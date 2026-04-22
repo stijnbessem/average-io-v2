@@ -23,3 +23,5 @@ Opens at `http://localhost:5173`.
 - `window.storage` is shimmed via `localStorage` outside the Claude artifact runtime (see `src/storage-shim.js`).
 - The Google Apps Script webhook URL and secret are hardcoded in `src/App.jsx`. For a public deployment, review them before pushing.
 - Admin password is also hardcoded — search for `ADMIN_PASSWORD` in `src/App.jsx` and change it before going public.
+- Questionnaire answers are now multi-choice only. Numeric/text prompts are converted to curated choice buckets so all answers can be compared as categorical distributions.
+- Moderate dedupe is applied to remove look-alike prompts (for example overlapping sleep/water/screen-time style questions) and keep each category focused.

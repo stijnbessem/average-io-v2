@@ -235,11 +235,13 @@ function titleCase(value) {
 }
 
 function mapQuestionType(question) {
-  if (question.type === "select" && question.options === "dynamic_country_list") return "country";
+  if (question.type === "select" && question.options === "dynamic_country_list") return "single";
   if (question.type === "select") return "single";
   if (question.type === "toggle") return "single";
-  if (question.type === "text") return "text";
-  return question.type;
+  if (question.type === "text") return "single";
+  if (question.type === "number") return "single";
+  if (question.type === "slider") return "single";
+  return "single";
 }
 
 const canonicalCategories = canonicalQuestionSet.categories.map((category, idx) => {
@@ -270,6 +272,146 @@ const COUNTRIES = [
   "Brazil", "Mexico", "Argentina", "India", "Indonesia", "Vietnam", "South Africa",
   "United Arab Emirates", "Turkey", "Greece", "Czechia", "Finland", "Romania", "Hungary", "Other",
 ];
+
+const DEDUPED_QUESTION_IDS = new Set([
+  "sleep",
+  "water",
+  "phone_hours",
+  "social_hours",
+  "caffeine_drinks_day",
+  "alcohol_days_month",
+  "exercise_minutes_week",
+]);
+
+const MULTI_CHOICE_OVERRIDE_OPTIONS = {
+  age: ["18–24", "25–34", "35–44", "45–54", "55–64", "65+"],
+  height: ["Under 155 cm", "155–164 cm", "165–174 cm", "175–184 cm", "185–194 cm", "195+ cm"],
+  weight: ["Under 55 kg", "55–69 kg", "70–84 kg", "85–99 kg", "100–119 kg", "120+ kg"],
+  screen_time: ["Under 1h", "1–2h", "2–4h", "4–6h", "6–8h", "8h+"],
+  sleep_hours: ["Under 5h", "5–6h", "6–7h", "7–8h", "8–9h", "9h+"],
+  steps: ["Under 2k", "2k–5k", "5k–8k", "8k–12k", "12k–16k", "16k+"],
+  coffee: ["0", "1", "2", "3", "4–5", "6+"],
+  city: ["Capital city", "Large city", "Medium city", "Small city/town", "Village/rural", "Prefer not to say"],
+  notifications: ["0–25", "26–75", "76–150", "151–250", "251–400", "400+"],
+  phone_unlocks: ["0–20", "21–50", "51–90", "91–140", "141–220", "220+"],
+  tabs: ["0–10", "11–25", "26–50", "51–100", "101–200", "200+"],
+};
+
+function buildRangeOptionSet(min, max, unit = "", count = 6) {
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return null;
+  const format = (n) => {
+    if (Math.abs(n) >= 1000) return `${Math.round(n / 100) / 10}k`;
+    return Number.isInteger(n) ? `${n}` : `${Math.round(n * 10) / 10}`;
+  };
+  const span = max - min;
+  const step = span / count;
+  const ranges = [];
+  for (let i = 0; i < count; i += 1) {
+    const lo = i === 0 ? min : min + step * i;
+    const hi = i === count - 1 ? max : min + step * (i + 1);
+    const loLabel = format(Math.round(lo));
+    const hiLabel = format(Math.round(hi));
+    const label = i === count - 1
+      ? `${loLabel}+${unit ? ` ${unit}` : ""}`
+      : `${loLabel}–${hiLabel}${unit ? ` ${unit}` : ""}`;
+    ranges.push({
+      label,
+      min: i === 0 ? Number.NEGATIVE_INFINITY : lo,
+      max: i === count - 1 ? Number.POSITIVE_INFINITY : hi,
+    });
+  }
+  return {
+    options: ranges.map((r) => r.label),
+    ranges,
+  };
+}
+
+function deriveRangesFromOptionLabels(options) {
+  const ranges = [];
+  options.forEach((label) => {
+    const txt = String(label);
+    const exact = txt.match(/^\s*(\d+(?:\.\d+)?)\s*$/);
+    if (exact) {
+      const n = Number(exact[1]);
+      ranges.push({ label: txt, min: n - 0.0001, max: n + 0.0001 });
+      return;
+    }
+    const under = txt.match(/under\s+(\d+(?:\.\d+)?)/i);
+    if (under) {
+      ranges.push({ label: txt, min: Number.NEGATIVE_INFINITY, max: Number(under[1]) });
+      return;
+    }
+    const plus = txt.match(/(\d+(?:\.\d+)?)\s*\+/);
+    if (plus) {
+      ranges.push({ label: txt, min: Number(plus[1]), max: Number.POSITIVE_INFINITY });
+      return;
+    }
+    const between = txt.match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)/);
+    if (between) {
+      ranges.push({ label: txt, min: Number(between[1]), max: Number(between[2]) + 0.0001 });
+    }
+  });
+  return ranges.length > 0 ? ranges : null;
+}
+
+function toMultiChoiceQuestion(question) {
+  const q = { ...question };
+  const overrideOptions = MULTI_CHOICE_OVERRIDE_OPTIONS[q.id];
+  let options = Array.isArray(q.options) ? [...q.options] : null;
+  let ranges = null;
+
+  if (q.id === "country") {
+    options = [...COUNTRIES];
+  } else if (overrideOptions) {
+    options = [...overrideOptions];
+  } else if (q.type === "number" || q.type === "slider") {
+    const rangeSet = buildRangeOptionSet(q.min, q.max, q.unit || "", 6);
+    if (rangeSet) {
+      options = rangeSet.options;
+      ranges = rangeSet.ranges;
+    }
+  } else if (q.type === "text") {
+    options = ["Prefer not to say", "Other"];
+  }
+
+  if (!Array.isArray(options) || options.length === 0) {
+    options = ["Prefer not to say", "Other"];
+  }
+
+  if (!ranges) {
+    ranges = deriveRangesFromOptionLabels(options);
+  }
+
+  return {
+    ...q,
+    type: "single",
+    options,
+    optionRanges: ranges,
+  };
+}
+
+function normalizeAnswerForQuestion(raw, question) {
+  if (raw == null || raw === "") return null;
+  if (!question) return raw;
+  const options = Array.isArray(question.options) ? question.options : [];
+  const asString = String(raw).trim();
+  if (options.includes(asString)) return asString;
+
+  const asNumber = Number(raw);
+  const ranges = Array.isArray(question.optionRanges) && question.optionRanges.length > 0
+    ? question.optionRanges
+    : deriveRangesFromOptionLabels(options);
+  if (Number.isFinite(asNumber) && Array.isArray(ranges) && ranges.length > 0) {
+    const hit = ranges.find((r) => asNumber >= r.min && asNumber < r.max);
+    return hit ? hit.label : ranges[ranges.length - 1].label;
+  }
+
+  // Best-effort: if this used to be free text/numeric and no exact option matches now,
+  // map to a neutral fallback so old sessions still hydrate.
+  if (options.includes("Other")) return "Other";
+  if (options.includes("Prefer not to say")) return "Prefer not to say";
+  return options[0] || null;
+}
 
 const canonicalQuestions = canonicalQuestionSet.categories.flatMap((category) =>
   (category.questions || []).map((question) => {
@@ -303,7 +445,9 @@ const legacyOnlyQuestions = LEGACY_QUESTIONS.filter(
   (legacyQuestion) => !canonicalQuestions.some((question) => question.id === legacyQuestion.id)
 );
 
-const QUESTIONS = [...canonicalQuestions, ...legacyOnlyQuestions];
+const QUESTIONS = [...canonicalQuestions, ...legacyOnlyQuestions]
+  .filter((question) => !DEDUPED_QUESTION_IDS.has(question.id))
+  .map(toMultiChoiceQuestion);
 
 /* Index helpers */
 const QUESTIONS_BY_ID = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
@@ -361,31 +505,7 @@ function generatePeer(rand) {
     if (q.dependsOn && (p[q.dependsOn] == null || !q.showIf.includes(p[q.dependsOn]))) {
       return;
     }
-    if (q.type === "single") {
-      if (Array.isArray(q.options) && q.options.length > 0) p[q.id] = pick(rand, q.options);
-      return;
-    }
-    if (q.type === "country") {
-      p[q.id] = pick(rand, COUNTRIES);
-      return;
-    }
-    if (q.type === "text") {
-      p[q.id] = `City ${Math.floor(rand() * 300) + 1}`;
-      return;
-    }
-    if (q.type === "number" || q.type === "slider") {
-      const min = Number.isFinite(q.min) ? q.min : 0;
-      const max = Number.isFinite(q.max) ? q.max : min + 100;
-      if (max <= min) {
-        p[q.id] = min;
-        return;
-      }
-      const step = Number.isFinite(q.step) && q.step > 0 ? q.step : 1;
-      const range = max - min;
-      const raw = min + rand() * range;
-      const stepped = Math.round((raw - min) / step) * step + min;
-      p[q.id] = Math.round(clamp(stepped, min, max) * 1000) / 1000;
-    }
+    if (Array.isArray(q.options) && q.options.length > 0) p[q.id] = pick(rand, q.options);
   });
   return p;
 }
@@ -443,7 +563,7 @@ function buildPeersFromSheet(table) {
     const qid = label.slice(2);
     if (!QUESTIONS_BY_ID[qid]) return;
     if (questionColumns.some((c) => c.qid === qid)) return; // ignore duplicate sheet columns
-    questionColumns.push({ idx, qid, type: QUESTIONS_BY_ID[qid].type });
+    questionColumns.push({ idx, qid });
   });
 
   const peers = [];
@@ -457,15 +577,11 @@ function buildPeersFromSheet(table) {
       : {};
     const peer = {};
 
-    questionColumns.forEach(({ idx, qid, type }) => {
+    questionColumns.forEach(({ idx, qid }) => {
       const raw = cells[idx]?.v ?? fallbackFromJson[qid];
       if (raw == null || raw === "") return;
-      if (type === "number" || type === "slider") {
-        const n = toNumberOrNull(raw);
-        if (n != null) peer[qid] = n;
-        return;
-      }
-      peer[qid] = String(raw).trim();
+      const normalized = normalizeAnswerForQuestion(raw, QUESTIONS_BY_ID[qid]);
+      if (normalized != null && normalized !== "") peer[qid] = normalized;
     });
 
     if (Object.keys(peer).length > 0) peers.push(peer);
@@ -571,16 +687,25 @@ function friendlyShare(pct) {
 
 /* Build a segmented peer list given the user's current filter */
 function segmentPeers(peers, user, segment) {
+  const ageBandFor = (value) => {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) return Math.floor(numeric / 10) * 10;
+    const firstNum = String(value || "").match(/\d{1,3}/);
+    if (!firstNum) return null;
+    return Math.floor(Number(firstNum[0]) / 10) * 10;
+  };
   if (!segment || segment === "all") return peers;
   if (segment === "gender" && user.gender) return peers.filter(p => p.gender === user.gender);
   if (segment === "country" && user.country) return peers.filter(p => p.country === user.country);
   if (segment === "age" && user.age != null) {
-    const band = Math.floor(user.age / 10) * 10;
-    return peers.filter(p => p.age >= band && p.age < band + 10);
+    const band = ageBandFor(user.age);
+    if (band == null) return peers;
+    return peers.filter((p) => ageBandFor(p.age) === band);
   }
   if (segment === "age_gender" && user.age != null && user.gender) {
-    const band = Math.floor(user.age / 10) * 10;
-    return peers.filter(p => p.gender === user.gender && p.age >= band && p.age < band + 10);
+    const band = ageBandFor(user.age);
+    if (band == null) return peers;
+    return peers.filter((p) => p.gender === user.gender && ageBandFor(p.age) === band);
   }
   return peers;
 }
@@ -708,7 +833,7 @@ function buildRealityCheckItems(peers, answers) {
       return;
     }
 
-    if (q.type === "single" || q.type === "country" || q.type === "text") {
+    if (q.type === "single") {
       const stat = computeCategoricalStats(peers, qid, value);
       if (!stat) return;
       const samePct = roundPct(stat.userPct);
@@ -1724,11 +1849,7 @@ function QuestionScreen({ state, dispatch, peers }) {
   // Inline live comparison preview
   let previewStats = null, previewKind = null, previewCopy = null;
   if (canNext) {
-    if (["number", "slider"].includes(q.type)) {
-      previewKind = "numeric";
-      previewStats = computeNumericStats(peers, q.id, value);
-      if (previewStats) previewCopy = comparisonPhrase("numeric", previewStats);
-    } else if (q.type === "single" || q.type === "text" || q.type === "country") {
+    if (q.type === "single") {
       previewKind = "categorical";
       previewStats = computeCategoricalStats(peers, q.id, value);
       if (previewStats) previewCopy = comparisonPhrase("categorical", previewStats);
@@ -1855,53 +1976,15 @@ function QuestionScreen({ state, dispatch, peers }) {
 }
 
 function AnswerInput({ q, value, onChange, onAnswered = null }) {
-  if (q.type === "single") {
-    return (
-      <SingleSelect
-        options={q.options}
-        value={value}
-        onChange={onChange}
-        onSelect={onAnswered}
-        columns={q.options.length > 5 ? 2 : 1}
-      />
-    );
-  }
-  if (q.type === "slider") {
-    return <Slider value={value} onChange={onChange} min={q.min} max={q.max} step={q.step || 1} unit={q.unit} />;
-  }
-  if (q.type === "number") {
-    return (
-      <div>
-        <Stepper value={value} onChange={onChange} min={q.min} max={q.max} step={1} unit={q.unit} />
-        <div style={{ marginTop: 10, fontSize: 12, color: "var(--ink-4)" }}>
-          Range {q.min}–{q.max}{q.unit ? ` ${q.unit}` : ""}
-        </div>
-      </div>
-    );
-  }
-  if (q.type === "country") {
-    return <SearchableSelect options={COUNTRIES} value={value} onChange={onChange} placeholder="Start typing your country…" />;
-  }
-  if (q.type === "text") {
-    return (
-      <input
-        type="text"
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Type your answer..."
-        style={{
-          width: "100%",
-          padding: "12px 14px",
-          borderRadius: "var(--radius-m)",
-          border: "1px solid var(--line)",
-          background: "#fff",
-          fontSize: 15,
-          color: "#111",
-        }}
-      />
-    );
-  }
-  return null;
+  return (
+    <SingleSelect
+      options={q.options || []}
+      value={value}
+      onChange={onChange}
+      onSelect={onAnswered}
+      columns={(q.options || []).length > 5 ? 2 : 1}
+    />
+  );
 }
 
 /* ============================================================================
@@ -2664,6 +2747,17 @@ function useDebugLog() {
 
 const STORAGE_KEY = "average-io:v1";
 
+function migrateAnswersToMultiChoice(answers) {
+  const next = {};
+  Object.entries(answers || {}).forEach(([qid, value]) => {
+    const q = QUESTIONS_BY_ID[qid];
+    if (!q) return;
+    const normalized = normalizeAnswerForQuestion(value, q);
+    if (normalized != null && normalized !== "") next[qid] = normalized;
+  });
+  return next;
+}
+
 const initialState = {
   screen: "welcome",             // welcome | hub | question | overview | category
   answers: {},                   // { [qid]: value }
@@ -2678,8 +2772,17 @@ const initialState = {
 
 function reducer(state, action) {
   switch (action.type) {
-    case "hydrate":
-      return { ...state, ...action.payload, sessions: action.payload.sessions || [] };
+    case "hydrate": {
+      const migratedAnswers = migrateAnswersToMultiChoice(action.payload.answers || {});
+      const migratedOrder = (action.payload.order || []).filter((qid) => migratedAnswers[qid] != null);
+      return {
+        ...state,
+        ...action.payload,
+        answers: migratedAnswers,
+        order: migratedOrder,
+        sessions: action.payload.sessions || [],
+      };
+    }
     case "go":
       return { ...state, screen: action.screen, ...(action.patch || {}) };
     case "answer": {

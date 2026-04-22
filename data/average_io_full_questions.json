@@ -3,10 +3,10 @@
     {
       "id": "demographics",
       "questions": [
-        { "id": "age", "label": "What is your age?", "type": "number", "min": 18, "max": 100 },
+        { "id": "age", "label": "What is your age?", "type": "select", "options": ["18–24", "25–34", "35–44", "45–54", "55–64", "65+"] },
         { "id": "gender", "label": "What is your gender?", "type": "select", "options": ["Male", "Female", "Non-binary", "Prefer not to say"] },
         { "id": "country", "label": "What country do you live in?", "type": "select", "options": "dynamic_country_list" },
-        { "id": "city", "label": "What city do you live in?", "type": "text" },
+        { "id": "city", "label": "What city size best describes where you live?", "type": "select", "options": ["Capital city", "Large city", "Medium city", "Small city/town", "Village/rural", "Prefer not to say"] },
         { "id": "skin_color", "label": "What is your skin color?", "type": "select", "options": ["Very light", "Light", "Medium", "Olive", "Brown", "Dark", "Prefer not to say"] },
         { "id": "dominant_hand", "label": "What is your dominant hand?", "type": "select", "options": ["Left", "Right", "Both"] }
       ]
@@ -14,48 +14,46 @@
     {
       "id": "body",
       "questions": [
-        { "id": "height", "label": "What is your height?", "type": "slider", "min": 120, "max": 230, "unit": "cm" },
-        { "id": "weight", "label": "What is your weight?", "type": "slider", "min": 35, "max": 250, "unit": "kg" },
+        { "id": "height", "label": "What is your height?", "type": "select", "options": ["Under 155 cm", "155–164 cm", "165–174 cm", "175–184 cm", "185–194 cm", "195+ cm"] },
+        { "id": "weight", "label": "What is your weight?", "type": "select", "options": ["Under 55 kg", "55–69 kg", "70–84 kg", "85–99 kg", "100–119 kg", "120+ kg"] },
         { "id": "eye_color", "label": "What is your eye color?", "type": "select", "options": ["Brown", "Blue", "Green", "Hazel", "Grey", "Other"] },
         { "id": "hair_color", "label": "What is your hair color?", "type": "select", "options": ["Black", "Brown", "Blonde", "Red", "Grey/White", "Other"] },
         { "id": "tattoos", "label": "Do you have tattoos?", "type": "toggle" },
-        { "id": "tattoo_count", "label": "How many tattoos do you have?", "type": "number", "min": 0, "max": 100 }
+        { "id": "tattoo_count", "label": "How many tattoos do you have?", "type": "select", "options": ["1", "2–3", "4–6", "7–10", "11+"] }
       ]
     },
     {
       "id": "digital",
       "questions": [
-        { "id": "phone_unlocks", "label": "Phone unlocks per day", "type": "slider", "min": 0, "max": 300 },
-        { "id": "notifications", "label": "Notifications per day", "type": "slider", "min": 0, "max": 500 },
-        { "id": "screen_time", "label": "Screen time per day", "type": "slider", "min": 0, "max": 16, "unit": "hours" },
-        { "id": "apps_installed", "label": "Apps installed", "type": "slider", "min": 0, "max": 300 }
+        { "id": "phone_unlocks", "label": "Phone unlocks per day", "type": "select", "options": ["0–20", "21–50", "51–90", "91–140", "141–220", "220+"] },
+        { "id": "screen_time", "label": "Screen time per day", "type": "select", "options": ["Under 1h", "1–2h", "2–4h", "4–6h", "6–8h", "8h+"] },
+        { "id": "apps_installed", "label": "Apps installed", "type": "select", "options": ["0–25", "26–60", "61–110", "111–170", "171–240", "240+"] }
       ]
     },
     {
       "id": "lifestyle",
       "questions": [
-        { "id": "sleep_hours", "label": "Sleep hours per night", "type": "slider", "min": 0, "max": 12 },
-        { "id": "water_intake", "label": "Water intake per day", "type": "slider", "min": 0, "max": 5, "unit": "L" },
-        { "id": "coffee", "label": "Cups of coffee per day", "type": "number", "min": 0, "max": 15 },
-        { "id": "steps", "label": "Steps per day", "type": "slider", "min": 0, "max": 30000 }
+        { "id": "sleep_hours", "label": "Sleep hours per night", "type": "select", "options": ["Under 5h", "5–6h", "6–7h", "7–8h", "8–9h", "9h+"] },
+        { "id": "water_intake", "label": "Water intake per day", "type": "select", "options": ["Under 1 L", "1–1.5 L", "1.6–2 L", "2.1–2.7 L", "2.8–3.5 L", "3.5+ L"] },
+        { "id": "coffee", "label": "Cups of coffee per day", "type": "select", "options": ["0", "1", "2", "3", "4–5", "6+"] },
+        { "id": "steps", "label": "Steps per day", "type": "select", "options": ["Under 2k", "2k–5k", "5k–8k", "8k–12k", "12k–16k", "16k+"] }
       ]
     },
     {
       "id": "micro",
       "questions": [
-        { "id": "alarms", "label": "Alarms per day", "type": "number", "min": 0, "max": 20 },
-        { "id": "snooze", "label": "Snooze presses", "type": "number", "min": 0, "max": 20 },
-        { "id": "tabs", "label": "Browser tabs open", "type": "number", "min": 0, "max": 500 },
-        { "id": "unread_emails", "label": "Unread emails", "type": "number", "min": 0, "max": 10000 }
+        { "id": "alarms", "label": "Alarms per day", "type": "select", "options": ["0", "1", "2", "3–4", "5–7", "8+"] },
+        { "id": "snooze", "label": "Snooze presses", "type": "select", "options": ["0", "1", "2", "3–4", "5–7", "8+"] },
+        { "id": "tabs", "label": "Browser tabs open", "type": "select", "options": ["0–10", "11–25", "26–50", "51–100", "101–200", "200+"] },
+        { "id": "unread_emails", "label": "Unread emails", "type": "select", "options": ["0", "1–10", "11–50", "51–200", "201–1000", "1000+"] }
       ]
     },
     {
       "id": "sexual",
       "sensitive": true,
       "questions": [
-        { "id": "partners_lifetime", "label": "Lifetime sexual partners", "type": "slider", "min": 0, "max": 200 },
-        { "id": "partners_year", "label": "Partners last 12 months", "type": "slider", "min": 0, "max": 50 },
-        { "id": "frequency", "label": "Sexual activity per month", "type": "slider", "min": 0, "max": 100 },
+        { "id": "partners_lifetime", "label": "Lifetime sexual partners", "type": "select", "options": ["0", "1", "2–4", "5–9", "10–19", "20+"] },
+        { "id": "frequency", "label": "Sexual activity per month", "type": "select", "options": ["0", "1–2", "3–5", "6–9", "10–15", "16+"] },
         { "id": "anal", "label": "Anal sex experience", "type": "select", "options": ["Yes", "No", "Prefer not to say"] },
         { "id": "protection", "label": "Protection usage", "type": "select", "options": ["Always", "Often", "Sometimes", "Never", "Prefer not to say"] }
       ]
