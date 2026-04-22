@@ -11,7 +11,7 @@ import questionnaireRaw from "./data/average_io_full_questions.json";
 /* Bump APP_VERSION whenever anything user-visible changes — semver-ish,
    nothing formal. Shown in the footer so you can verify you're on the
    latest build. APP_BUILD is the approximate ship date. */
-const APP_VERSION = "0.15.4";
+const APP_VERSION = "0.15.5";
 const APP_BUILD = "2026-04-22";
 
 /* ---------- Design tokens (minimalist-ui: warm monochrome + spot pastels) --- */
@@ -32,6 +32,7 @@ const STYLE = `
     --ink-4: #8F8B84;
     --line: #EAEAEA;
     --line-soft: rgba(0,0,0,0.06);
+    --comparison-preview-border: rgba(17, 17, 17, 0.24);
 
     --accent-solid: #111111;
     --btn-solid-bg: #111111;
@@ -90,6 +91,7 @@ const STYLE = `
     --ink-4: #7A776F;
     --line: #2E2E2C;
     --line-soft: rgba(255,255,255,0.08);
+    --comparison-preview-border: rgba(255, 255, 255, 0.24);
 
     --accent-solid: #E8E7E3;
     --btn-solid-bg: #ECEBE7;
@@ -2422,7 +2424,7 @@ function QuestionScreen({ state, dispatch, peers }) {
                 <div style={{
                   padding: "14px 18px",
                   background: "transparent",
-                  border: "1px solid rgba(17,17,17,0.24)",
+                  border: "1px solid var(--comparison-preview-border)",
                   borderRadius: "var(--radius-m)",
                   display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
                 }}>
