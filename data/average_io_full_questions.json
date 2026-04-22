@@ -277,6 +277,21 @@
           ]
         },
         {
+          "id": "hairdresser_interval",
+          "question": "Salon / barber rhythm (cuts & pro trims)",
+          "options": [
+            { "value": "diy_only", "label": "DIY / clippers only — pros never 👀" },
+            { "value": "under_3wk", "label": "Every few weeks — fresh fade religion ✂️" },
+            { "value": "4-6wk", "label": "Roughly 4–6 weeks" },
+            { "value": "2-3mo", "label": "Every 2–3 months" },
+            { "value": "few_times_year", "label": "A few times a year — grows out seasons 🌿" },
+            { "value": "yearish", "label": "About once a year — intervention haircut" },
+            { "value": "when_shamed", "label": "When partner / mum / mirror negotiates 📣" },
+            { "value": "buzz_none", "label": "Buzzed/bald/none needed — zero salon drama 🥚" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
           "id": "activity",
           "question": "Daily movement",
           "options": [
@@ -590,6 +605,70 @@
             { "value": "speedrun", "label": "Speedrun / mastery degenerate ⏱️" },
             { "value": "retro", "label": "Retro / emulation collector 👾" },
             { "value": "prefer_not", "label": "Rather not say" }
+          ]
+        },
+        {
+          "id": "pets_home",
+          "question": "Pets under your roof",
+          "options": [
+            { "value": "none", "label": "Plant era only — zero fur 🌱" },
+            { "value": "dog", "label": "Dog(s) — sworn bestie(s) 🐕" },
+            { "value": "cat", "label": "Cat(s) — household royalty 🐈" },
+            { "value": "dog_cat", "label": "Dog + cat diplomacy zone 🐕‍🦺🐈" },
+            { "value": "small_critters", "label": "Small mammals / rodents / hopping chaos 🐹" },
+            { "value": "birds_reptiles_fish", "label": "Bird / reptile / aquarium cabinet 🐠🦎" },
+            { "value": "multi_zoo", "label": "Full zoo energy — multiple species 📦" },
+            { "value": "shared_not_mine", "label": "Roomie's / partner's pets — I'm the uncle" },
+            { "value": "soon_maybe", "label": "Soon™ — stalking shelters mentally" },
+            { "value": "allergic_obstacle", "label": "Allergic — fur is betrayal 🤧" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "pet_energy",
+          "question": "Pet parenting energy (if pets apply — else vibes)",
+          "options": [
+            { "value": "na_none", "label": "N/A — no pets / plants only 🌿" },
+            { "value": "low_key", "label": "Low-key — chill coexistence" },
+            { "value": "spoiled_soft", "label": "Rotten spoiled — treats budget exists 🧺" },
+            { "value": "structured", "label": "Structured walks / routines — spreadsheet brain 📋" },
+            { "value": "chaos_pack", "label": "Chaos pack — zoomies at 3am 🌀" },
+            { "value": "outdoor_partner", "label": "Outdoor partner — hikes & mud 🥾" },
+            { "value": "senior_care", "label": "Senior / meds era — gentle hospice vibes 💊" },
+            { "value": "foster_rotation", "label": "Foster / rotate — heart always breaking 💔" },
+            { "value": "want_so_bad", "label": "Petless but mentally at the dog park 🫠" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "self_care_frequency",
+          "question": "Self-care cadence (intentional you-time)",
+          "options": [
+            { "value": "what_self_care", "label": "What's self-care — survival mode 🫥" },
+            { "value": "rare_guilt", "label": "Rare bursts — guilt spiral after 📉" },
+            { "value": "weekly_slot", "label": "Weekly-ish slot — calendar negotiates 🗓️" },
+            { "value": "few_week", "label": "Few times a week micro rituals ✨" },
+            { "value": "daily_small", "label": "Daily tiny habits — stack wins 🧱" },
+            { "value": "main_character", "label": "Main-character maintenance — non-negotiable 👑" },
+            { "value": "cyclical", "label": "Cyclical — great month then offline month 🌙" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "self_care_lane",
+          "question": "Self-care lane that hits hardest",
+          "options": [
+            { "value": "skin_body", "label": "Skin / bath / body rituals 🛁" },
+            { "value": "therapy_mind", "label": "Therapy / journaling / inner work 🛋️" },
+            { "value": "movement", "label": "Movement — gym walk stretch dance 🏃" },
+            { "value": "sleep_nest", "label": "Sleep / nest / blackout curtain lore 😴" },
+            { "value": "social_refuel", "label": "People time — extrovert refill ☕" },
+            { "value": "solo_silence", "label": "Alone silence — battery sacred 🔌" },
+            { "value": "creative_play", "label": "Creative play — art music games 🎨" },
+            { "value": "nature_reset", "label": "Nature reset — grass touch subscription 🌲" },
+            { "value": "food_treat", "label": "Food treat — chef brain or nice takeout 🍜" },
+            { "value": "no_sparkle", "label": "No sparkle — coping is memes only 😅" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
           ]
         }
       ]

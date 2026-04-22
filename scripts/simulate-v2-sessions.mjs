@@ -99,9 +99,41 @@ function downweightAvoid(opts, baseWeights) {
  * Plausible distributions: age/gender/region skew; bell-ish for long Likert-style lists;
  * sensitive blocks slightly more "rather not" via downweightAvoid (still answered).
  */
-function pickAnswer(q) {
+function pickAnswer(q, answers) {
   const opts = q.options;
   const n = opts.length;
+
+  if (q.id === "hairdresser_interval") {
+    const w = [8, 14, 22, 24, 14, 6, 6, 4, 2];
+    return pickWeighted(opts, w.slice(0, n));
+  }
+  if (q.id === "pets_home") {
+    const w = [18, 22, 20, 8, 6, 5, 3, 6, 7, 4, 1];
+    return pickWeighted(opts, w.slice(0, n));
+  }
+  if (q.id === "pet_energy") {
+    const home = answers.pets_home || "";
+    if (
+      !home ||
+      home.includes("Plant era only") ||
+      home.includes("Allergic — fur") ||
+      home.includes("Rather not say 🤐")
+    ) {
+      const naOpts = opts.filter((o) => /N\/A — no pets|Petless but mentally|Rather not say 🤐/.test(o));
+      const pool = naOpts.length ? naOpts : opts;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+    const w = [5, 18, 22, 16, 12, 10, 6, 5, 4, 2];
+    return pickWeighted(opts, w.slice(0, n));
+  }
+  if (q.id === "self_care_frequency") {
+    const w = [12, 14, 22, 20, 16, 8, 6, 2];
+    return pickWeighted(opts, w.slice(0, n));
+  }
+  if (q.id === "self_care_lane") {
+    const w = [14, 12, 16, 14, 10, 12, 10, 8, 8, 4, 2];
+    return pickWeighted(opts, w.slice(0, n));
+  }
 
   if (q.id === "age") {
     const w = [2, 20, 32, 22, 14, 8, 2];
@@ -136,7 +168,7 @@ function buildAnswers(flatQuestions) {
   const answers = {};
   for (const q of flatQuestions) {
     if (!isVisible(q, answers)) continue;
-    answers[q.id] = pickAnswer(q);
+    answers[q.id] = pickAnswer(q, answers);
   }
   return answers;
 }
