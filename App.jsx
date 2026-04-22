@@ -1692,9 +1692,6 @@ function QuestionScreen({ state, dispatch, peers }) {
                   display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap",
                 }}>
                   <span className="label">Live comparison</span>
-                  {previewStats && (
-                    <span style={{ fontSize: 11, color: "var(--ink-4)" }}>n={previewStats.n}</span>
-                  )}
                   <span style={{ fontSize: 14, color: "#111" }}>{previewCopy}</span>
                   {previewKind === "numeric" && previewStats && (
                     <span style={{ marginLeft: "auto" }}>
@@ -2183,7 +2180,6 @@ function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
                   ? " The percentile is the share of users who answered lower than you."
                   : " The bars show how often each option was picked."}
               </InfoTip>
-              <span style={{ fontSize: 11, color: "var(--ink-4)" }}>n={localStats.n}</span>
               {kind === "numeric" && <PercentileBadge percentile={localStats.percentile} />}
             </div>
             <div style={{ fontSize: 14, color: "#111", marginBottom: 16, lineHeight: 1.5 }}>
