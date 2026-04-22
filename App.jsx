@@ -11,7 +11,7 @@ import questionnaireRaw from "./data/average_io_full_questions.json";
 /* Bump APP_VERSION whenever anything user-visible changes — semver-ish,
    nothing formal. Shown in the footer so you can verify you're on the
    latest build. APP_BUILD is the approximate ship date. */
-const APP_VERSION = "0.15.2";
+const APP_VERSION = "0.15.3";
 const APP_BUILD = "2026-04-22";
 
 /* ---------- Design tokens (minimalist-ui: warm monochrome + spot pastels) --- */
