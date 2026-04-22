@@ -870,8 +870,8 @@ function PercentileBadge({ percentile }) {
   return (
     <div style={{
       display: "inline-flex", alignItems: "baseline", gap: 6,
-      padding: "6px 12px", background: "#F7F6F3", borderRadius: "var(--radius-s)",
-      border: "1px solid var(--line)",
+      padding: "6px 12px", background: "transparent", borderRadius: "var(--radius-s)",
+      border: "1px solid rgba(17,17,17,0.24)",
     }}>
       <span className="mono" style={{ fontSize: 18, color: "#111", fontWeight: 500 }}>{percentile}</span>
       <span style={{ fontSize: 11, color: "var(--ink-3)" }}>percentile</span>
@@ -1737,7 +1737,7 @@ function QuestionScreen({ state, dispatch, peers }) {
 
   return (
     <PageShell>
-      <div style={{ width: "min(820px, 100%)" }}>
+      <div style={{ width: "min(820px, 100%)", margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
         <Tag tone={cat.accent}>{cat.title}</Tag>
         <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>
@@ -1795,7 +1795,7 @@ function QuestionScreen({ state, dispatch, peers }) {
                 <div style={{
                   padding: "14px 18px",
                   background: "transparent",
-                  border: "1px solid var(--ink-2)",
+                  border: "1px solid rgba(17,17,17,0.24)",
                   borderRadius: "var(--radius-m)",
                   display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
                 }}>
