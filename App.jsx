@@ -446,9 +446,11 @@ function buildPeersFromSheet(table) {
   if (!cols.length || !rows.length) return [];
 
   const questionColumns = [];
+  let sessionIdColIndex = -1;
   let jsonColIndex = -1;
   cols.forEach((col, idx) => {
     const label = (col?.label || "").trim();
+    if (label === "session_id") sessionIdColIndex = idx;
     if (label === "_json") jsonColIndex = idx;
     if (!label.startsWith("q_")) return;
     const qid = label.slice(2);
@@ -460,6 +462,9 @@ function buildPeersFromSheet(table) {
   const peers = [];
   rows.forEach((row) => {
     const cells = row?.c || [];
+    const sessionId = sessionIdColIndex >= 0 ? String(cells[sessionIdColIndex]?.v || "") : "";
+    // Ignore earlier synthetic bootstrap rows so varied replacements can take over.
+    if (sessionId.includes("-seed-")) return;
     const fallbackFromJson = jsonColIndex >= 0
       ? extractAnswerValuesFromJsonCell(cells[jsonColIndex]?.v)
       : {};
@@ -1167,7 +1172,6 @@ function SheetDataModal({ open, onClose, sheetState }) {
     lastSuccessAt = null,
     lastError = "",
     sheetPeerCount = 0,
-    sample = [],
   } = sheetState || {};
 
   const fmt = (iso) => {
@@ -1227,7 +1231,7 @@ function SheetDataModal({ open, onClose, sheetState }) {
               <div className="mono" style={{ color: "#111", marginTop: 6 }}>{source === "live" ? "LIVE" : "FALLBACK"}</div>
             </div>
             <div style={{ padding: 10, background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
-              <div className="label">Rows parsed</div>
+              <div className="label">User inputs</div>
               <div className="mono" style={{ color: "#111", marginTop: 6 }}>{sheetPeerCount}</div>
             </div>
             <div style={{ padding: 10, background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
@@ -1250,19 +1254,6 @@ function SheetDataModal({ open, onClose, sheetState }) {
             </div>
           ) : null}
 
-          <div style={{
-            padding: 12, border: "1px solid var(--line)", borderRadius: "var(--radius-s)",
-            background: "#FAFAF8",
-          }}>
-            <div className="label" style={{ marginBottom: 8 }}>Preview (first {sample.length} rows)</div>
-            <pre style={{
-              margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word",
-              fontSize: 11, lineHeight: 1.5, color: "#222", fontFamily: "var(--mono)",
-              maxHeight: "42vh", overflow: "auto",
-            }}>
-              {sample.length ? JSON.stringify(sample, null, 2) : "No sheet rows parsed yet."}
-            </pre>
-          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
