@@ -11,7 +11,7 @@ import questionnaireRaw from "./data/average_io_full_questions.json";
 /* Bump APP_VERSION whenever anything user-visible changes — semver-ish,
    nothing formal. Shown in the footer so you can verify you're on the
    latest build. APP_BUILD is the approximate ship date. */
-const APP_VERSION = "0.15.7";
+const APP_VERSION = "0.15.8";
 const APP_BUILD = "2026-04-22";
 
 /* ---------- Design tokens (minimalist-ui: warm monochrome + spot pastels) --- */
@@ -1996,6 +1996,10 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
 function WelcomeBenefits() {
   const items = [
     {
+      title: "PDF-ready overview",
+      body: "Download a polished PDF with your full answer set, category scores, and how each answer compares to peers—built locally in your browser.",
+    },
+    {
       title: "Context, not a test",
       body: "See how your answers line up with other people. No right or wrong—just distribution.",
     },
@@ -2528,7 +2532,7 @@ function AnswerInput({ q, value, onChange, onAnswered = null }) {
    OVERVIEW DASHBOARD
    ============================================================================ */
 
-function OverviewDashboard({ state, dispatch, peers, onShare }) {
+function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
   const { answers, segment } = state;
   const totalAnswered = Object.keys(answers).filter(k => answerIsFilled(answers[k])).length;
   const segmentedPeers = useMemo(() => segmentPeers(peers, answers, segment), [peers, answers, segment]);
@@ -2640,9 +2644,15 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
       <motion.div {...FADE_UP}>
         <span className="label">Results</span>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", gap: 20, marginTop: 10 }}>
-          <h2 className="serif" style={{ fontSize: 48, margin: 0, color: "var(--ink)" }}>
-            Overview
-          </h2>
+          <div style={{ flex: "1 1 280px", minWidth: 0 }}>
+            <h2 className="serif" style={{ fontSize: 48, margin: 0, color: "var(--ink)" }}>
+              Overview
+            </h2>
+            <p style={{ margin: "10px 0 0", fontSize: 14, color: "var(--ink-3)", lineHeight: 1.5, maxWidth: 440 }}>
+              <strong style={{ color: "var(--ink)", fontWeight: 600 }}>PDF overview included:</strong> export a printable report with every answer,
+              uniqueness scores, and peer comparisons — generated on your device, nothing uploaded.
+            </p>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", maxWidth: "100%" }}>
             <div className="seg-scroll">
               <SegmentedControl
@@ -2657,6 +2667,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                 ]}
               />
             </div>
+            <Button size="sm" variant="secondary" onClick={onDownloadPdf}>PDF overview ↓</Button>
             <Button size="sm" onClick={onShare}>Share snapshot ↗</Button>
           </div>
         </div>
@@ -4586,6 +4597,180 @@ function buildSnapshotData(answers, peers, segment) {
   return { entries, standouts, catUniq, overallUniq, totalAnswered, catsCompleted };
 }
 
+/** Human-readable labels for peer comparison segment (matches overview SegmentedControl). */
+const SEGMENT_LABELS = {
+  all: "Everyone",
+  gender: "Same gender",
+  age: "Same age range",
+  age_gender: "Same age and gender",
+  country: "Same country",
+};
+
+function pdfSafeText(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/\p{Extended_Pictographic}/gu, "")
+    .replace(/[\u{1F1E6}-\u{1F1FF}]{2}/gu, "")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/…/g, "...")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatRawAnswerForPdf(val, q) {
+  if (val == null || val === "") return "";
+  if (Array.isArray(val)) return val.join(", ");
+  const u = q?.unit ? ` ${q.unit}` : "";
+  return `${val}${u}`;
+}
+
+/**
+ * Multi-page PDF: summary, uniqueness, standouts, and full Q&A by category.
+ * Uses jsPDF (dynamic import). Text is ASCII-safe for standard PDF fonts.
+ */
+async function buildOverviewPdfBlob(answers, peers, segment) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 16;
+  const maxW = pageW - margin * 2;
+  let y = margin;
+
+  const data = buildSnapshotData(answers, peers, segment);
+  const segmentLabel = SEGMENT_LABELS[segment] || segment || "Everyone";
+  const visibleTotal = QUESTIONS.filter((q) => isQuestionVisible(q, answers)).length;
+
+  const ensureRoom = (neededMm) => {
+    if (y + neededMm > pageH - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const writeLines = (text, fontSize, fontStyle = "normal") => {
+    doc.setFont("helvetica", fontStyle);
+    doc.setFontSize(fontSize);
+    const lines = doc.splitTextToSize(pdfSafeText(text), maxW);
+    const lh = fontSize * 0.52;
+    lines.forEach((line) => {
+      ensureRoom(lh + 0.5);
+      doc.text(line, margin, y);
+      y += lh;
+    });
+  };
+
+  const heading = (text, fontSize = 11.5) => {
+    ensureRoom(fontSize + 6);
+    y += 3;
+    writeLines(text, fontSize, "bold");
+    y += 2;
+  };
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  ensureRoom(12);
+  doc.text("average.io", margin, y);
+  y += 11;
+  writeLines("Your overview report", 13, "bold");
+  writeLines(
+    `Generated on your device · ${new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · Nothing in this PDF was uploaded to our servers.`,
+    8.5
+  );
+  y += 3;
+  writeLines(`Comparison group: ${segmentLabel}`, 10, "bold");
+  y += 4;
+
+  if (data.totalAnswered === 0) {
+    heading("No answers yet");
+    writeLines("Answer at least one question, then download again to get your full overview.", 10);
+    return doc.output("blob");
+  }
+
+  heading("Summary");
+  writeLines(`Questions answered: ${data.totalAnswered} (of ${visibleTotal} visible for you)`, 10);
+  writeLines(`Categories fully completed: ${data.catsCompleted} of ${CATEGORIES.length}`, 10);
+  if (data.overallUniq != null) {
+    writeLines(
+      `Overall uniqueness (for this peer group): ${Math.round(data.overallUniq * 100)} / 100 — ${pdfSafeText(labelForUniqueness(data.overallUniq))}`,
+      10
+    );
+  }
+  y += 3;
+
+  if (data.catUniq.length > 0) {
+    heading("Uniqueness by category");
+    data.catUniq.forEach(({ cat, u }) => {
+      writeLines(`${cat.title}: ${Math.round(u.score * 100)}/100 — ${pdfSafeText(u.label)} (n=${u.n})`, 9.5);
+    });
+    y += 3;
+  }
+
+  const ranked = [...data.entries].sort((a, b) => b.score - a.score).slice(0, 14);
+  if (ranked.length > 0) {
+    heading("Standout comparisons");
+    writeLines("Strongest signals vs the selected peer group (not a judgment—just rare vs common).", 8.5);
+    y += 1;
+    ranked.forEach((e) => {
+      const raw = formatRawAnswerForPdf(e.value, e.q);
+      const phrase = e.stat
+        ? phraseForEntry({ kind: e.kind, stat: e.stat, unit: e.q.unit })
+        : "";
+      writeLines(`${pdfSafeText(e.q.label.replace(/\?$/, ""))}`, 10, "bold");
+      writeLines(`Answer: ${pdfSafeText(raw)}`, 9.5);
+      if (phrase) writeLines(`Compared with peers: ${pdfSafeText(phrase)}`, 9);
+      y += 2;
+    });
+    y += 2;
+  }
+
+  heading("All answers by category");
+  writeLines("Every visible answer you gave, with the same peer comparison note where available.", 8.5);
+  y += 2;
+
+  CATEGORIES.forEach((cat) => {
+    const qs = QUESTIONS_BY_CAT[cat.id].filter(
+      (q) => isQuestionVisible(q, answers) && answerIsFilled(answers[q.id])
+    );
+    if (qs.length === 0) return;
+    heading(cat.title, 11);
+    qs.forEach((q) => {
+      const raw = formatRawAnswerForPdf(answers[q.id], q);
+      const entry = data.entries.find((e) => e.qid === q.id);
+      const phrase = entry?.stat
+        ? phraseForEntry({ kind: entry.kind, stat: entry.stat, unit: q.unit })
+        : "";
+      writeLines(`${pdfSafeText(q.label.replace(/\?$/, ""))}`, 9.5, "bold");
+      writeLines(`${pdfSafeText(raw)}`, 9);
+      if (phrase) writeLines(`Peers: ${pdfSafeText(phrase)}`, 8);
+      y += 1.5;
+    });
+    y += 2;
+  });
+
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8);
+  ensureRoom(10);
+  y += 4;
+  doc.text("average.io · Compare your answers with real people.", margin, y);
+
+  return doc.output("blob");
+}
+
+async function downloadOverviewPdf(answers, peers, segment) {
+  const blob = await buildOverviewPdfBlob(answers, peers, segment);
+  const stamp = new Date().toISOString().slice(0, 10);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `average-io-overview-${stamp}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 800);
+}
+
 /* Short headline for each standout, shown on the card */
 function cardLineFor(e) {
   if (!e.stat) return null;
@@ -4908,6 +5093,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
   const [blob, setBlob] = useState(null);
   const [copied, setCopied] = useState(false);
   const [rendering, setRendering] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const data = useMemo(() => buildSnapshotData(answers, peers, segment), [answers, peers, segment]);
   const text = useMemo(() => buildShareText(data), [data]);
   const hasWebShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
@@ -4969,6 +5155,18 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
     try { await navigator.share(payload); } catch (_) {}
   };
 
+  const grabPdf = async () => {
+    if (pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      await downloadOverviewPdf(answers, peers, segment);
+    } catch (_) {
+      /* ignore */
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
   const notEnough = data.totalAnswered < 5;
 
   return (
@@ -5026,6 +5224,14 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
                   <span className="mono" style={{ color: "var(--ink)" }}>{data.totalAnswered}</span>
                   <span style={{ marginLeft: 6 }}>answered so far.</span>
                 </div>
+                <div style={{ marginTop: 20 }}>
+                  <Button variant="secondary" onClick={grabPdf} disabled={pdfBusy || data.totalAnswered === 0}>
+                    {pdfBusy ? "Preparing PDF…" : "Download PDF overview (so far) ↓"}
+                  </Button>
+                </div>
+                <div style={{ marginTop: 12, fontSize: 12, color: "var(--ink-4)" }}>
+                  The full PDF report works with any number of answers — not tied to the social snapshot card.
+                </div>
               </div>
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 20 }}>
@@ -5056,6 +5262,9 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
                   <Button onClick={download} disabled={!blob}>
                     Download image ↓
                   </Button>
+                  <Button variant="secondary" onClick={grabPdf} disabled={pdfBusy}>
+                    {pdfBusy ? "Preparing PDF…" : "PDF overview ↓"}
+                  </Button>
                   <Button variant="secondary" onClick={copyText}>
                     {copied ? "Copied ✓" : "Copy text"}
                   </Button>
@@ -5079,6 +5288,8 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
                 <div style={{ fontSize: 11, color: "var(--ink-4)", lineHeight: 1.5 }}>
                   The image is generated on your device and never uploaded.
                   1080×1350 PNG — fits Instagram Stories or any social post.
+                  {" "}
+                  The PDF includes your full answer list and peer notes—ideal for archiving or coaching.
                 </div>
               </div>
             )}
@@ -5251,7 +5462,15 @@ export default function App() {
   } else if (state.screen === "question") {
     screenNode = <QuestionScreen state={state} dispatch={dispatch} peers={peers} />;
   } else if (state.screen === "overview") {
-    screenNode = <OverviewDashboard state={state} dispatch={dispatch} peers={peers} onShare={() => setShareOpen(true)} />;
+    screenNode = (
+      <OverviewDashboard
+        state={state}
+        dispatch={dispatch}
+        peers={peers}
+        onShare={() => setShareOpen(true)}
+        onDownloadPdf={() => downloadOverviewPdf(answers, peers, state.segment)}
+      />
+    );
   } else if (state.screen === "category") {
     screenNode = <CategoryDetail state={state} dispatch={dispatch} peers={peers} />;
   } else {
