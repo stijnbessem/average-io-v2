@@ -3053,13 +3053,53 @@ function SegmentedControl({ options, value, onChange }) {
 
 function Stepper({ value, onChange, min = 0, max = 100, step = 1, unit = "" }) {
   const v = value ?? min;
+  const clampToRange = (n) => Math.max(min, Math.min(max, n));
+  const handleTextChange = (raw) => {
+    if (raw === "" || raw === "-" || raw === ".") return;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return;
+    onChange(clampToRange(n));
+  };
+  const handleCommit = (raw) => {
+    const n = Number(raw);
+    if (!Number.isFinite(n)) {
+      onChange(clampToRange(v));
+      return;
+    }
+    onChange(clampToRange(n));
+  };
   const inc = () => onChange(Math.min(max, +(v + step).toFixed(2)));
   const dec = () => onChange(Math.max(min, +(v - step).toFixed(2)));
   return (
     <div style={{ display: "inline-flex", alignItems: "center", border: "1px solid var(--line)", borderRadius: "var(--radius-s)", background: "#fff" }}>
       <button onClick={dec} style={stepperBtn}>−</button>
-      <div style={{ minWidth: 100, textAlign: "center", fontFamily: "var(--mono)", fontSize: 15, padding: "0 4px" }}>
-        {value == null ? "—" : v}{unit && <span style={{ color: "var(--ink-3)", marginLeft: 4, fontSize: 12 }}>{unit}</span>}
+      <div style={{ minWidth: 124, textAlign: "center", fontFamily: "var(--mono)", fontSize: 15, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+        <input
+          type="number"
+          value={value == null ? "" : v}
+          min={min}
+          max={max}
+          step={step}
+          onChange={(e) => handleTextChange(e.target.value)}
+          onBlur={(e) => handleCommit(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            }
+          }}
+          placeholder="—"
+          style={{
+            width: 70,
+            border: "none",
+            outline: "none",
+            textAlign: "center",
+            fontFamily: "var(--mono)",
+            fontSize: 15,
+            color: "#111",
+            background: "transparent",
+          }}
+        />
+        {unit && <span style={{ color: "var(--ink-3)", fontSize: 12 }}>{unit}</span>}
       </div>
       <button onClick={inc} style={stepperBtn}>+</button>
     </div>
