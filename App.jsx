@@ -27,7 +27,7 @@ const STYLE = `
     --ink: #111111;
     --ink-2: #2F3437;
     --ink-3: #787774;
-    --ink-4: #B4B2AC;
+    --ink-4: #8F8B84;
     --line: #EAEAEA;
     --line-soft: rgba(0,0,0,0.06);
 
@@ -994,7 +994,7 @@ function useMediaQuery(query) {
 }
 
 function TopBar({
-  state, dispatch, totalAnswered, onOpenAdmin,
+  state, dispatch, totalAnswered,
   peerSource = "synthetic", peerCount = 0, onOpenSheetData = null,
 }) {
   const items = [
@@ -1014,10 +1014,6 @@ function TopBar({
     setMenuOpen(false);
   };
 
-  const openAdmin = () => {
-    setMenuOpen(false);
-    if (onOpenAdmin) onOpenAdmin();
-  };
   const openSheetData = () => {
     setMenuOpen(false);
     if (onOpenSheetData) onOpenSheetData();
@@ -1128,19 +1124,6 @@ function TopBar({
                 <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>{totalAnswered}</span>
                 <span className="label" style={{ marginLeft: 6 }}>answered</span>
               </span>
-              <button
-                onClick={openAdmin}
-                aria-label="Open admin panel"
-                style={{
-                  background: "transparent", border: "none", padding: "4px 8px",
-                  fontFamily: "var(--sans)", fontSize: 11, color: "var(--ink-4)",
-                  textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 500,
-                  cursor: "pointer", borderRadius: 4,
-                  transition: "color 180ms ease, background 180ms ease",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--ink-2)"; e.currentTarget.style.background = "#F2F1EE"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--ink-4)"; e.currentTarget.style.background = "transparent"; }}
-              >Admin</button>
             </div>
           </div>
         )}
@@ -1171,15 +1154,6 @@ function TopBar({
                   }}
                 >{it.label}</button>
               ))}
-              <button
-                onClick={openAdmin}
-                style={{
-                  background: "transparent", border: "none", textAlign: "left",
-                  padding: "12px 12px", borderRadius: "var(--radius-s)",
-                  fontFamily: "var(--sans)", fontSize: 15, cursor: "pointer",
-                  color: "var(--ink-3)", fontWeight: 500,
-                }}
-              >Admin</button>
               <div style={{
                 marginTop: 6, paddingTop: 12, borderTop: "1px solid var(--line)",
                 display: "flex", alignItems: "baseline", gap: 6,
@@ -1333,7 +1307,8 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic" }) 
       background: "transparent",
       position: "relative", overflow: "hidden",
     }}>
-      <div style={{ maxWidth: 640, width: "100%", position: "relative", zIndex: 1 }}>
+      <div style={{ maxWidth: 1120, width: "100%", position: "relative", zIndex: 1 }}>
+        <div style={{ width: "min(760px, 100%)" }}>
         <motion.div {...FADE_UP} transition={{ duration: 0.5, ease: EASE_OUT }}>
           <Logo size={44} />
         </motion.div>
@@ -1387,6 +1362,7 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic" }) 
           {peerSource === "live"
             ? "Comparisons are currently powered by live community submissions from the shared sheet."
             : "Live community data is temporarily unavailable, so comparisons are using a seeded synthetic fallback peer pool."}
+        </div>
         </div>
       </div>
     </div>
@@ -1742,6 +1718,7 @@ function QuestionScreen({ state, dispatch, peers }) {
     else dispatch({ type: "go", screen: "hub" });
   };
   const onSkip = () => goToNextQuestion();
+  const isMobile = useMediaQuery("(max-width: 639px)");
 
   // Inline live comparison preview
   let previewStats = null, previewKind = null, previewCopy = null;
@@ -1758,7 +1735,8 @@ function QuestionScreen({ state, dispatch, peers }) {
   }
 
   return (
-    <PageShell maxWidth={720}>
+    <PageShell>
+      <div style={{ width: "min(820px, 100%)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
         <Tag tone={cat.accent}>{cat.title}</Tag>
         <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>
@@ -1834,21 +1812,38 @@ function QuestionScreen({ state, dispatch, peers }) {
         </motion.div>
       </AnimatePresence>
 
-      <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        flexWrap: "wrap", gap: 12, marginTop: 32,
-        paddingTop: 20, borderTop: "1px solid var(--line)",
-      }}>
-        <Button variant="ghost" onClick={onPrev}>← Back</Button>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button variant="quiet" onClick={() => dispatch({ type: "go", screen: "overview" })}>
-            View comparisons
-          </Button>
-          <Button variant="secondary" onClick={onSkip}>Skip</Button>
-          <Button onClick={goToNextQuestion} disabled={!canNext}>
-            {idx === visible.length - 1 && !nextCat ? "Finish →" : "Next →"}
-          </Button>
-        </div>
+      <div style={{ marginTop: 32, display: "grid", gap: isMobile ? 10 : 0 }}>
+        {isMobile ? (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
+              <Button variant="ghost" onClick={onPrev}>← Back</Button>
+              <Button variant="secondary" onClick={onSkip}>Skip</Button>
+              <Button onClick={goToNextQuestion} disabled={!canNext}>
+                {idx === visible.length - 1 && !nextCat ? "Finish →" : "Next →"}
+              </Button>
+            </div>
+            <Button variant="quiet" onClick={() => dispatch({ type: "go", screen: "overview" })}>
+              View comparisons
+            </Button>
+          </>
+        ) : (
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            flexWrap: "wrap", gap: 12,
+          }}>
+            <Button variant="ghost" onClick={onPrev}>← Back</Button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <Button variant="quiet" onClick={() => dispatch({ type: "go", screen: "overview" })}>
+                View comparisons
+              </Button>
+              <Button variant="secondary" onClick={onSkip}>Skip</Button>
+              <Button onClick={goToNextQuestion} disabled={!canNext}>
+                {idx === visible.length - 1 && !nextCat ? "Finish →" : "Next →"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
       </div>
     </PageShell>
   );
@@ -4570,64 +4565,72 @@ export default function App() {
     <>
       <style>{STYLE}</style>
       <GlobalMetalBackdrop />
-      <div style={{ minHeight: "100vh", background: "transparent", position: "relative", zIndex: 2 }}>
+      <div style={{ minHeight: "100vh", background: "transparent", position: "relative", zIndex: 2, display: "flex", flexDirection: "column" }}>
         {!isWelcome && (
           <TopBar
             state={state}
             dispatch={dispatch}
             totalAnswered={totalAnswered}
-            onOpenAdmin={() => admin.setPrompting(true)}
             peerSource={peerSource}
             peerCount={peers.length}
             onOpenSheetData={() => setSheetModalOpen(true)}
           />
         )}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={state.screen + (state.currentCatId || "")}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.25, ease: EASE_OUT }}
-          >
-            {screenNode}
-          </motion.div>
-        </AnimatePresence>
+        <div style={{ flex: 1 }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={state.screen + (state.currentCatId || "")}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.25, ease: EASE_OUT }}
+            >
+              {screenNode}
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         {!isWelcome && (
           <div style={{
-            maxWidth: 1120, margin: "0 auto", padding: "40px 24px",
+            background: "#fff",
             borderTop: "1px solid var(--line)",
-            display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16,
-            flexWrap: "wrap",
+            marginTop: 20,
           }}>
-            <button
-              onClick={() => dispatch({ type: "go", screen: "welcome" })}
-              aria-label="Go to start page"
-              style={{
-                display: "flex", alignItems: "center", gap: 14,
-                color: "var(--ink-4)", fontSize: 12,
-                background: "none", border: "none", padding: 0, cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              <Logo size={14} muted />
-              <span>
-                {peerSource === "live"
-                  ? `Live community comparisons · ${peers.length} peers`
-                  : "Prototype fallback · synthetic peer pool"}
-              </span>
-            </button>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "var(--ink-4)" }}>
-              <span className="mono" title={`Build ${APP_BUILD}`}>
-                v{APP_VERSION}
-              </span>
-              <span style={{ color: "var(--line)" }}>·</span>
-              <span>{APP_BUILD}</span>
+            <div style={{
+              maxWidth: 1120, margin: "0 auto", padding: "24px 24px 28px",
+              display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16,
+              flexWrap: "wrap",
+            }}>
+              <button
+                onClick={() => dispatch({ type: "go", screen: "welcome" })}
+                aria-label="Go to start page"
+                style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  color: "var(--ink-4)", fontSize: 12,
+                  background: "none", border: "none", padding: 0, cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                <Logo size={14} muted />
+                <span>
+                  {peerSource === "live"
+                    ? `Live community comparisons · ${peers.length} peers`
+                    : "Prototype fallback · synthetic peer pool"}
+                </span>
+              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "var(--ink-4)" }}>
+                <span className="mono" title={`Build ${APP_BUILD}`}>
+                  v{APP_VERSION}
+                </span>
+                <span style={{ color: "var(--line)" }}>·</span>
+                <span>{APP_BUILD}</span>
+                <span style={{ color: "var(--line)" }}>·</span>
+                <span>Copyright {new Date().getFullYear()}</span>
+              </div>
+              <Button size="sm" variant="ghost" onClick={onReset}>
+                Reset my answers
+              </Button>
             </div>
-            <Button size="sm" variant="ghost" onClick={onReset}>
-              Reset my answers
-            </Button>
           </div>
         )}
       </div>
