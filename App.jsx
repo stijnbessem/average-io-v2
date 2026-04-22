@@ -2229,18 +2229,8 @@ function Logo({ size = 32, muted = false }) {
       <span className="serif" style={{ fontSize: h * 1.05, color: textColor, letterSpacing: "-0.025em" }}>
         average
       </span>
-      <span style={{ display: "inline-flex", alignItems: "baseline", gap: h * 0.02, marginLeft: h * 0.08 }}>
-        <svg viewBox="0 0 40 28" height={h * 0.6} style={{ transform: `translateY(${h * 0.02}px)` }}>
-          {/* subtle bell curve */}
-          <path d="M 2 24 C 8 24, 12 22, 16 10 C 18 4, 22 4, 24 10 C 28 22, 32 24, 38 24"
-            fill="none" stroke={muted ? "#999" : "#111"} strokeWidth={2} strokeLinecap="round" />
-          {/* midpoint tick */}
-          <line x1={20} y1={14} x2={20} y2={24} stroke={muted ? "#999" : "#111"} strokeWidth={1.5} strokeLinecap="round" />
-          <circle cx={20} cy={10} r={2} fill={muted ? "#999" : "#111"} />
-        </svg>
-        <span className="serif" style={{ fontSize: h * 1.05, color: textColor, letterSpacing: "-0.025em" }}>
-          .io
-        </span>
+      <span className="serif" style={{ fontSize: h * 1.05, color: textColor, letterSpacing: "-0.025em", marginLeft: h * 0.08 }}>
+        .io
       </span>
     </div>
   );

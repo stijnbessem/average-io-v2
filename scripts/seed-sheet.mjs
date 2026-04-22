@@ -188,6 +188,10 @@ function makeAnswers() {
     apps_installed: randInt(35, 220),
     exercise_freq: exercise,
     exercise_type: pickWeighted([{ v: "Walking", w: 28 }, { v: "Running", w: 14 }, { v: "Cycling", w: 10 }, { v: "Gym / weights", w: 22 }, { v: "Yoga / pilates", w: 8 }, { v: "Team sports", w: 7 }, { v: "Swimming", w: 5 }, { v: "Other", w: 4 }, { v: "None", w: 2 }]),
+    years_exercising: Math.max(0, Math.min(age - 12, randInt(0, Math.max(1, age - 12)))),
+    gym_member: pickWeighted([{ v: "Yes", w: 34 }, { v: "No", w: 66 }]),
+    // Keep this populated for every row so q_gym_visits comparison has depth.
+    gym_visits: 0,
     phone_hours: randInt(1, 8),
     social_hours: randInt(0, 6),
     work_hours: workHours,
@@ -238,6 +242,9 @@ function makeAnswers() {
   }
   if (mergedAnswers.active === "No") {
     mergedAnswers.frequency = 0;
+  }
+  if (mergedAnswers.gym_member === "Yes") {
+    mergedAnswers.gym_visits = randInt(1, 7);
   }
   if (mergedAnswers.relationship === "Single" && mergedAnswers.children === "No") {
     mergedAnswers.household = Math.max(1, Math.min(mergedAnswers.household, 3));
