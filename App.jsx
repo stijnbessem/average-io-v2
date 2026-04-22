@@ -2241,14 +2241,25 @@ function Logo({ size = 32, muted = false }) {
   const h = size;
   const textColor = muted ? "var(--ink-3)" : "#111";
   return (
-    <div style={{ display: "inline-flex", alignItems: "baseline", gap: 0, height: h, lineHeight: 1 }}>
+    <motion.div
+      style={{ display: "inline-flex", alignItems: "baseline", gap: 0, height: h, lineHeight: 1, willChange: "transform" }}
+      initial={false}
+      animate={{ y: [0, -1.2, 0] }}
+      transition={{ duration: 6.8, ease: "easeInOut", repeat: Infinity }}
+    >
       <span className="serif" style={{ fontSize: h * 1.05, color: textColor, letterSpacing: "-0.025em" }}>
         average
       </span>
-      <span className="serif" style={{ fontSize: h * 1.05, color: textColor, letterSpacing: "-0.025em", marginLeft: h * 0.08 }}>
+      <motion.span
+        className="serif"
+        style={{ fontSize: h * 1.05, color: textColor, letterSpacing: "-0.025em", marginLeft: h * 0.08 }}
+        initial={false}
+        animate={{ opacity: [1, 0.78, 1] }}
+        transition={{ duration: 6.8, ease: "easeInOut", repeat: Infinity }}
+      >
         .io
-      </span>
-    </div>
+      </motion.span>
+    </motion.div>
   );
 }
 
