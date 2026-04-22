@@ -1861,6 +1861,23 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
   const [isBlurOn, setIsBlurOn] = useState(false);
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [isStripeLoading, setIsStripeLoading] = useState(false);
+  const [isMobilePaywall, setIsMobilePaywall] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 640px)").matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const media = window.matchMedia("(max-width: 640px)");
+    const onChange = (event) => setIsMobilePaywall(event.matches);
+    setIsMobilePaywall(media.matches);
+    if (media.addEventListener) media.addEventListener("change", onChange);
+    else media.addListener(onChange);
+    return () => {
+      if (media.removeEventListener) media.removeEventListener("change", onChange);
+      else media.removeListener(onChange);
+    };
+  }, []);
 
   // Stacked intro: show overview first, then blur, then popup.
   useEffect(() => {
@@ -2102,9 +2119,9 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
             background: showPaywallModal ? "rgba(17,17,17,0.16)" : "rgba(17,17,17,0)",
             transition: prefersReducedMotion ? "none" : "background 220ms cubic-bezier(0.25, 1, 0.5, 1)",
             display: "flex",
-            alignItems: "center",
+            alignItems: isMobilePaywall ? "flex-end" : "center",
             justifyContent: "center",
-            padding: 24,
+            padding: isMobilePaywall ? 0 : 24,
           }}
           aria-hidden={!showPaywallModal}
         >
@@ -2117,16 +2134,17 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                 exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.988 }}
                 transition={{ duration: prefersReducedMotion ? 0.05 : 0.26, ease: [0.22, 1, 0.36, 1] }}
                 style={{
-                  width: "min(720px, 100%)",
+                  width: isMobilePaywall ? "100%" : "min(720px, 100%)",
                   background: "#fff",
                   border: "1px solid var(--line)",
-                  borderRadius: "var(--radius-l)",
+                  borderRadius: isMobilePaywall ? "16px 16px 0 0" : "var(--radius-l)",
                   boxShadow: "0 16px 40px rgba(0,0,0,0.12)",
-                  padding: 24,
+                  padding: isMobilePaywall ? "20px 16px calc(16px + env(safe-area-inset-bottom, 0px))" : 24,
+                  maxHeight: isMobilePaywall ? "min(88dvh, 760px)" : "calc(100vh - 48px)",
+                  overflowY: "auto",
                 }}
               >
                 <div style={{ display: "grid", gap: 14 }}>
-                  <div className="label">Demo paywall</div>
                   <div className="serif" style={{ color: "#111", fontSize: 26, lineHeight: 1.1 }}>
                     Unlock full overview
                   </div>
@@ -2150,10 +2168,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                     <div><strong style={{ color: "#111" }}>What you unlock:</strong></div>
                     <div>• Full category breakdowns and deeper reality-check signals</div>
                     <div>• Stronger uniqueness insights as your answers grow</div>
-                    <div>• A smoother, evolving product supported by the community</div>
-                  </div>
-                  <div style={{ color: "var(--ink-4)", fontSize: 12, maxWidth: 640 }}>
-                    Demo mode: Stripe remains a stub for now. Bypass unlocks this visit only; reopening Overview shows this paywall again.
+                    <div>• Thousands of additional data comparisons unlocked across categories</div>
                   </div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
                     <Button onClick={startStripeDemo} disabled={isStripeLoading}>
