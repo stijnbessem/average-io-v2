@@ -412,7 +412,6 @@ function buildPeerPool(size = 480, seed = 20260421) {
 
 const LIVE_PEER_POOL_URL = "https://docs.google.com/spreadsheets/d/1wKOyr9XtI9CEvcp3V7QrGFX42YvopkTxQghkW-dGqr0/gviz/tq?tqx=out:json";
 const LIVE_PEER_REFRESH_MS = 30000;
-const LIVE_PEER_MIN_ROWS = 5;
 
 function parseGvizResponse(text) {
   if (typeof text !== "string" || text.trim() === "") throw new Error("empty gviz response");
@@ -502,16 +501,17 @@ function usePeerPool() {
 
     const load = async () => {
       const attemptedAt = new Date().toISOString();
+      let attemptedSheetCount = 0;
+      let attemptedSample = [];
       try {
         const res = await fetch(LIVE_PEER_POOL_URL, { cache: "no-store" });
         if (!res.ok) throw new Error(`sheet fetch failed (${res.status})`);
         const raw = await res.text();
         const gviz = parseGvizResponse(raw);
         const livePeers = buildPeersFromSheet(gviz?.table);
-        const sample = livePeers.slice(0, 10);
-        if (livePeers.length < LIVE_PEER_MIN_ROWS) {
-          throw new Error(`sheet has too few usable rows (${livePeers.length})`);
-        }
+        attemptedSheetCount = livePeers.length;
+        attemptedSample = livePeers.slice(0, 10);
+        if (livePeers.length === 0) throw new Error("sheet returned no usable rows");
         if (!cancelled) {
           setPeers(livePeers);
           setSource("live");
@@ -521,7 +521,7 @@ function usePeerPool() {
             lastSuccessAt: attemptedAt,
             lastError: "",
             sheetPeerCount: livePeers.length,
-            sample,
+            sample: attemptedSample,
           });
           debug("live-peers", `loaded ${livePeers.length} live peers from sheet`);
         }
@@ -534,8 +534,8 @@ function usePeerPool() {
             lastAttemptAt: attemptedAt,
             lastSuccessAt: prev.lastSuccessAt,
             lastError: e && e.message ? e.message : String(e),
-            sheetPeerCount: prev.sheetPeerCount,
-            sample: prev.sample,
+            sheetPeerCount: attemptedSheetCount || prev.sheetPeerCount,
+            sample: attemptedSample.length ? attemptedSample : prev.sample,
           }));
           debug("live-peers-error", e && e.message ? e.message : String(e));
         }
