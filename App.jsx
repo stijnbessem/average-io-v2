@@ -596,7 +596,7 @@ function segmentPeers(peers, user, segment) {
 /* Numeric percentile: share of peers with answer <= user's answer */
 function computeNumericStats(peers, qid, userVal) {
   const vals = peers.map(p => p[qid]).filter(v => v != null && !isNaN(v));
-  if (vals.length < 5) return null;
+  if (vals.length < 1) return null;
   const sorted = [...vals].sort((a, b) => a - b);
   const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
   const median = sorted[Math.floor(sorted.length / 2)];
@@ -616,7 +616,7 @@ function computeCategoricalStats(peers, qid, userVal) {
     counts[v] = (counts[v] || 0) + 1;
     total++;
   });
-  if (total < 5) return null;
+  if (total < 1) return null;
   const dist = Object.entries(counts)
     .map(([k, n]) => ({ option: k, n, pct: (n / total) * 100 }))
     .sort((a, b) => b.pct - a.pct);
@@ -1718,6 +1718,9 @@ function QuestionScreen({ state, dispatch, peers }) {
                   display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap",
                 }}>
                   <span className="label">Live comparison</span>
+                  {previewStats && (
+                    <span style={{ fontSize: 11, color: "var(--ink-4)" }}>n={previewStats.n}</span>
+                  )}
                   <span style={{ fontSize: 14, color: "#111" }}>{previewCopy}</span>
                   {previewKind === "numeric" && previewStats && (
                     <span style={{ marginLeft: "auto" }}>
