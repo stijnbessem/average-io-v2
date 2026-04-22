@@ -1667,7 +1667,9 @@ function QuestionScreen({ state, dispatch, peers }) {
                 // Faster flow on tap-based single-choice questions.
                 if (q.type !== "single") return;
                 if (selectedValue == null || selectedValue === "") return;
-                requestAnimationFrame(() => goToNextQuestion());
+                window.setTimeout(() => {
+                  goToNextQuestion();
+                }, 140);
               }}
             />
           </div>
