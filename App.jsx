@@ -487,30 +487,56 @@ function usePeerPool() {
   const syntheticPeers = useMemo(() => buildPeerPool(480, 20260421), []);
   const [peers, setPeers] = useState(syntheticPeers);
   const [source, setSource] = useState("synthetic");
+  const [sheetState, setSheetState] = useState({
+    source: "synthetic",
+    lastAttemptAt: null,
+    lastSuccessAt: null,
+    lastError: "",
+    sheetPeerCount: 0,
+    sample: [],
+  });
 
   useEffect(() => {
     let cancelled = false;
     let refreshTimer = null;
 
     const load = async () => {
+      const attemptedAt = new Date().toISOString();
       try {
         const res = await fetch(LIVE_PEER_POOL_URL, { cache: "no-store" });
         if (!res.ok) throw new Error(`sheet fetch failed (${res.status})`);
         const raw = await res.text();
         const gviz = parseGvizResponse(raw);
         const livePeers = buildPeersFromSheet(gviz?.table);
+        const sample = livePeers.slice(0, 10);
         if (livePeers.length < LIVE_PEER_MIN_ROWS) {
           throw new Error(`sheet has too few usable rows (${livePeers.length})`);
         }
         if (!cancelled) {
           setPeers(livePeers);
           setSource("live");
+          setSheetState({
+            source: "live",
+            lastAttemptAt: attemptedAt,
+            lastSuccessAt: attemptedAt,
+            lastError: "",
+            sheetPeerCount: livePeers.length,
+            sample,
+          });
           debug("live-peers", `loaded ${livePeers.length} live peers from sheet`);
         }
       } catch (e) {
         if (!cancelled) {
           setPeers(syntheticPeers);
           setSource("synthetic");
+          setSheetState((prev) => ({
+            source: "synthetic",
+            lastAttemptAt: attemptedAt,
+            lastSuccessAt: prev.lastSuccessAt,
+            lastError: e && e.message ? e.message : String(e),
+            sheetPeerCount: prev.sheetPeerCount,
+            sample: prev.sample,
+          }));
           debug("live-peers-error", e && e.message ? e.message : String(e));
         }
       } finally {
@@ -527,7 +553,7 @@ function usePeerPool() {
     };
   }, [syntheticPeers]);
 
-  return { peers, source };
+  return { peers, source, sheetState };
 }
 
 /* ============================================================================
@@ -909,7 +935,10 @@ function useMediaQuery(query) {
   return matches;
 }
 
-function TopBar({ state, dispatch, totalAnswered, onOpenAdmin, peerSource = "synthetic", peerCount = 0 }) {
+function TopBar({
+  state, dispatch, totalAnswered, onOpenAdmin,
+  peerSource = "synthetic", peerCount = 0, onOpenSheetData = null,
+}) {
   const items = [
     { id: "hub", label: "Categories" },
     { id: "overview", label: "Overview" },
@@ -930,6 +959,10 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin, peerSource = "syn
   const openAdmin = () => {
     setMenuOpen(false);
     if (onOpenAdmin) onOpenAdmin();
+  };
+  const openSheetData = () => {
+    setMenuOpen(false);
+    if (onOpenSheetData) onOpenSheetData();
   };
   const isLive = peerSource === "live";
 
@@ -1009,7 +1042,8 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin, peerSource = "syn
               >{it.label}</button>
             ))}
             <div style={{ marginLeft: 10, paddingLeft: 14, borderLeft: "1px solid var(--line)", display: "flex", alignItems: "baseline", gap: 12 }}>
-              <span
+              <button
+                onClick={openSheetData}
                 title={isLive ? "Using live community data" : "Using synthetic fallback data"}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
@@ -1017,6 +1051,8 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin, peerSource = "syn
                   borderRadius: 999,
                   border: `1px solid ${isLive ? "#CFE8D3" : "#E2E0D9"}`,
                   background: isLive ? "#F2FBF4" : "#F7F6F3",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
                 }}
               >
                 <span style={{
@@ -1029,7 +1065,7 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin, peerSource = "syn
                 <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>
                   {peerCount}
                 </span>
-              </span>
+              </button>
               <span>
                 <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>{totalAnswered}</span>
                 <span className="label" style={{ marginLeft: 6 }}>answered</span>
@@ -1091,7 +1127,8 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin, peerSource = "syn
                 display: "flex", alignItems: "baseline", gap: 6,
                 padding: "12px 12px 2px",
               }}>
-                <span
+                <button
+                  onClick={openSheetData}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
                     padding: "3px 7px",
@@ -1099,6 +1136,8 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin, peerSource = "syn
                     border: `1px solid ${isLive ? "#CFE8D3" : "#E2E0D9"}`,
                     background: isLive ? "#F2FBF4" : "#F7F6F3",
                     marginRight: 8,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
                   }}
                 >
                   <span style={{
@@ -1108,7 +1147,7 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin, peerSource = "syn
                   <span className="mono" style={{ fontSize: 10, color: isLive ? "#246A35" : "#6D695E" }}>
                     {isLive ? "LIVE" : "FALLBACK"}
                   </span>
-                </span>
+                </button>
                 <span className="mono" style={{ fontSize: 13, color: "#111" }}>{totalAnswered}</span>
                 <span className="label">answered</span>
               </div>
@@ -1117,6 +1156,116 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin, peerSource = "syn
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function SheetDataModal({ open, onClose, sheetState }) {
+  if (!open) return null;
+  const {
+    source = "synthetic",
+    lastAttemptAt = null,
+    lastSuccessAt = null,
+    lastError = "",
+    sheetPeerCount = 0,
+    sample = [],
+  } = sheetState || {};
+
+  const fmt = (iso) => {
+    if (!iso) return "—";
+    try {
+      return new Date(iso).toLocaleString();
+    } catch (_) {
+      return iso;
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease: EASE_OUT }}
+        style={{
+          position: "fixed", inset: 0, zIndex: 120,
+          background: "rgba(17,17,17,0.36)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 16,
+        }}
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 8, scale: 0.99 }}
+          transition={{ duration: 0.22, ease: EASE_OUT }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: "min(920px, 96vw)",
+            maxHeight: "88vh",
+            overflow: "auto",
+            background: "#fff",
+            border: "1px solid var(--line)",
+            borderRadius: "var(--radius-l)",
+            boxShadow: "0 10px 44px rgba(0,0,0,0.16)",
+            padding: 18,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div>
+              <div className="label">Shared Sheet Data</div>
+              <div className="serif" style={{ fontSize: 24, color: "#111", marginTop: 4 }}>
+                Gathered peer rows
+              </div>
+            </div>
+            <Button size="sm" variant="ghost" onClick={onClose}>Close ×</Button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
+            <div style={{ padding: 10, background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
+              <div className="label">Current source</div>
+              <div className="mono" style={{ color: "#111", marginTop: 6 }}>{source === "live" ? "LIVE" : "FALLBACK"}</div>
+            </div>
+            <div style={{ padding: 10, background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
+              <div className="label">Rows parsed</div>
+              <div className="mono" style={{ color: "#111", marginTop: 6 }}>{sheetPeerCount}</div>
+            </div>
+            <div style={{ padding: 10, background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
+              <div className="label">Last refresh attempt</div>
+              <div style={{ color: "#111", marginTop: 6, fontSize: 12 }}>{fmt(lastAttemptAt)}</div>
+            </div>
+            <div style={{ padding: 10, background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
+              <div className="label">Last successful sync</div>
+              <div style={{ color: "#111", marginTop: 6, fontSize: 12 }}>{fmt(lastSuccessAt)}</div>
+            </div>
+          </div>
+
+          {lastError ? (
+            <div style={{
+              marginBottom: 12, padding: "10px 12px",
+              border: "1px solid #ECDCC8", background: "#FFF7EE", borderRadius: "var(--radius-s)",
+              fontSize: 12, color: "#7A4B0E",
+            }}>
+              Latest fetch error: {lastError}
+            </div>
+          ) : null}
+
+          <div style={{
+            padding: 12, border: "1px solid var(--line)", borderRadius: "var(--radius-s)",
+            background: "#FAFAF8",
+          }}>
+            <div className="label" style={{ marginBottom: 8 }}>Preview (first {sample.length} rows)</div>
+            <pre style={{
+              margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word",
+              fontSize: 11, lineHeight: 1.5, color: "#222", fontFamily: "var(--mono)",
+              maxHeight: "42vh", overflow: "auto",
+            }}>
+              {sample.length ? JSON.stringify(sample, null, 2) : "No sheet rows parsed yet."}
+            </pre>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
@@ -3849,11 +3998,12 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
 
 export default function App() {
   const [state, dispatch, hydrated] = useAppState();
-  const { peers, source: peerSource } = usePeerPool();
+  const { peers, source: peerSource, sheetState } = usePeerPool();
   const answers = state.answers;
   const totalAnswered = Object.keys(answers).filter(k => answers[k] != null && answers[k] !== "").length;
   const admin = useAdminUnlock();
   const [shareOpen, setShareOpen] = useState(false);
+  const [sheetModalOpen, setSheetModalOpen] = useState(false);
 
   // Scroll to top on every screen change (and when the active category changes
   // within the question flow, which also swaps page content).
@@ -4008,6 +4158,7 @@ export default function App() {
           onOpenAdmin={() => admin.setPrompting(true)}
           peerSource={peerSource}
           peerCount={peers.length}
+          onOpenSheetData={() => setSheetModalOpen(true)}
         />
         <AnimatePresence mode="wait">
           <motion.div
@@ -4064,6 +4215,11 @@ export default function App() {
         answers={answers}
         peers={peers}
         segment={state.segment}
+      />
+      <SheetDataModal
+        open={sheetModalOpen}
+        onClose={() => setSheetModalOpen(false)}
+        sheetState={sheetState}
       />
     </>
   );
