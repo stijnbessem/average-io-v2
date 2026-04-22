@@ -1659,7 +1659,17 @@ function QuestionScreen({ state, dispatch, peers }) {
           )}
 
           <div style={{ marginBottom: 24 }}>
-            <AnswerInput q={q} value={value} onChange={setValue} />
+            <AnswerInput
+              q={q}
+              value={value}
+              onChange={setValue}
+              onAnswered={(selectedValue) => {
+                // Faster flow on tap-based single-choice questions.
+                if (q.type !== "single") return;
+                if (selectedValue == null || selectedValue === "") return;
+                requestAnimationFrame(() => goToNextQuestion());
+              }}
+            />
           </div>
 
           <AnimatePresence>
@@ -1716,9 +1726,17 @@ function QuestionScreen({ state, dispatch, peers }) {
   );
 }
 
-function AnswerInput({ q, value, onChange }) {
+function AnswerInput({ q, value, onChange, onAnswered = null }) {
   if (q.type === "single") {
-    return <SingleSelect options={q.options} value={value} onChange={onChange} columns={q.options.length > 5 ? 2 : 1} />;
+    return (
+      <SingleSelect
+        options={q.options}
+        value={value}
+        onChange={onChange}
+        onSelect={onAnswered}
+        columns={q.options.length > 5 ? 2 : 1}
+      />
+    );
   }
   if (q.type === "slider") {
     return <Slider value={value} onChange={onChange} min={q.min} max={q.max} step={q.step || 1} unit={q.unit} />;
@@ -2816,11 +2834,15 @@ function Chip({ active, onClick, children, small }) {
   );
 }
 
-function SingleSelect({ options, value, onChange, columns = 1 }) {
+function SingleSelect({ options, value, onChange, onSelect = null, columns = 1 }) {
+  const handleSelect = (opt) => {
+    onChange(opt);
+    if (onSelect) onSelect(opt);
+  };
   return (
     <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: 10 }}>
       {options.map(opt => (
-        <Chip key={opt} active={value === opt} onClick={() => onChange(opt)}>
+        <Chip key={opt} active={value === opt} onClick={() => handleSelect(opt)}>
           {opt}
         </Chip>
       ))}
