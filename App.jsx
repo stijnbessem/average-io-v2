@@ -410,6 +410,126 @@ function buildPeerPool(size = 480, seed = 20260421) {
   return peers;
 }
 
+const LIVE_PEER_POOL_URL = "https://docs.google.com/spreadsheets/d/1wKOyr9XtI9CEvcp3V7QrGFX42YvopkTxQghkW-dGqr0/gviz/tq?tqx=out:json";
+const LIVE_PEER_REFRESH_MS = 30000;
+const LIVE_PEER_MIN_ROWS = 5;
+
+function parseGvizResponse(text) {
+  if (typeof text !== "string" || text.trim() === "") throw new Error("empty gviz response");
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start < 0 || end < 0 || end <= start) throw new Error("invalid gviz envelope");
+  return JSON.parse(text.slice(start, end + 1));
+}
+
+function toNumberOrNull(v) {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function extractAnswerValuesFromJsonCell(rawJsonCell) {
+  if (!rawJsonCell || typeof rawJsonCell !== "string") return {};
+  try {
+    const parsed = JSON.parse(rawJsonCell);
+    const answers = parsed?.answers || {};
+    return Object.fromEntries(
+      Object.entries(answers).map(([qid, payload]) => [qid, payload?.value])
+    );
+  } catch (_) {
+    return {};
+  }
+}
+
+function buildPeersFromSheet(table) {
+  const cols = table?.cols || [];
+  const rows = table?.rows || [];
+  if (!cols.length || !rows.length) return [];
+
+  const questionColumns = [];
+  let jsonColIndex = -1;
+  cols.forEach((col, idx) => {
+    const label = (col?.label || "").trim();
+    if (label === "_json") jsonColIndex = idx;
+    if (!label.startsWith("q_")) return;
+    const qid = label.slice(2);
+    if (!QUESTIONS_BY_ID[qid]) return;
+    if (questionColumns.some((c) => c.qid === qid)) return; // ignore duplicate sheet columns
+    questionColumns.push({ idx, qid, type: QUESTIONS_BY_ID[qid].type });
+  });
+
+  const peers = [];
+  rows.forEach((row) => {
+    const cells = row?.c || [];
+    const fallbackFromJson = jsonColIndex >= 0
+      ? extractAnswerValuesFromJsonCell(cells[jsonColIndex]?.v)
+      : {};
+    const peer = {};
+
+    questionColumns.forEach(({ idx, qid, type }) => {
+      const raw = cells[idx]?.v ?? fallbackFromJson[qid];
+      if (raw == null || raw === "") return;
+      if (type === "number" || type === "slider") {
+        const n = toNumberOrNull(raw);
+        if (n != null) peer[qid] = n;
+        return;
+      }
+      peer[qid] = String(raw).trim();
+    });
+
+    if (Object.keys(peer).length > 0) peers.push(peer);
+  });
+
+  return peers;
+}
+
+function usePeerPool() {
+  const syntheticPeers = useMemo(() => buildPeerPool(480, 20260421), []);
+  const [peers, setPeers] = useState(syntheticPeers);
+  const [source, setSource] = useState("synthetic");
+
+  useEffect(() => {
+    let cancelled = false;
+    let refreshTimer = null;
+
+    const load = async () => {
+      try {
+        const res = await fetch(LIVE_PEER_POOL_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error(`sheet fetch failed (${res.status})`);
+        const raw = await res.text();
+        const gviz = parseGvizResponse(raw);
+        const livePeers = buildPeersFromSheet(gviz?.table);
+        if (livePeers.length < LIVE_PEER_MIN_ROWS) {
+          throw new Error(`sheet has too few usable rows (${livePeers.length})`);
+        }
+        if (!cancelled) {
+          setPeers(livePeers);
+          setSource("live");
+          debug("live-peers", `loaded ${livePeers.length} live peers from sheet`);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setPeers(syntheticPeers);
+          setSource("synthetic");
+          debug("live-peers-error", e && e.message ? e.message : String(e));
+        }
+      } finally {
+        if (!cancelled) {
+          refreshTimer = setTimeout(load, LIVE_PEER_REFRESH_MS);
+        }
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+      if (refreshTimer) clearTimeout(refreshTimer);
+    };
+  }, [syntheticPeers]);
+
+  return { peers, source };
+}
+
 /* ============================================================================
    COMPARISON MATH — percentile, distribution, uniqueness, rounding
    ============================================================================ */
@@ -789,7 +909,7 @@ function useMediaQuery(query) {
   return matches;
 }
 
-function TopBar({ state, dispatch, totalAnswered, onOpenAdmin }) {
+function TopBar({ state, dispatch, totalAnswered, onOpenAdmin, peerSource = "synthetic", peerCount = 0 }) {
   const items = [
     { id: "hub", label: "Categories" },
     { id: "overview", label: "Overview" },
@@ -811,6 +931,7 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin }) {
     setMenuOpen(false);
     if (onOpenAdmin) onOpenAdmin();
   };
+  const isLive = peerSource === "live";
 
   return (
     <div style={{
@@ -888,6 +1009,27 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin }) {
               >{it.label}</button>
             ))}
             <div style={{ marginLeft: 10, paddingLeft: 14, borderLeft: "1px solid var(--line)", display: "flex", alignItems: "baseline", gap: 12 }}>
+              <span
+                title={isLive ? "Using live community data" : "Using synthetic fallback data"}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "4px 8px",
+                  borderRadius: 999,
+                  border: `1px solid ${isLive ? "#CFE8D3" : "#E2E0D9"}`,
+                  background: isLive ? "#F2FBF4" : "#F7F6F3",
+                }}
+              >
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%",
+                  background: isLive ? "#2E9B45" : "#8A867A",
+                }} />
+                <span className="mono" style={{ fontSize: 10, color: isLive ? "#246A35" : "#6D695E" }}>
+                  {isLive ? "LIVE" : "FALLBACK"}
+                </span>
+                <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>
+                  {peerCount}
+                </span>
+              </span>
               <span>
                 <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>{totalAnswered}</span>
                 <span className="label" style={{ marginLeft: 6 }}>answered</span>
@@ -949,6 +1091,24 @@ function TopBar({ state, dispatch, totalAnswered, onOpenAdmin }) {
                 display: "flex", alignItems: "baseline", gap: 6,
                 padding: "12px 12px 2px",
               }}>
+                <span
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "3px 7px",
+                    borderRadius: 999,
+                    border: `1px solid ${isLive ? "#CFE8D3" : "#E2E0D9"}`,
+                    background: isLive ? "#F2FBF4" : "#F7F6F3",
+                    marginRight: 8,
+                  }}
+                >
+                  <span style={{
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: isLive ? "#2E9B45" : "#8A867A",
+                  }} />
+                  <span className="mono" style={{ fontSize: 10, color: isLive ? "#246A35" : "#6D695E" }}>
+                    {isLive ? "LIVE" : "FALLBACK"}
+                  </span>
+                </span>
                 <span className="mono" style={{ fontSize: 13, color: "#111" }}>{totalAnswered}</span>
                 <span className="label">answered</span>
               </div>
@@ -972,7 +1132,7 @@ function PageShell({ children, maxWidth = 1120 }) {
    WELCOME
    ============================================================================ */
 
-function WelcomeScreen({ dispatch }) {
+function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic" }) {
   return (
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "flex-start", justifyContent: "center",
@@ -1028,12 +1188,13 @@ function WelcomeScreen({ dispatch }) {
           style={{ marginTop: 56, display: "flex", gap: 32, flexWrap: "wrap", color: "var(--ink-3)", fontSize: 13 }}>
           <div><span className="mono" style={{ color: "#111" }}>45</span> questions</div>
           <div><span className="mono" style={{ color: "#111" }}>8</span> categories</div>
-          <div><span className="mono" style={{ color: "#111" }}>~480</span> peers to compare against</div>
+          <div><span className="mono" style={{ color: "#111" }}>{peerCount}</span> peers to compare against</div>
         </motion.div>
 
         <div style={{ marginTop: 64, fontSize: 12, color: "var(--ink-4)", maxWidth: 520, lineHeight: 1.6 }}>
-          This prototype uses a seeded synthetic peer pool for local comparisons and rounded
-          benchmark priors for the global layer. Your answers stay in this browser.
+          {peerSource === "live"
+            ? "Comparisons are currently powered by live community submissions from the shared sheet."
+            : "Live community data is temporarily unavailable, so comparisons are using a seeded synthetic fallback peer pool."}
         </div>
       </div>
     </div>
@@ -3688,7 +3849,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
 
 export default function App() {
   const [state, dispatch, hydrated] = useAppState();
-  const peers = useMemo(() => buildPeerPool(480, 20260421), []);
+  const { peers, source: peerSource } = usePeerPool();
   const answers = state.answers;
   const totalAnswered = Object.keys(answers).filter(k => answers[k] != null && answers[k] !== "").length;
   const admin = useAdminUnlock();
@@ -3810,7 +3971,7 @@ export default function App() {
     return (
       <>
         <style>{STYLE}</style>
-        <WelcomeScreen dispatch={dispatch} />
+        <WelcomeScreen dispatch={dispatch} peerCount={peers.length} peerSource={peerSource} />
         <AdminModal {...admin} sessions={state.sessions} dispatch={dispatch} />
       </>
     );
@@ -3840,7 +4001,14 @@ export default function App() {
     <>
       <style>{STYLE}</style>
       <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-        <TopBar state={state} dispatch={dispatch} totalAnswered={totalAnswered} onOpenAdmin={() => admin.setPrompting(true)} />
+        <TopBar
+          state={state}
+          dispatch={dispatch}
+          totalAnswered={totalAnswered}
+          onOpenAdmin={() => admin.setPrompting(true)}
+          peerSource={peerSource}
+          peerCount={peers.length}
+        />
         <AnimatePresence mode="wait">
           <motion.div
             key={state.screen + (state.currentCatId || "")}
@@ -3871,7 +4039,11 @@ export default function App() {
             }}
           >
             <Logo size={14} muted />
-            <span>Prototype · synthetic peer pool for demo</span>
+            <span>
+              {peerSource === "live"
+                ? `Live community comparisons · ${peers.length} peers`
+                : "Prototype fallback · synthetic peer pool"}
+            </span>
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "var(--ink-4)" }}>
             <span className="mono" title={`Build ${APP_BUILD}`}>
