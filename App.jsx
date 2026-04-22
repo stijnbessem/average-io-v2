@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useReducer, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
 import canonicalQuestionSet from "./data/average_io_full_questions.json";
 
@@ -4417,16 +4417,21 @@ export default function App() {
   const [shareOpen, setShareOpen] = useState(false);
   const [sheetModalOpen, setSheetModalOpen] = useState(false);
 
-  // Scroll to top on every screen change (and when the active category changes
-  // within the question flow, which also swaps page content).
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    // Use rAF so the scroll happens after the new screen has mounted
-    const id = requestAnimationFrame(() => {
-      try { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); }
-      catch (_) { window.scrollTo(0, 0); } // fallback for older browsers
-    });
-    return () => cancelAnimationFrame(id);
+  // Force scroll to top on every screen/category transition.
+  // We run multiple phases to catch late layout shifts and ensure reliability.
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const scrollTopNow = () => {
+      try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }
+      catch (_) { window.scrollTo(0, 0); }
+    };
+    scrollTopNow();
+    const rafId = requestAnimationFrame(scrollTopNow);
+    const timeoutId = setTimeout(scrollTopNow, 70);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timeoutId);
+    };
   }, [state.screen, state.currentCatId]);
 
   // Load Google Fonts via <link> in <head> — more reliable than @import in inline <style>
