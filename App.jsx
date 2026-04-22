@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useReducer, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
-import canonicalQuestionSet from "./data/average_io_full_questions.json";
+import SunCalc from "suncalc";
+import questionnaireRaw from "./data/average_io_full_questions.json";
 
 /* ============================================================================
    average.io — immersive comparison questionnaire
@@ -10,7 +11,7 @@ import canonicalQuestionSet from "./data/average_io_full_questions.json";
 /* Bump APP_VERSION whenever anything user-visible changes — semver-ish,
    nothing formal. Shown in the footer so you can verify you're on the
    latest build. APP_BUILD is the approximate ship date. */
-const APP_VERSION = "0.13.0";
+const APP_VERSION = "0.15.2";
 const APP_BUILD = "2026-04-22";
 
 /* ---------- Design tokens (minimalist-ui: warm monochrome + spot pastels) --- */
@@ -22,6 +23,7 @@ const FONT_HREFS = [
 
 const STYLE = `
   :root {
+    color-scheme: light;
     --bg: #FBFBFA;
     --bg-raised: #FFFFFF;
     --ink: #111111;
@@ -30,6 +32,23 @@ const STYLE = `
     --ink-4: #8F8B84;
     --line: #EAEAEA;
     --line-soft: rgba(0,0,0,0.06);
+
+    --accent-solid: #111111;
+    --btn-solid-bg: #111111;
+    --btn-solid-fg: #FFFFFF;
+    --surface-muted: #F2F1EE;
+    --surface-live: #F2FBF4;
+    --surface-live-border: #CFE8D3;
+    --surface-fallback: #F7F6F3;
+    --surface-fallback-border: #E2E0D9;
+    --topbar-bg: rgba(251,251,250,0.82);
+    --mobile-menu-bg: #FBFBFA;
+    --icon-stroke: #111111;
+    --selection-bg: #111111;
+    --selection-fg: #FFFFFF;
+    --meta-theme: #FBFBFA;
+    --tag-neutral-bg: #F2F1EE;
+    --tag-neutral-fg: #5a5a55;
 
     --pale-red-bg: #FDEBEC;   --pale-red-ink: #9F2F2D;
     --pale-blue-bg: #E1F3FE;  --pale-blue-ink: #1F6C9F;
@@ -54,9 +73,57 @@ const STYLE = `
     --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
     --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
+    --modal-scrim: rgba(17, 17, 17, 0.22);
+
     --serif: 'Fraunces', 'Source Serif Pro', Georgia, serif;
     --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', system-ui, sans-serif;
     --mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  }
+
+  html.dark {
+    color-scheme: dark;
+    --bg: #121210;
+    --bg-raised: #1A1A18;
+    --ink: #ECEBE7;
+    --ink-2: #D4D2CC;
+    --ink-3: #9B9890;
+    --ink-4: #7A776F;
+    --line: #2E2E2C;
+    --line-soft: rgba(255,255,255,0.08);
+
+    --accent-solid: #E8E7E3;
+    --btn-solid-bg: #ECEBE7;
+    --btn-solid-fg: #141413;
+    --surface-muted: #252523;
+    --surface-live: #162318;
+    --surface-live-border: #2A4A32;
+    --surface-fallback: #1E1E1C;
+    --surface-fallback-border: #3A3A38;
+    --topbar-bg: rgba(18,18,16,0.88);
+    --mobile-menu-bg: #161614;
+    --icon-stroke: #ECEBE7;
+    --selection-bg: #ECEBE7;
+    --selection-fg: #121210;
+    --meta-theme: #121210;
+    --tag-neutral-bg: #2A2A28;
+    --tag-neutral-fg: #C8C6BF;
+
+    --pale-red-bg: #2A181A;   --pale-red-ink: #E8A8A8;
+    --pale-blue-bg: #14252F;  --pale-blue-ink: #8BC4EA;
+    --pale-green-bg: #172520; --pale-green-ink: #9DC9A4;
+    --pale-yellow-bg: #2A2618;--pale-yellow-ink: #E6C96C;
+    --pale-violet-bg: #231E30;--pale-violet-ink: #C4B4EB;
+
+    --metal-mesh-a: rgba(180,182,188,0.22);
+    --metal-mesh-b: rgba(160,162,168,0.18);
+    --metal-mesh-c: rgba(90,92,96,0.35);
+    --metal-orb-core: rgba(120,122,128,0.35);
+    --metal-orb-mid: rgba(90,92,98,0.28);
+    --metal-sheen-core: rgba(70,72,76,0.42);
+    --metal-pointer-core: rgba(88,90,94,0.45);
+    --metal-pointer-mid: rgba(56,58,62,0.35);
+
+    --modal-scrim: rgba(0, 0, 0, 0.58);
   }
 
   * { box-sizing: border-box; }
@@ -73,7 +140,7 @@ const STYLE = `
     text-rendering: optimizeLegibility;
   }
 
-  ::selection { background: #111; color: #fff; }
+  ::selection { background: var(--selection-bg); color: var(--selection-fg); }
 
   .serif { font-family: var(--serif); letter-spacing: -0.025em; line-height: 1.02; font-weight: 400; }
   .mono { font-family: var(--mono); }
@@ -133,11 +200,66 @@ const CATEGORY_UI_META = {
   relationships: { title: "Relationships & Family", blurb: "Partners, children, siblings.", accent: "blue" },
   living: { title: "Living & Finance", blurb: "Home and household.", accent: "yellow" },
   intimate: { title: "Intimate", blurb: "Private. Fully optional.", accent: "red" },
+  basic_info: { title: "Basic Info", blurb: "Who you are, where you land, family vibes.", accent: "blue" },
+  body_stats: { title: "Body & Stats", blurb: "Measurements, look, sleep honesty.", accent: "green" },
+  education: { title: "Education", blurb: "School era and field.", accent: "violet" },
+  work: { title: "Work", blurb: "Job mode and money mood.", accent: "yellow" },
+  habits: { title: "Habits", blurb: "Drinks, smokes, other substances.", accent: "red" },
+  health_mishaps: { title: "Health & Mishaps", blurb: "Body stats you don't post on IG.", accent: "green" },
+  travel_world: { title: "Travel & World", blurb: "Stamps, trips, wanderlust.", accent: "blue" },
+  personality: { title: "Personality", blurb: "How you decide and recharge.", accent: "violet" },
+  hobbies: { title: "Hobbies", blurb: "What you do when no one's paying.", accent: "yellow" },
+  real_talk: { title: "Real Talk", blurb: "Heavy stuff. All skippable.", accent: "red" },
+  mind_mood: { title: "Mind & Mood", blurb: "Brains are weird. Answer what feels safe.", accent: "violet" },
+  private_sparks: { title: "Private sparks", blurb: "Extra private. Skip anything you don’t vibe with.", accent: "red" },
 };
 
 const QUESTION_DEPENDENCIES = {
   tattoo_count: { dependsOn: "tattoos", showIf: ["Yes"] },
+  penis_length: { dependsOn: "gender", showIf: ["Male ♂️"] },
+  bra_cup: { dependsOn: "gender", showIf: ["Female ♀️"] },
+  plastic_detail: {
+    dependsOn: "plastic_surgery",
+    showIf: [
+      "Minor tweaks only",
+      "Injectables / tweak era 💉",
+      "Revision / fix-up round 🔁",
+      "Full storyline arc 🔪",
+    ],
+  },
 };
+
+function slugCategoryId(name) {
+  const s = String(name || "category")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+  return s || "category";
+}
+
+const IS_V2_QUESTIONNAIRE = Array.isArray(questionnaireRaw?.questionnaire);
+
+function normalizeQuestionnaireV2(raw) {
+  return {
+    categories: (raw.questionnaire || []).map((block) => ({
+      id: slugCategoryId(block.category),
+      sensitive: Boolean(block.sensitive),
+      questions: (block.questions || []).map((q) => ({
+        id: q.id,
+        label: q.question,
+        type: "select",
+        options: (q.options || []).map((o) => (typeof o === "string" ? o : o.label)),
+        sensitive: Boolean(q.sensitive),
+        global: typeof q.global === "string" ? q.global : "",
+      })),
+    })),
+  };
+}
+
+const canonicalQuestionSet = IS_V2_QUESTIONNAIRE
+  ? normalizeQuestionnaireV2(questionnaireRaw)
+  : questionnaireRaw;
 
 const LEGACY_CATEGORIES = [
   { id: "demographics", title: "Demographics", blurb: "Age, place, work.", accent: "blue", optional: false },
@@ -256,12 +378,14 @@ const canonicalCategories = canonicalQuestionSet.categories.map((category, idx) 
   };
 });
 
-const legacyOnlyCategories = LEGACY_CATEGORIES.filter(
-  (legacyCategory) => !canonicalCategories.some((category) => category.id === legacyCategory.id)
-).map((category, idx) => ({
-  ...category,
-  order: canonicalCategories.length + idx + 1,
-}));
+const legacyOnlyCategories = IS_V2_QUESTIONNAIRE
+  ? []
+  : LEGACY_CATEGORIES.filter(
+    (legacyCategory) => !canonicalCategories.some((category) => category.id === legacyCategory.id)
+  ).map((category, idx) => ({
+    ...category,
+    order: canonicalCategories.length + idx + 1,
+  }));
 
 const CATEGORIES = [...canonicalCategories, ...legacyOnlyCategories];
 
@@ -273,29 +397,33 @@ const COUNTRIES = [
   "United Arab Emirates", "Turkey", "Greece", "Czechia", "Finland", "Romania", "Hungary", "Other",
 ];
 
-const DEDUPED_QUESTION_IDS = new Set([
-  "sleep",
-  "water",
-  "phone_hours",
-  "social_hours",
-  "caffeine_drinks_day",
-  "alcohol_days_month",
-  "exercise_minutes_week",
-]);
+const DEDUPED_QUESTION_IDS = IS_V2_QUESTIONNAIRE
+  ? new Set()
+  : new Set([
+    "sleep",
+    "water",
+    "phone_hours",
+    "social_hours",
+    "caffeine_drinks_day",
+    "alcohol_days_month",
+    "exercise_minutes_week",
+  ]);
 
-const MULTI_CHOICE_OVERRIDE_OPTIONS = {
-  age: ["18–24", "25–34", "35–44", "45–54", "55–64", "65+"],
-  height: ["Under 155 cm", "155–164 cm", "165–174 cm", "175–184 cm", "185–194 cm", "195+ cm"],
-  weight: ["Under 55 kg", "55–69 kg", "70–84 kg", "85–99 kg", "100–119 kg", "120+ kg"],
-  screen_time: ["Under 1h", "1–2h", "2–4h", "4–6h", "6–8h", "8h+"],
-  sleep_hours: ["Under 5h", "5–6h", "6–7h", "7–8h", "8–9h", "9h+"],
-  steps: ["Under 2k", "2k–5k", "5k–8k", "8k–12k", "12k–16k", "16k+"],
-  coffee: ["0", "1", "2", "3", "4–5", "6+"],
-  city: ["Capital city", "Large city", "Medium city", "Small city/town", "Village/rural", "Prefer not to say"],
-  notifications: ["0–25", "26–75", "76–150", "151–250", "251–400", "400+"],
-  phone_unlocks: ["0–20", "21–50", "51–90", "91–140", "141–220", "220+"],
-  tabs: ["0–10", "11–25", "26–50", "51–100", "101–200", "200+"],
-};
+const MULTI_CHOICE_OVERRIDE_OPTIONS = IS_V2_QUESTIONNAIRE
+  ? {}
+  : {
+    age: ["18–24", "25–34", "35–44", "45–54", "55–64", "65+"],
+    height: ["Under 155 cm", "155–164 cm", "165–174 cm", "175–184 cm", "185–194 cm", "195+ cm"],
+    weight: ["Under 55 kg", "55–69 kg", "70–84 kg", "85–99 kg", "100–119 kg", "120+ kg"],
+    screen_time: ["Under 1h", "1–2h", "2–4h", "4–6h", "6–8h", "8h+"],
+    sleep_hours: ["Under 5h", "5–6h", "6–7h", "7–8h", "8–9h", "9h+"],
+    steps: ["Under 2k", "2k–5k", "5k–8k", "8k–12k", "12k–16k", "16k+"],
+    coffee: ["0", "1", "2", "3", "4–5", "6+"],
+    city: ["Capital city", "Large city", "Medium city", "Small city/town", "Village/rural", "Prefer not to say"],
+    notifications: ["0–25", "26–75", "76–150", "151–250", "251–400", "400+"],
+    phone_unlocks: ["0–20", "21–50", "51–90", "91–140", "141–220", "220+"],
+    tabs: ["0–10", "11–25", "26–50", "51–100", "101–200", "200+"],
+  };
 
 function buildRangeOptionSet(min, max, unit = "", count = 6) {
   if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return null;
@@ -441,9 +569,11 @@ const canonicalQuestions = canonicalQuestionSet.categories.flatMap((category) =>
   })
 );
 
-const legacyOnlyQuestions = LEGACY_QUESTIONS.filter(
-  (legacyQuestion) => !canonicalQuestions.some((question) => question.id === legacyQuestion.id)
-);
+const legacyOnlyQuestions = IS_V2_QUESTIONNAIRE
+  ? []
+  : LEGACY_QUESTIONS.filter(
+    (legacyQuestion) => !canonicalQuestions.some((question) => question.id === legacyQuestion.id)
+  );
 
 const QUESTIONS = [...canonicalQuestions, ...legacyOnlyQuestions]
   .filter((question) => !DEDUPED_QUESTION_IDS.has(question.id))
@@ -868,7 +998,7 @@ function realityToneColor(tone) {
    CHART PRIMITIVES — custom SVG, mobile-first, paired with text summaries
    ============================================================================ */
 
-function DistributionHistogram({ values, userValue, min, max, unit = "", accent = "#111" }) {
+function DistributionHistogram({ values, userValue, min, max, unit = "", accent = "var(--ink)" }) {
   const bins = 16;
   const range = max - min;
   const binW = range / bins;
@@ -915,7 +1045,7 @@ function DistributionHistogram({ values, userValue, min, max, unit = "", accent 
   );
 }
 
-function HorizontalBars({ dist, userOption, accent = "#111" }) {
+function HorizontalBars({ dist, userOption, accent = "var(--ink)" }) {
   const max = Math.max(...dist.map(d => d.pct), 1);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -924,11 +1054,11 @@ function HorizontalBars({ dist, userOption, accent = "#111" }) {
         return (
           <div key={d.option} style={{ display: "grid", gridTemplateColumns: "minmax(100px, 1fr) 2.2fr 40px", gap: 10, alignItems: "center" }}>
             <div style={{
-              fontSize: 13, color: isUser ? "#111" : "var(--ink-3)",
+              fontSize: 13, color: isUser ? "var(--ink)" : "var(--ink-3)",
               fontWeight: isUser ? 500 : 400,
               whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             }}>{d.option}</div>
-            <div style={{ height: 10, background: "#F2F1EE", borderRadius: 3, overflow: "hidden", position: "relative" }}>
+            <div style={{ height: 10, background: "var(--surface-muted)", borderRadius: 3, overflow: "hidden", position: "relative" }}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${(d.pct / max) * 100}%` }}
@@ -946,7 +1076,7 @@ function HorizontalBars({ dist, userOption, accent = "#111" }) {
   );
 }
 
-function Donut({ dist, userOption, accent = "#111", size = 120 }) {
+function Donut({ dist, userOption, accent = "var(--ink)", size = 120 }) {
   const palette = ["#111111", "#7E7D77", "#B4B2AC", "#D9D7D0", "#ECEAE3", "#F6F4EE"];
   let cumulative = 0;
   const total = dist.reduce((a, b) => a + b.pct, 0) || 1;
@@ -975,9 +1105,9 @@ function Donut({ dist, userOption, accent = "#111", size = 120 }) {
             d={s.d} fill={s.color}
           />
         ))}
-        <circle cx={50} cy={50} r={22} fill="#fff" />
+        <circle cx={50} cy={50} r={22} fill="var(--bg-raised)" />
         {userSeg && (
-          <text x={50} y={48} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize={10} fill="#111" fontWeight={500}>
+          <text x={50} y={48} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize={10} fill="var(--ink)" fontWeight={500}>
             {Math.round(userSeg.pct)}%
           </text>
         )}
@@ -998,7 +1128,7 @@ function PercentileBadge({ percentile }) {
       padding: "6px 12px", background: "transparent", borderRadius: "var(--radius-s)",
       border: "1px solid rgba(17,17,17,0.24)",
     }}>
-      <span className="mono" style={{ fontSize: 18, color: "#111", fontWeight: 500 }}>{percentile}</span>
+      <span className="mono" style={{ fontSize: 18, color: "var(--ink)", fontWeight: 500 }}>{percentile}</span>
       <span style={{ fontSize: 11, color: "var(--ink-3)" }}>percentile</span>
     </div>
   );
@@ -1027,7 +1157,7 @@ function InfoTip({ children, align = "right" }) {
           color: "var(--ink-3)", lineHeight: 1,
           transition: "color 150ms ease, border-color 150ms ease, background 150ms ease",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = "#111"; e.currentTarget.style.borderColor = "#B4B2AC"; }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--ink)"; e.currentTarget.style.borderColor = "#B4B2AC"; }}
         onMouseLeave={(e) => { e.currentTarget.style.color = "var(--ink-3)"; e.currentTarget.style.borderColor = "var(--line)"; }}
       >i</button>
       <AnimatePresence>
@@ -1045,8 +1175,8 @@ function InfoTip({ children, align = "right" }) {
               zIndex: 30,
               minWidth: 220, maxWidth: 280,
               padding: "10px 12px",
-              background: "#111",
-              color: "#fff",
+              background: "var(--btn-solid-bg)",
+              color: "var(--btn-solid-fg)",
               borderRadius: "var(--radius-s)",
               fontSize: 12, lineHeight: 1.5,
               fontFamily: "var(--sans)",
@@ -1074,7 +1204,7 @@ function UniquenessMeter({ score, size = 80 }) {
         <circle cx={40} cy={40} r={r} fill="none" stroke="var(--line)" strokeWidth={4} />
         <motion.circle
           cx={40} cy={40} r={r} fill="none"
-          stroke="#111" strokeWidth={4} strokeLinecap="round"
+          stroke="var(--ink)" strokeWidth={4} strokeLinecap="round"
           strokeDasharray={c}
           initial={{ strokeDashoffset: c }}
           animate={{ strokeDashoffset: c - (pct / 100) * c }}
@@ -1086,7 +1216,7 @@ function UniquenessMeter({ score, size = 80 }) {
         position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
         flexDirection: "column", gap: size * 0.02,
       }}>
-        <div className="mono" style={{ fontSize: numberSize, color: "#111", fontWeight: 500, lineHeight: 1 }}>{pct}</div>
+        <div className="mono" style={{ fontSize: numberSize, color: "var(--ink)", fontWeight: 500, lineHeight: 1 }}>{pct}</div>
         <div style={{ fontSize: labelSize, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em", lineHeight: 1 }}>unique</div>
       </div>
     </div>
@@ -1118,9 +1248,215 @@ function useMediaQuery(query) {
   return matches;
 }
 
+const THEME_STORAGE_KEY = "avg_io_theme";
+const THEME_PHASE_KEY = "avg_io_theme_phase";
+const THEME_LAST_COMPUTED_KEY = "avg_io_theme_last_computed";
+
+/** Questionnaire stores region as option label — map to approximate coords for sunrise/sunset */
+const REGION_LABEL_TO_COORDS = {
+  "Europe 🇪🇺": { lat: 50.1, lng: 10.4 },
+  "North America 🌎": { lat: 39.8, lng: -98.6 },
+  "South America 🌴": { lat: -14.2, lng: -57.9 },
+  "Asia 🌏": { lat: 34.0, lng: 105.6 },
+  "Africa 🌍": { lat: 1.6, lng: 20.0 },
+  "Oceania 🐨": { lat: -25.3, lng: 133.8 },
+  "Middle East 🕌": { lat: 29.3, lng: 47.7 },
+  "Caribbean 🏝️": { lat: 18.5, lng: -66.1 },
+  "Split between regions 🧳": { lat: 40.0, lng: -40.0 },
+};
+
+function coordsFromTimezoneFallback() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    if (/^America\/(Argentina|Chile|Brazil)/.test(tz)) return { lat: -22.9, lng: -47.1 };
+    if (/^America\//.test(tz)) return { lat: 39.8, lng: -98.6 };
+    if (/^Pacific\/(Auckland|Chatham)/.test(tz)) return { lat: -36.85, lng: 174.76 };
+    if (/^Australia\//.test(tz)) return { lat: -25.27, lng: 133.78 };
+    if (/^Asia\//.test(tz)) return { lat: 30.0, lng: 105.0 };
+    if (/^Europe\//.test(tz)) return { lat: 50.1, lng: 10.4 };
+    if (/^Africa\//.test(tz)) return { lat: -1.29, lng: 36.82 };
+    if (/^Atlantic\/(Azores|Canary|Cape_Verde)/.test(tz)) return { lat: 38.7, lng: -9.1 };
+  } catch (_) {}
+  return { lat: 48.8566, lng: 2.3522 };
+}
+
+function getSunCoordsForAnswers(answers) {
+  const r = answers?.region;
+  if (r && REGION_LABEL_TO_COORDS[r]) return REGION_LABEL_TO_COORDS[r];
+  return coordsFromTimezoneFallback();
+}
+
+function isNightAtCoords(lat, lng, date = new Date()) {
+  const times = SunCalc.getTimes(date, lat, lng);
+  const t = date.getTime();
+  return t < times.sunrise.getTime() || t > times.sunset.getTime();
+}
+
+function readInitialPhase() {
+  if (typeof window === "undefined") return "auto";
+  try {
+    const p = localStorage.getItem(THEME_PHASE_KEY);
+    if (p === "auto" || p === "light" || p === "dark") return p;
+    const legacy = localStorage.getItem(THEME_STORAGE_KEY);
+    if (legacy === "dark") return "dark";
+    if (legacy === "light") return "light";
+    return "auto";
+  } catch (_) {
+    return "auto";
+  }
+}
+
+function applyDomTheme(mode, phase) {
+  if (typeof document === "undefined") return;
+  document.documentElement.classList.toggle("dark", mode === "dark");
+  try {
+    localStorage.setItem(THEME_PHASE_KEY, phase);
+    localStorage.setItem(THEME_STORAGE_KEY, mode);
+    if (phase === "auto") localStorage.setItem(THEME_LAST_COMPUTED_KEY, mode);
+  } catch (_) {}
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", mode === "dark" ? "#121210" : "#FBFBFA");
+}
+
+function useTheme(answers) {
+  const [phase, setPhase] = useState(readInitialPhase);
+  const [tick, setTick] = useState(0);
+
+  const coords = useMemo(() => getSunCoordsForAnswers(answers || {}), [answers]);
+
+  useEffect(() => {
+    if (phase !== "auto") return undefined;
+    const id = window.setInterval(() => setTick((x) => x + 1), 60 * 1000);
+    const onVis = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        setTick((x) => x + 1);
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [phase]);
+
+  const effectiveMode = useMemo(() => {
+    if (phase === "light") return "light";
+    if (phase === "dark") return "dark";
+    return isNightAtCoords(coords.lat, coords.lng) ? "dark" : "light";
+  }, [phase, coords, tick]);
+
+  useEffect(() => {
+    applyDomTheme(effectiveMode, phase);
+  }, [effectiveMode, phase]);
+
+  const cycleTheme = useCallback(() => {
+    setPhase((p) => (p === "auto" ? "light" : p === "light" ? "dark" : "auto"));
+  }, []);
+
+  return { mode: effectiveMode, phase, cycleTheme };
+}
+
+function ThemeToggle({ mode, phase, onCycle }) {
+  const dark = mode === "dark";
+  const isAuto = phase === "auto";
+  const label = isAuto
+    ? (dark ? "Automatic dark (night where you said you are). Click to force light." : "Automatic light (daytime). Click to force dark.")
+    : (dark ? "Forced dark mode. Click for automatic sunset matching." : "Forced light mode. Click for dark.");
+  return (
+    <motion.button
+      type="button"
+      role="switch"
+      aria-checked={dark}
+      aria-label={label}
+      title={isAuto ? "Auto — matches sunset using your region answer (or timezone until then). Tap to cycle: force light → force dark → auto." : label}
+      onClick={onCycle}
+      whileTap={{ scale: 0.94 }}
+      style={{
+        flexShrink: 0,
+        width: 42,
+        height: 38,
+        borderRadius: "var(--radius-m)",
+        border: `1px solid ${isAuto ? "var(--pale-violet-ink)" : "var(--line)"}`,
+        background: "var(--surface-muted)",
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 0,
+        transition: "background 180ms ease, border-color 180ms ease",
+        position: "relative",
+      }}
+    >
+      {isAuto && (
+        <span
+          className="mono"
+          style={{
+            position: "absolute",
+            top: 3,
+            right: 4,
+            fontSize: 8,
+            fontWeight: 600,
+            color: "var(--ink-3)",
+            lineHeight: 1,
+            letterSpacing: 0,
+          }}
+        >
+          A
+        </span>
+      )}
+      <span style={{ position: "relative", width: 22, height: 22, display: "block" }}>
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            opacity: dark ? 0 : 1,
+            transform: dark ? "rotate(-70deg) scale(0.5)" : "rotate(0deg) scale(1)",
+            transition: "opacity 220ms ease, transform 280ms cubic-bezier(0.23, 1, 0.32, 1)",
+            color: "var(--ink)",
+          }}
+        >
+          <circle cx="12" cy="12" r="4.25" fill="none" stroke="currentColor" strokeWidth="1.75" />
+          <path
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            d="M12 3v2M12 19v2M5.64 5.64l1.41 1.41M17.95 17.95l1.41 1.41M3 12h2M19 12h2M5.64 18.36l1.41-1.41M17.95 6.05l1.41-1.41"
+          />
+        </svg>
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            opacity: dark ? 1 : 0,
+            transform: dark ? "rotate(0deg) scale(1)" : "rotate(70deg) scale(0.5)",
+            transition: "opacity 220ms ease, transform 280ms cubic-bezier(0.23, 1, 0.32, 1)",
+            color: "var(--ink)",
+          }}
+        >
+          <path
+            fill="currentColor"
+            d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+          />
+        </svg>
+      </span>
+    </motion.button>
+  );
+}
+
 function TopBar({
   state, dispatch, totalAnswered,
   peerSource = "synthetic", peerCount = 0, onOpenSheetData = null,
+  themeMode = "light",
+  themePhase = "auto",
+  onToggleTheme,
 }) {
   const items = [
     { id: "hub", label: "Categories" },
@@ -1148,7 +1484,7 @@ function TopBar({
   return (
     <div style={{
       position: "sticky", top: 0, zIndex: 50,
-      background: "rgba(251,251,250,0.82)",
+      background: "var(--topbar-bg)",
       backdropFilter: "saturate(180%) blur(10px)",
       WebkitBackdropFilter: "saturate(180%) blur(10px)",
       borderBottom: "1px solid var(--line)",
@@ -1166,92 +1502,97 @@ function TopBar({
           <Logo size={18} />
         </button>
 
-        {isMobile ? (
-          <button
-            aria-label="Open menu"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(o => !o)}
-            style={{
-              width: 38, height: 38,
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              background: menuOpen ? "#F2F1EE" : "transparent",
-              border: "1px solid var(--line)",
-              borderRadius: "var(--radius-s)",
-              cursor: "pointer",
-              padding: 0,
-              transition: "background 180ms ease",
-            }}
-          >
-            {/* Three-bar icon, drawn inline (minimalist-ui bans Lucide/Feather libs) */}
-            <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true">
-              <motion.line
-                x1="0" x2="16" y1="1.5" y2="1.5"
-                stroke="#111" strokeWidth="1.5" strokeLinecap="round"
-                animate={menuOpen ? { rotate: 45, y: 4.5 } : { rotate: 0, y: 0 }}
-                transition={{ duration: 0.22, ease: EASE_OUT }}
-                style={{ transformOrigin: "8px 1.5px" }}
-              />
-              <motion.line
-                x1="0" x2="16" y1="6" y2="6"
-                stroke="#111" strokeWidth="1.5" strokeLinecap="round"
-                animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
-                transition={{ duration: 0.18, ease: EASE_OUT }}
-              />
-              <motion.line
-                x1="0" x2="16" y1="10.5" y2="10.5"
-                stroke="#111" strokeWidth="1.5" strokeLinecap="round"
-                animate={menuOpen ? { rotate: -45, y: -4.5 } : { rotate: 0, y: 0 }}
-                transition={{ duration: 0.22, ease: EASE_OUT }}
-                style={{ transformOrigin: "8px 10.5px" }}
-              />
-            </svg>
-          </button>
-        ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            {items.map(it => (
-              <button key={it.id}
-                onClick={() => go(it.id)}
-                style={{
-                  background: state.screen === it.id ? "#F2F1EE" : "transparent",
-                  border: "none", padding: "8px 14px", borderRadius: "var(--radius-s)",
-                  fontFamily: "var(--sans)", fontSize: 13.5, cursor: "pointer",
-                  color: state.screen === it.id ? "#111" : "var(--ink-3)",
-                  fontWeight: 500,
-                }}
-              >{it.label}</button>
-            ))}
-            <div style={{ marginLeft: 10, paddingLeft: 14, borderLeft: "1px solid var(--line)", display: "flex", alignItems: "baseline", gap: 12 }}>
-              <button
-                onClick={openSheetData}
-                title={isLive ? "Using live community data" : "Using synthetic fallback data"}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "4px 8px",
-                  borderRadius: 999,
-                  border: `1px solid ${isLive ? "#CFE8D3" : "#E2E0D9"}`,
-                  background: isLive ? "#F2FBF4" : "#F7F6F3",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                }}
-              >
-                <span style={{
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: isLive ? "#2E9B45" : "#8A867A",
-                }} />
-                <span className="mono" style={{ fontSize: 10, color: isLive ? "#246A35" : "#6D695E" }}>
-                  {isLive ? "LIVE" : "FALLBACK"}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {typeof onToggleTheme === "function" && (
+            <ThemeToggle mode={themeMode} phase={themePhase} onCycle={onToggleTheme} />
+          )}
+          {isMobile ? (
+            <button
+              aria-label="Open menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(o => !o)}
+              style={{
+                width: 38, height: 38,
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                background: menuOpen ? "var(--surface-muted)" : "transparent",
+                border: "1px solid var(--line)",
+                borderRadius: "var(--radius-s)",
+                cursor: "pointer",
+                padding: 0,
+                transition: "background 180ms ease",
+              }}
+            >
+              {/* Three-bar icon, drawn inline (minimalist-ui bans Lucide/Feather libs) */}
+              <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true">
+                <motion.line
+                  x1="0" x2="16" y1="1.5" y2="1.5"
+                  stroke="var(--ink)" strokeWidth="1.5" strokeLinecap="round"
+                  animate={menuOpen ? { rotate: 45, y: 4.5 } : { rotate: 0, y: 0 }}
+                  transition={{ duration: 0.22, ease: EASE_OUT }}
+                  style={{ transformOrigin: "8px 1.5px" }}
+                />
+                <motion.line
+                  x1="0" x2="16" y1="6" y2="6"
+                  stroke="var(--ink)" strokeWidth="1.5" strokeLinecap="round"
+                  animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
+                  transition={{ duration: 0.18, ease: EASE_OUT }}
+                />
+                <motion.line
+                  x1="0" x2="16" y1="10.5" y2="10.5"
+                  stroke="var(--ink)" strokeWidth="1.5" strokeLinecap="round"
+                  animate={menuOpen ? { rotate: -45, y: -4.5 } : { rotate: 0, y: 0 }}
+                  transition={{ duration: 0.22, ease: EASE_OUT }}
+                  style={{ transformOrigin: "8px 10.5px" }}
+                />
+              </svg>
+            </button>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {items.map(it => (
+                <button key={it.id}
+                  onClick={() => go(it.id)}
+                  style={{
+                    background: state.screen === it.id ? "var(--surface-muted)" : "transparent",
+                    border: "none", padding: "8px 14px", borderRadius: "var(--radius-s)",
+                    fontFamily: "var(--sans)", fontSize: 13.5, cursor: "pointer",
+                    color: state.screen === it.id ? "var(--ink)" : "var(--ink-3)",
+                    fontWeight: 500,
+                  }}
+                >{it.label}</button>
+              ))}
+              <div style={{ marginLeft: 10, paddingLeft: 14, borderLeft: "1px solid var(--line)", display: "flex", alignItems: "baseline", gap: 12 }}>
+                <button
+                  onClick={openSheetData}
+                  title={isLive ? "Using live community data" : "Using synthetic fallback data"}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "4px 8px",
+                    borderRadius: 999,
+                    border: `1px solid ${isLive ? "var(--surface-live-border)" : "var(--surface-fallback-border)"}`,
+                    background: isLive ? "var(--surface-live)" : "var(--surface-fallback)",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <span style={{
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: isLive ? "#2E9B45" : "#8A867A",
+                  }} />
+                  <span className="mono" style={{ fontSize: 10, color: isLive ? "#6BC77D" : "var(--ink-3)" }}>
+                    {isLive ? "LIVE" : "FALLBACK"}
+                  </span>
+                  <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>
+                    {peerCount}
+                  </span>
+                </button>
+                <span>
+                  <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>{totalAnswered}</span>
+                  <span className="label" style={{ marginLeft: 6 }}>answered</span>
                 </span>
-                <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>
-                  {peerCount}
-                </span>
-              </button>
-              <span>
-                <span className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>{totalAnswered}</span>
-                <span className="label" style={{ marginLeft: 6 }}>answered</span>
-              </span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Mobile dropdown */}
@@ -1263,18 +1604,18 @@ function TopBar({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.24, ease: EASE_DRAWER }}
-            style={{ overflow: "hidden", borderTop: "1px solid var(--line)", background: "#FBFBFA" }}
+            style={{ overflow: "hidden", borderTop: "1px solid var(--line)", background: "var(--mobile-menu-bg)" }}
           >
             <div style={{ padding: "10px 18px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
               {items.map(it => (
                 <button key={it.id}
                   onClick={() => go(it.id)}
                   style={{
-                    background: state.screen === it.id ? "#F2F1EE" : "transparent",
+                    background: state.screen === it.id ? "var(--surface-muted)" : "transparent",
                     border: "none", textAlign: "left",
                     padding: "12px 12px", borderRadius: "var(--radius-s)",
                     fontFamily: "var(--sans)", fontSize: 15, cursor: "pointer",
-                    color: state.screen === it.id ? "#111" : "var(--ink-2)",
+                    color: state.screen === it.id ? "var(--ink)" : "var(--ink-2)",
                     fontWeight: 500,
                   }}
                 >{it.label}</button>
@@ -1290,8 +1631,8 @@ function TopBar({
                     display: "inline-flex", alignItems: "center", gap: 6,
                     padding: "3px 7px",
                     borderRadius: 999,
-                    border: `1px solid ${isLive ? "#CFE8D3" : "#E2E0D9"}`,
-                    background: isLive ? "#F2FBF4" : "#F7F6F3",
+                    border: `1px solid ${isLive ? "var(--surface-live-border)" : "var(--surface-fallback-border)"}`,
+                    background: isLive ? "var(--surface-live)" : "var(--surface-fallback)",
                     marginRight: 8,
                     cursor: "pointer",
                     fontFamily: "inherit",
@@ -1301,11 +1642,11 @@ function TopBar({
                     width: 6, height: 6, borderRadius: "50%",
                     background: isLive ? "#2E9B45" : "#8A867A",
                   }} />
-                  <span className="mono" style={{ fontSize: 10, color: isLive ? "#246A35" : "#6D695E" }}>
+                  <span className="mono" style={{ fontSize: 10, color: isLive ? "#6BC77D" : "var(--ink-3)" }}>
                     {isLive ? "LIVE" : "FALLBACK"}
                   </span>
                 </button>
-                <span className="mono" style={{ fontSize: 13, color: "#111" }}>{totalAnswered}</span>
+                <span className="mono" style={{ fontSize: 13, color: "var(--ink)" }}>{totalAnswered}</span>
                 <span className="label">answered</span>
               </div>
             </div>
@@ -1344,7 +1685,7 @@ function SheetDataModal({ open, onClose, sheetState }) {
         transition={{ duration: 0.2, ease: EASE_OUT }}
         style={{
           position: "fixed", inset: 0, zIndex: 120,
-          background: "rgba(17,17,17,0.36)",
+          background: "var(--modal-scrim)",
           display: "flex", alignItems: "center", justifyContent: "center",
           padding: 16,
         }}
@@ -1360,7 +1701,7 @@ function SheetDataModal({ open, onClose, sheetState }) {
             width: "min(920px, 96vw)",
             maxHeight: "88vh",
             overflow: "auto",
-            background: "#fff",
+            background: "var(--bg-raised)",
             border: "1px solid var(--line)",
             borderRadius: "var(--radius-l)",
             boxShadow: "0 10px 44px rgba(0,0,0,0.16)",
@@ -1370,7 +1711,7 @@ function SheetDataModal({ open, onClose, sheetState }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
             <div>
               <div className="label">Shared Sheet Data</div>
-              <div className="serif" style={{ fontSize: 24, color: "#111", marginTop: 4 }}>
+              <div className="serif" style={{ fontSize: 24, color: "var(--ink)", marginTop: 4 }}>
                 Gathered peer rows
               </div>
             </div>
@@ -1378,21 +1719,21 @@ function SheetDataModal({ open, onClose, sheetState }) {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
-            <div style={{ padding: 10, background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
+            <div style={{ padding: 10, background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
               <div className="label">Current source</div>
-              <div className="mono" style={{ color: "#111", marginTop: 6 }}>{source === "live" ? "LIVE" : "FALLBACK"}</div>
+              <div className="mono" style={{ color: "var(--ink)", marginTop: 6 }}>{source === "live" ? "LIVE" : "FALLBACK"}</div>
             </div>
-            <div style={{ padding: 10, background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
+            <div style={{ padding: 10, background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
               <div className="label">User inputs</div>
-              <div className="mono" style={{ color: "#111", marginTop: 6 }}>{sheetPeerCount}</div>
+              <div className="mono" style={{ color: "var(--ink)", marginTop: 6 }}>{sheetPeerCount}</div>
             </div>
-            <div style={{ padding: 10, background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
+            <div style={{ padding: 10, background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
               <div className="label">Last refresh attempt</div>
-              <div style={{ color: "#111", marginTop: 6, fontSize: 12 }}>{fmt(lastAttemptAt)}</div>
+              <div style={{ color: "var(--ink)", marginTop: 6, fontSize: 12 }}>{fmt(lastAttemptAt)}</div>
             </div>
-            <div style={{ padding: 10, background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
+            <div style={{ padding: 10, background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
               <div className="label">Last successful sync</div>
-              <div style={{ color: "#111", marginTop: 6, fontSize: 12 }}>{fmt(lastSuccessAt)}</div>
+              <div style={{ color: "var(--ink)", marginTop: 6, fontSize: 12 }}>{fmt(lastSuccessAt)}</div>
             </div>
           </div>
 
@@ -1424,7 +1765,7 @@ function PageShell({ children, maxWidth = 1120 }) {
    WELCOME
    ============================================================================ */
 
-function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic" }) {
+function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", themeMode = "light", themePhase = "auto", onToggleTheme }) {
   const isMobile = useMediaQuery("(max-width: 639px)");
   return (
     <div style={{
@@ -1435,14 +1776,27 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic" }) 
     }}>
       <div style={{ maxWidth: 1120, width: "100%", position: "relative", zIndex: 1 }}>
         <div style={{ width: "min(760px, 100%)" }}>
-        <motion.div {...FADE_UP} transition={{ duration: 0.5, ease: EASE_OUT }}>
+        <motion.div
+          {...FADE_UP}
+          transition={{ duration: 0.5, ease: EASE_OUT }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
           <Logo size={44} />
+          {typeof onToggleTheme === "function" && (
+            <ThemeToggle mode={themeMode} phase={themePhase} onCycle={onToggleTheme} />
+          )}
         </motion.div>
 
         <motion.h1 {...FADE_UP}
           transition={{ duration: 0.6, delay: 0.08, ease: EASE_OUT }}
           className="serif"
-          style={{ fontSize: "clamp(44px, 6.4vw, 76px)", margin: "48px 0 18px", color: "#111" }}>
+          style={{ fontSize: "clamp(44px, 6.4vw, 76px)", margin: "48px 0 18px", color: "var(--ink)" }}>
           See how you compare —<br/>
           <span style={{ color: "var(--ink-3)" }}>locally, globally, uniquely.</span>
         </motion.h1>
@@ -1479,9 +1833,9 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic" }) 
         <motion.div {...FADE_UP}
           transition={{ duration: 0.6, delay: 0.36, ease: EASE_OUT }}
           style={{ marginTop: 56, display: "flex", gap: 32, flexWrap: "wrap", color: "var(--ink-3)", fontSize: 13 }}>
-          <div><span className="mono" style={{ color: "#111" }}>45</span> questions</div>
-          <div><span className="mono" style={{ color: "#111" }}>8</span> categories</div>
-          <div><span className="mono" style={{ color: "#111" }}>{peerCount}</span> peers to compare against</div>
+          <div><span className="mono" style={{ color: "var(--ink)" }}>{QUESTIONS.length}</span> questions</div>
+          <div><span className="mono" style={{ color: "var(--ink)" }}>{CATEGORIES.length}</span> categories</div>
+          <div><span className="mono" style={{ color: "var(--ink)" }}>{peerCount}</span> peers to compare against</div>
         </motion.div>
 
         <div style={{ marginTop: 64, fontSize: 12, color: "var(--ink-4)", maxWidth: 520, lineHeight: 1.6 }}>
@@ -1529,7 +1883,7 @@ function WelcomeBenefits() {
           transition={{ duration: 0.5, delay: 0.4 + i * 0.06, ease: EASE_OUT }}
           style={{
             padding: "18px 18px 20px",
-            background: "#fff",
+            background: "var(--bg-raised)",
             border: "1px solid var(--line)",
             borderRadius: "var(--radius-m)",
             position: "relative",
@@ -1539,10 +1893,10 @@ function WelcomeBenefits() {
           {/* Tiny hairline accent in the top-left corner */}
           <div style={{
             position: "absolute", top: 0, left: 0,
-            width: 32, height: 1, background: "#111",
+            width: 32, height: 1, background: "var(--accent-solid)",
           }} />
           <div style={{
-            fontSize: 15, fontWeight: 500, color: "#111",
+            fontSize: 15, fontWeight: 500, color: "var(--ink)",
             marginTop: 6, marginBottom: 6,
           }}>
             {b.title}
@@ -1715,7 +2069,7 @@ function CategoryHub({ state, dispatch }) {
     <PageShell>
       <motion.div {...FADE_UP}>
         <span className="label">Step 1 · Pick your path</span>
-        <h2 className="serif" style={{ fontSize: 44, margin: "14px 0 10px", color: "#111" }}>
+        <h2 className="serif" style={{ fontSize: 44, margin: "14px 0 10px", color: "var(--ink)" }}>
           Choose a category to answer
         </h2>
         <p style={{ color: "var(--ink-3)", fontSize: 15, maxWidth: 560, margin: 0 }}>
@@ -1744,7 +2098,7 @@ function CategoryHub({ state, dispatch }) {
                 </div>
                 {c.optional && <Tag tone="red">optional</Tag>}
               </div>
-              <div className="serif" style={{ fontSize: 26, color: "#111", margin: "18px 0 8px" }}>
+              <div className="serif" style={{ fontSize: 26, color: "var(--ink)", margin: "18px 0 8px" }}>
                 {c.title}
               </div>
               <div style={{ color: "var(--ink-3)", fontSize: 13, marginBottom: 20, minHeight: 38 }}>
@@ -1753,9 +2107,9 @@ function CategoryHub({ state, dispatch }) {
               <ProgressBar value={c.answered} max={c.total} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
                 <span style={{ fontSize: 12, color: "var(--ink-3)" }}>
-                  <span className="mono" style={{ color: "#111" }}>{c.answered}</span> / {c.total} answered
+                  <span className="mono" style={{ color: "var(--ink)" }}>{c.answered}</span> / {c.total} answered
                 </span>
-                <span style={{ fontSize: 13, color: "#111", fontWeight: 500 }}>
+                <span style={{ fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>
                   {c.answered === 0 ? "Start →" : c.answered < c.total ? "Continue →" : "Review →"}
                 </span>
               </div>
@@ -1801,7 +2155,7 @@ function QuestionScreen({ state, dispatch, peers }) {
       <PageShell maxWidth={720}>
         <motion.div {...FADE_UP}>
           <Tag tone={cat.accent}>{cat.title}</Tag>
-          <h2 className="serif" style={{ fontSize: 40, margin: "20px 0 12px", color: "#111" }}>
+          <h2 className="serif" style={{ fontSize: 40, margin: "20px 0 12px", color: "var(--ink)" }}>
             {cat.title} complete
           </h2>
           <p style={{ color: "var(--ink-3)", marginBottom: 32 }}>
@@ -1877,7 +2231,7 @@ function QuestionScreen({ state, dispatch, peers }) {
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.28, ease: EASE_OUT }}
         >
-          <h2 className="serif" style={{ fontSize: "clamp(32px, 4.2vw, 44px)", margin: "24px 0 32px", color: "#111" }}>
+          <h2 className="serif" style={{ fontSize: "clamp(32px, 4.2vw, 44px)", margin: "24px 0 32px", color: "var(--ink)" }}>
             {q.label}
           </h2>
 
@@ -1921,7 +2275,7 @@ function QuestionScreen({ state, dispatch, peers }) {
                   display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
                 }}>
                   <span className="label">Live comparison</span>
-                  <span style={{ fontSize: 14, color: "#111" }}>{previewCopy}</span>
+                  <span style={{ fontSize: 14, color: "var(--ink)" }}>{previewCopy}</span>
                   {previewKind === "numeric" && previewStats && (
                     <span style={{ marginLeft: "auto" }}>
                       <PercentileBadge percentile={previewStats.percentile} />
@@ -2103,7 +2457,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
       <motion.div {...FADE_UP}>
         <span className="label">Your mirror</span>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", gap: 20, marginTop: 10 }}>
-          <h2 className="serif" style={{ fontSize: 48, margin: 0, color: "#111" }}>
+          <h2 className="serif" style={{ fontSize: 48, margin: 0, color: "var(--ink)" }}>
             Overview
           </h2>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", maxWidth: "100%" }}>
@@ -2153,7 +2507,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
       {/* Category comparison cards */}
       <div style={{ marginTop: 48 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 18 }}>
-          <h3 className="serif" style={{ fontSize: 26, color: "#111", margin: 0 }}>By category</h3>
+          <h3 className="serif" style={{ fontSize: 26, color: "var(--ink)", margin: 0 }}>By category</h3>
           <Button variant="quiet" onClick={() => dispatch({ type: "go", screen: "hub" })}>Answer more →</Button>
         </div>
 
@@ -2183,7 +2537,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
       {/* Reality check feed */}
       <div style={{ marginTop: 38 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 18 }}>
-          <h3 className="serif" style={{ fontSize: 26, color: "#111", margin: 0 }}>Reality check</h3>
+          <h3 className="serif" style={{ fontSize: 26, color: "var(--ink)", margin: 0 }}>Reality check</h3>
           <span className="label">strongest signals first</span>
         </div>
         {realityItems.length === 0 ? (
@@ -2205,11 +2559,11 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                   padding: "14px 16px",
                   border: "1px solid var(--line)",
                   borderRadius: "var(--radius-m)",
-                  background: "#FAFAF8",
+                  background: "var(--surface-muted)",
                 }}
               >
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ color: "#111", fontSize: 20, lineHeight: 1.2 }}>
+                  <div style={{ color: "var(--ink)", fontSize: 20, lineHeight: 1.2 }}>
                     <span style={{ color: realityToneColor(item.tone) }}>{item.agreementPct}%</span>
                     <span style={{ marginLeft: 6 }}>{item.sentence.replace(/^\d+%/, "").trimStart()}</span>
                   </div>
@@ -2219,7 +2573,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div className="label">Responses</div>
-                  <div className="mono" style={{ color: "#111", marginTop: 3 }}>{item.responses}</div>
+                  <div className="mono" style={{ color: "var(--ink)", marginTop: 3 }}>{item.responses}</div>
                 </div>
                 <button
                   type="button"
@@ -2227,12 +2581,12 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                   onClick={() => jumpToQuestion(item.qid)}
                   style={{
                     border: "1px solid var(--line)",
-                    background: "#fff",
+                    background: "var(--bg-raised)",
                     width: 32,
                     height: 32,
                     borderRadius: "var(--radius-s)",
                     cursor: "pointer",
-                    color: "#111",
+                    color: "var(--ink)",
                     display: "grid",
                     placeItems: "center",
                     fontSize: 22,
@@ -2255,7 +2609,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
             inset: 0,
             zIndex: 40,
             pointerEvents: "auto",
-            background: showPaywallModal ? "rgba(17,17,17,0.16)" : "rgba(17,17,17,0)",
+            background: showPaywallModal ? "var(--modal-scrim)" : "rgba(0,0,0,0)",
             transition: prefersReducedMotion ? "none" : "background 220ms cubic-bezier(0.25, 1, 0.5, 1)",
             display: "flex",
             alignItems: isMobilePaywall ? "flex-end" : "center",
@@ -2274,7 +2628,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                 transition={{ duration: prefersReducedMotion ? 0.05 : 0.26, ease: [0.22, 1, 0.36, 1] }}
                 style={{
                   width: isMobilePaywall ? "100%" : "min(720px, 100%)",
-                  background: "#fff",
+                  background: "var(--bg-raised)",
                   border: "1px solid var(--line)",
                   borderRadius: isMobilePaywall ? "16px 16px 0 0" : "var(--radius-l)",
                   boxShadow: "0 16px 40px rgba(0,0,0,0.12)",
@@ -2284,11 +2638,11 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                 }}
               >
                 <div style={{ display: "grid", gap: 14 }}>
-                  <div className="serif" style={{ color: "#111", fontSize: 26, lineHeight: 1.1 }}>
+                  <div className="serif" style={{ color: "var(--ink)", fontSize: 26, lineHeight: 1.1 }}>
                     Unlock full overview
                   </div>
                   <div style={{ color: "var(--ink-3)", fontSize: 14, maxWidth: 640 }}>
-                    Get the complete picture for <strong style={{ color: "#111" }}>just €1</strong> and help keep average.io independent.
+                    Get the complete picture for <strong style={{ color: "var(--ink)" }}>just €1</strong> and help keep average.io independent.
                     Your support funds new questions, cleaner comparisons, and better weekly updates.
                   </div>
                   <div
@@ -2297,14 +2651,14 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                       gap: 8,
                       color: "var(--ink-2)",
                       fontSize: 13,
-                      background: "#F7F6F3",
+                      background: "var(--surface-fallback)",
                       border: "1px solid var(--line)",
                       borderRadius: "var(--radius-m)",
                       padding: "12px 14px",
                       maxWidth: 640,
                     }}
                   >
-                    <div><strong style={{ color: "#111" }}>What you unlock:</strong></div>
+                    <div><strong style={{ color: "var(--ink)" }}>What you unlock:</strong></div>
                     <div>• Full category breakdowns and deeper reality-check signals</div>
                     <div>• Stronger uniqueness insights as your answers grow</div>
                     <div>• Thousands of additional data comparisons unlocked across categories</div>
@@ -2346,7 +2700,7 @@ function UniquenessExplainer() {
       transition={{ duration: 0.4, ease: EASE_OUT }}
       style={{
         marginBottom: 20, padding: 22,
-        background: "#FFFFFF",
+        background: "var(--bg-raised)",
         border: "1px solid var(--line)",
         borderRadius: "var(--radius-m)",
       }}
@@ -2377,7 +2731,7 @@ function UniquenessExplainer() {
                 {t.range}
               </span>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "baseline" }}>
-                <span style={{ fontSize: 13, color: "#111", fontWeight: 500 }}>{t.label}</span>
+                <span style={{ fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>{t.label}</span>
                 <span style={{ fontSize: 12, color: "var(--ink-3)" }}>— {t.note}</span>
               </div>
             </div>
@@ -2398,12 +2752,12 @@ function labelForUniqueness(score) {
 
 function SnapshotCard({ label, value, sub, accent, info }) {
   return (
-    <Card padding={18} style={accent ? { background: "#F7F6F3" } : undefined}>
+    <Card padding={18} style={accent ? { background: "var(--surface-fallback)" } : undefined}>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <span className="label">{label}</span>
         {info && <InfoTip align="left">{info}</InfoTip>}
       </div>
-      <div className="mono" style={{ fontSize: 34, color: "#111", fontWeight: 500, margin: "6px 0 4px", lineHeight: 1 }}>
+      <div className="mono" style={{ fontSize: 34, color: "var(--ink)", fontWeight: 500, margin: "6px 0 4px", lineHeight: 1 }}>
         {value}
       </div>
       <div style={{ fontSize: 12, color: "var(--ink-3)" }}>{sub}</div>
@@ -2425,7 +2779,7 @@ function StageHint({ stage, totalAnswered, dispatch }) {
     <Card padding={18} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
       <div>
         <div className="label">Progressive reveal</div>
-        <div style={{ fontSize: 15, color: "#111", marginTop: 6, maxWidth: 600 }}>
+        <div style={{ fontSize: 15, color: "var(--ink)", marginTop: 6, maxWidth: 600 }}>
           {hint.copy} {remaining > 0 && <span style={{ color: "var(--ink-3)" }}>{remaining} to go.</span>}
         </div>
       </div>
@@ -2458,12 +2812,12 @@ function CategoryCard({ cat, answers, peers, onOpen }) {
         <Tag tone={cat.accent}>{cat.title}</Tag>
         {uniq && <UniquenessMeter score={uniq.score} size={76} />}
       </div>
-      <div className="serif" style={{ fontSize: 22, color: "#111", margin: "14px 0 6px" }}>
+      <div className="serif" style={{ fontSize: 22, color: "var(--ink)", margin: "14px 0 6px" }}>
         {cat.title}
       </div>
       <div style={{
         fontSize: 13,
-        color: "var(--ink-3)",
+        color: "var(--ink-2)",
         minHeight: 42,
         display: "-webkit-box",
         WebkitLineClamp: 2,
@@ -2475,7 +2829,7 @@ function CategoryCard({ cat, answers, peers, onOpen }) {
       <div style={{ marginTop: "auto", paddingTop: 18 }}>
         <ProgressBar value={answered.length} max={vis.length} />
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: "var(--ink-3)" }}>
-          <span><span className="mono" style={{ color: "#111" }}>{answered.length}</span>/{vis.length}</span>
+          <span><span className="mono" style={{ color: "var(--ink)" }}>{answered.length}</span>/{vis.length}</span>
           <span>{answered.length === 0 ? "Start →" : "Open detail →"}</span>
         </div>
       </div>
@@ -2512,7 +2866,7 @@ function CategoryDetail({ state, dispatch, peers }) {
           </span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 20, flexWrap: "wrap", marginTop: 16 }}>
-          <h2 className="serif" style={{ fontSize: 44, color: "#111", margin: 0 }}>{cat.title}</h2>
+          <h2 className="serif" style={{ fontSize: 44, color: "var(--ink)", margin: 0 }}>{cat.title}</h2>
           {uniq && (
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <UniquenessMeter score={uniq.score} />
@@ -2523,7 +2877,7 @@ function CategoryDetail({ state, dispatch, peers }) {
                     Averages how rare your answers are across the {uniq.n} question{uniq.n === 1 ? "" : "s"} you've answered in this category. 0 means very common, 100 means highly unique.
                   </InfoTip>
                 </div>
-                <div style={{ fontSize: 16, color: "#111", marginTop: 4, fontWeight: 500 }}>{uniq.label}</div>
+                <div style={{ fontSize: 16, color: "var(--ink)", marginTop: 4, fontWeight: 500 }}>{uniq.label}</div>
               </div>
             </div>
           )}
@@ -2583,10 +2937,10 @@ function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
     <Card padding={22}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 280px", minWidth: 0 }}>
-          <div style={{ fontSize: 15, color: "#111", fontWeight: 500 }}>{q.label}</div>
+          <div style={{ fontSize: 15, color: "var(--ink)", fontWeight: 500 }}>{q.label}</div>
           {!unanswered && (
             <div className="mono" style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 4 }}>
-              Your answer: <span style={{ color: "#111" }}>{String(value)}{q.unit ? ` ${q.unit}` : ""}</span>
+              Your answer: <span style={{ color: "var(--ink)" }}>{String(value)}{q.unit ? ` ${q.unit}` : ""}</span>
             </div>
           )}
         </div>
@@ -2625,14 +2979,14 @@ function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
               <span className="label">Local comparison</span>
               <InfoTip align="left">
-                Your answer compared against <strong style={{ color: "#fff" }}>{localStats.n}</strong> other users in the current segment.
+                Your answer compared against <strong style={{ color: "var(--btn-solid-fg)" }}>{localStats.n}</strong> other users in the current segment.
                 {kind === "numeric"
                   ? " The percentile is the share of users who answered lower than you."
                   : " The bars show how often each option was picked."}
               </InfoTip>
               {kind === "numeric" && <PercentileBadge percentile={localStats.percentile} />}
             </div>
-            <div style={{ fontSize: 14, color: "#111", marginBottom: 16, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 14, color: "var(--ink)", marginBottom: 16, lineHeight: 1.5 }}>
               {comparison}
             </div>
             {kind === "numeric" ? (
@@ -2649,16 +3003,16 @@ function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
             )}
             {kind === "numeric" && (
               <div style={{ marginTop: 12, fontSize: 12, color: "var(--ink-3)" }}>
-                Average <span className="mono" style={{ color: "#111" }}>{Math.round(localStats.mean * 10) / 10}</span>
+                Average <span className="mono" style={{ color: "var(--ink)" }}>{Math.round(localStats.mean * 10) / 10}</span>
                 <span style={{ margin: "0 8px" }}>·</span>
-                Median <span className="mono" style={{ color: "#111" }}>{localStats.median}</span>
+                Median <span className="mono" style={{ color: "var(--ink)" }}>{localStats.median}</span>
               </div>
             )}
           </div>
 
           {/* Global AI */}
           {q.global && (
-            <div style={{ padding: 16, background: "#F7F6F3", borderRadius: "var(--radius-m)", border: "1px solid var(--line)" }}>
+            <div style={{ padding: 16, background: "var(--surface-fallback)", borderRadius: "var(--radius-m)", border: "1px solid var(--line)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <span className="label">Global benchmark</span>
                 <InfoTip align="left">
@@ -2675,7 +3029,7 @@ function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
       )}
 
       {unanswered && (
-        <div style={{ marginTop: 16, padding: 16, background: "#F7F6F3", borderRadius: "var(--radius-m)", fontSize: 13, color: "var(--ink-3)" }}>
+        <div style={{ marginTop: 16, padding: 16, background: "var(--surface-fallback)", borderRadius: "var(--radius-m)", fontSize: 13, color: "var(--ink-3)" }}>
           Not answered. {q.global && <span>Global: {q.global}</span>}
         </div>
       )}
@@ -2689,7 +3043,7 @@ function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
 
 function Logo({ size = 32, muted = false }) {
   const h = size;
-  const textColor = muted ? "var(--ink-3)" : "#111";
+  const textColor = muted ? "var(--ink-3)" : "var(--ink)";
   return (
     <motion.div
       style={{ display: "inline-flex", alignItems: "baseline", gap: 0, height: h, lineHeight: 1, willChange: "transform" }}
@@ -3222,8 +3576,8 @@ function Button({ children, onClick, variant = "primary", size = "md", disabled,
     userSelect: "none",
   };
   const variants = {
-    primary: { background: "#111", color: "#fff", borderColor: "#111" },
-    secondary: { background: "#fff", color: "#111", borderColor: "var(--line)" },
+    primary: { background: "var(--btn-solid-bg)", color: "var(--btn-solid-fg)", borderColor: "var(--btn-solid-bg)" },
+    secondary: { background: "var(--bg-raised)", color: "var(--ink)", borderColor: "var(--line)" },
     ghost: { background: "transparent", color: "var(--ink-2)", borderColor: "transparent" },
     quiet: { background: "transparent", color: "var(--ink-3)", borderColor: "transparent", padding: "6px 10px" },
   };
@@ -3242,7 +3596,7 @@ function Button({ children, onClick, variant = "primary", size = "md", disabled,
 
 function Tag({ children, tone = "neutral" }) {
   const tones = {
-    neutral: { bg: "#F2F1EE", fg: "#5a5a55" },
+    neutral: { bg: "var(--tag-neutral-bg)", fg: "var(--tag-neutral-fg)" },
     red: { bg: "var(--pale-red-bg)", fg: "var(--pale-red-ink)" },
     blue: { bg: "var(--pale-blue-bg)", fg: "var(--pale-blue-ink)" },
     green: { bg: "var(--pale-green-bg)", fg: "var(--pale-green-ink)" },
@@ -3286,7 +3640,7 @@ function ProgressBar({ value, max = 1, height = 3 }) {
         initial={false}
         animate={{ width: `${pct}%` }}
         transition={{ duration: 0.5, ease: EASE_OUT }}
-        style={{ height: "100%", background: "#111" }}
+        style={{ height: "100%", background: "var(--accent-solid)" }}
       />
     </div>
   );
@@ -3301,9 +3655,9 @@ function Chip({ active, onClick, children, small }) {
         fontFamily: "var(--sans)",
         fontSize: small ? 13 : 14,
         padding: small ? "7px 12px" : "10px 16px",
-        background: active ? "#111" : "#fff",
-        color: active ? "#fff" : "var(--ink-2)",
-        border: `1px solid ${active ? "#111" : "var(--line)"}`,
+        background: active ? "var(--btn-solid-bg)" : "var(--bg-raised)",
+        color: active ? "var(--btn-solid-fg)" : "var(--ink-2)",
+        border: `1px solid ${active ? "var(--btn-solid-bg)" : "var(--line)"}`,
         borderRadius: "var(--radius-s)",
         cursor: "pointer",
         transition: "background 200ms ease, border-color 200ms ease, color 200ms ease",
@@ -3334,7 +3688,7 @@ function SegmentedControl({ options, value, onChange }) {
     <div style={{
       display: "inline-flex",
       padding: 3,
-      background: "#F2F1EE",
+      background: "var(--surface-muted)",
       borderRadius: "var(--radius-s)",
       gap: 2,
     }}>
@@ -3347,8 +3701,8 @@ function SegmentedControl({ options, value, onChange }) {
             style={{
               fontFamily: "var(--sans)", fontSize: 12, fontWeight: 500,
               padding: "6px 12px", borderRadius: 5, border: "none",
-              background: active ? "#fff" : "transparent",
-              color: active ? "#111" : "var(--ink-3)",
+              background: active ? "var(--bg-raised)" : "transparent",
+              color: active ? "var(--ink)" : "var(--ink-3)",
               cursor: "pointer",
               boxShadow: active ? "0 1px 2px rgba(0,0,0,0.04)" : "none",
               transition: "background 180ms ease, color 180ms ease",
@@ -3380,7 +3734,7 @@ function Stepper({ value, onChange, min = 0, max = 100, step = 1, unit = "" }) {
   const inc = () => onChange(Math.min(max, +(v + step).toFixed(2)));
   const dec = () => onChange(Math.max(min, +(v - step).toFixed(2)));
   return (
-    <div style={{ display: "inline-flex", alignItems: "center", border: "1px solid var(--line)", borderRadius: "var(--radius-s)", background: "#fff" }}>
+    <div style={{ display: "inline-flex", alignItems: "center", border: "1px solid var(--line)", borderRadius: "var(--radius-s)", background: "var(--bg-raised)" }}>
       <button onClick={dec} style={stepperBtn}>−</button>
       <div style={{ minWidth: 124, textAlign: "center", fontFamily: "var(--mono)", fontSize: 15, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
         <input
@@ -3404,7 +3758,7 @@ function Stepper({ value, onChange, min = 0, max = 100, step = 1, unit = "" }) {
             textAlign: "center",
             fontFamily: "var(--mono)",
             fontSize: 15,
-            color: "#111",
+            color: "var(--ink)",
             background: "transparent",
           }}
         />
@@ -3425,7 +3779,7 @@ function Slider({ value, onChange, min, max, step = 1, unit = "" }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
-        <div className="mono" style={{ fontSize: 32, color: "#111", fontWeight: 400 }}>
+        <div className="mono" style={{ fontSize: 32, color: "var(--ink)", fontWeight: 400 }}>
           {value == null ? "—" : v}
           <span style={{ fontSize: 14, color: "var(--ink-3)", marginLeft: 6 }}>{unit}</span>
         </div>
@@ -3437,7 +3791,7 @@ function Slider({ value, onChange, min, max, step = 1, unit = "" }) {
           initial={false}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.18, ease: EASE_OUT }}
-          style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", height: 2, background: "#111", borderRadius: 999 }}
+          style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", height: 2, background: "var(--accent-solid)", borderRadius: 999 }}
         />
         <input
           type="range" min={min} max={max} step={step} value={v}
@@ -3451,13 +3805,13 @@ function Slider({ value, onChange, min, max, step = 1, unit = "" }) {
           input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none; appearance: none;
             width: 20px; height: 20px; border-radius: 50%;
-            background: #111; border: 3px solid #fff;
+            background: var(--accent-solid); border: 3px solid var(--bg-raised);
             box-shadow: 0 1px 3px rgba(0,0,0,0.12);
             cursor: grab;
           }
           input[type=range]::-moz-range-thumb {
             width: 20px; height: 20px; border-radius: 50%;
-            background: #111; border: 3px solid #fff;
+            background: var(--accent-solid); border: 3px solid var(--bg-raised);
             box-shadow: 0 1px 3px rgba(0,0,0,0.12);
             cursor: grab;
           }
@@ -3479,7 +3833,7 @@ function SearchableSelect({ options, value, onChange, placeholder = "Search…" 
       <div style={{
         display: "flex", alignItems: "center", gap: 8,
         border: "1px solid var(--line)", borderRadius: "var(--radius-s)",
-        padding: "10px 14px", background: "#fff",
+        padding: "10px 14px", background: "var(--bg-raised)",
       }}>
         <input
           value={open ? q : (value || "")}
@@ -3505,7 +3859,7 @@ function SearchableSelect({ options, value, onChange, placeholder = "Search…" 
             transition={{ duration: 0.14, ease: EASE_OUT }}
             style={{
               position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 10,
-              background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--radius-s)",
+              background: "var(--bg-raised)", border: "1px solid var(--line)", borderRadius: "var(--radius-s)",
               maxHeight: 280, overflowY: "auto", padding: 4,
               boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
             }}
@@ -3517,7 +3871,7 @@ function SearchableSelect({ options, value, onChange, placeholder = "Search…" 
                 onMouseDown={() => { onChange(o); setOpen(false); setQ(""); }}
                 style={{
                   display: "block", width: "100%", textAlign: "left",
-                  padding: "8px 12px", border: "none", background: value === o ? "#F7F6F3" : "transparent",
+                  padding: "8px 12px", border: "none", background: value === o ? "var(--surface-fallback)" : "transparent",
                   borderRadius: 4, fontFamily: "var(--sans)", fontSize: 14, color: "var(--ink-2)", cursor: "pointer",
                 }}
               >{o}</button>
@@ -3707,7 +4061,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
           onClick={close}
           style={{
             position: "fixed", inset: 0, zIndex: 100,
-            background: "rgba(17,17,17,0.42)",
+            background: "var(--modal-scrim)",
             backdropFilter: "blur(6px)",
             WebkitBackdropFilter: "blur(6px)",
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -3722,7 +4076,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: 0.22, ease: EASE_OUT }}
             style={{
-              background: "#fff",
+              background: "var(--bg-raised)",
               border: "1px solid var(--line)",
               borderRadius: "var(--radius-l)",
               padding: 28,
@@ -3735,7 +4089,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
             {!unlocked ? (
               <div>
                 <div className="label">Admin</div>
-                <h3 className="serif" style={{ fontSize: 28, color: "#111", margin: "10px 0 6px" }}>
+                <h3 className="serif" style={{ fontSize: 28, color: "var(--ink)", margin: "10px 0 6px" }}>
                   Enter admin password
                 </h3>
                 <p style={{ color: "var(--ink-3)", fontSize: 13, margin: "0 0 20px" }}>
@@ -3752,7 +4106,8 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                     width: "100%", padding: "12px 14px",
                     border: `1px solid ${err ? "var(--pale-red-ink)" : "var(--line)"}`,
                     borderRadius: "var(--radius-s)",
-                    background: err ? "var(--pale-red-bg)" : "#fff",
+                    background: err ? "var(--pale-red-bg)" : "var(--bg-raised)",
+                    color: "var(--ink)",
                     fontFamily: "var(--mono)", fontSize: 14,
                     outline: "none",
                     transition: "border-color 200ms ease, background 200ms ease",
@@ -3769,7 +4124,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 6 }}>
                   <div>
                     <div className="label">Admin panel</div>
-                    <h3 className="serif" style={{ fontSize: 28, color: "#111", margin: "6px 0 0" }}>
+                    <h3 className="serif" style={{ fontSize: 28, color: "var(--ink)", margin: "6px 0 0" }}>
                       Recorded sessions
                     </h3>
                   </div>
@@ -3777,11 +4132,11 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                 </div>
 
                 <div style={{
-                  padding: "10px 14px", background: "#F7F6F3",
+                  padding: "10px 14px", background: "var(--surface-fallback)",
                   border: "1px solid var(--line)", borderRadius: "var(--radius-s)",
                   fontSize: 12, color: "var(--ink-3)", margin: "16px 0 12px", lineHeight: 1.5,
                 }}>
-                  This panel lists sessions saved on <strong style={{ color: "#111" }}>this browser</strong>.
+                  This panel lists sessions saved on <strong style={{ color: "var(--ink)" }}>this browser</strong>.
                   {WEBHOOK_ENABLED && WEBHOOK_URL ? (
                     <> All sessions are also sent to the Google Sheet webhook — check the Sheet for the full cross-device log.</>
                   ) : (
@@ -3794,10 +4149,10 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                     display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
                     margin: "0 0 20px", padding: "10px 14px",
                     border: "1px dashed var(--line)", borderRadius: "var(--radius-s)",
-                    background: "#fff",
+                    background: "var(--bg-raised)",
                   }}>
                     <span style={{ fontSize: 12, color: "var(--ink-3)", flex: "1 1 200px", minWidth: 0 }}>
-                      Send a hardcoded test row to the webhook. Then check your Sheet — you should see a row with session_id starting <code className="mono" style={{ fontSize: 11, background: "#F2F1EE", padding: "1px 4px", borderRadius: 3 }}>test-webhook-…</code>
+                      Send a hardcoded test row to the webhook. Then check your Sheet — you should see a row with session_id starting <code className="mono" style={{ fontSize: 11, background: "var(--surface-muted)", padding: "1px 4px", borderRadius: 3 }}>test-webhook-…</code>
                     </span>
                     <Button size="sm" variant="secondary" onClick={runWebhookTest} disabled={testStatus === "sending"}>
                       {testStatus === "sending" ? "Sending…" : "Test webhook"}
@@ -3816,7 +4171,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                 )}
 
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-                  <span className="mono" style={{ fontSize: 13, color: "#111" }}>
+                  <span className="mono" style={{ fontSize: 13, color: "var(--ink)" }}>
                     {sortedSessions.length} session{sortedSessions.length === 1 ? "" : "s"}
                   </span>
                   <div style={{ flex: 1 }} />
@@ -3844,7 +4199,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13, color: "#111" }}>
+                          <div style={{ fontSize: 13, color: "var(--ink)" }}>
                             {new Date(s.created_at).toLocaleString()}
                             {s.finished && <Tag tone="green"> finished </Tag>}
                           </div>
@@ -3904,7 +4259,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                         <div style={{
                           marginTop: 12,
                           maxHeight: 220, overflowY: "auto",
-                          background: "#111", color: "#EAEAEA",
+                          background: "var(--surface-muted)", color: "var(--ink-2)",
                           borderRadius: "var(--radius-s)",
                           padding: 10,
                           fontFamily: "var(--mono)", fontSize: 11, lineHeight: 1.6,
@@ -3945,7 +4300,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
 const kbdStyle = {
   display: "inline-block",
   padding: "1px 5px",
-  background: "#F7F6F3",
+  background: "var(--surface-fallback)",
   border: "1px solid var(--line)",
   borderRadius: 3,
   fontFamily: "var(--mono)",
@@ -4403,7 +4758,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
           onClick={onClose}
           style={{
             position: "fixed", inset: 0, zIndex: 90,
-            background: "rgba(17,17,17,0.42)",
+            background: "var(--modal-scrim)",
             backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: 24,
@@ -4417,7 +4772,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: 0.22, ease: EASE_OUT }}
             style={{
-              background: "#fff",
+              background: "var(--bg-raised)",
               border: "1px solid var(--line)",
               borderRadius: "var(--radius-l)",
               padding: 24,
@@ -4430,7 +4785,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 16 }}>
               <div>
                 <div className="label">Share</div>
-                <h3 className="serif" style={{ fontSize: 28, color: "#111", margin: "6px 0 0" }}>
+                <h3 className="serif" style={{ fontSize: 28, color: "var(--ink)", margin: "6px 0 0" }}>
                   Your snapshot
                 </h3>
               </div>
@@ -4440,12 +4795,12 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
             {notEnough ? (
               <div style={{
                 padding: "36px 20px", textAlign: "center",
-                background: "#F7F6F3", border: "1px solid var(--line)", borderRadius: "var(--radius-m)",
+                background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-m)",
                 color: "var(--ink-3)", fontSize: 14, lineHeight: 1.55,
               }}>
                 Answer at least 5 questions to unlock your snapshot.
                 <div style={{ marginTop: 14 }}>
-                  <span className="mono" style={{ color: "#111" }}>{data.totalAnswered}</span>
+                  <span className="mono" style={{ color: "var(--ink)" }}>{data.totalAnswered}</span>
                   <span style={{ marginLeft: 6 }}>answered so far.</span>
                 </div>
               </div>
@@ -4453,7 +4808,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
               <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 20 }}>
                 {/* Preview */}
                 <div style={{
-                  background: "#F2F1EE", borderRadius: "var(--radius-m)",
+                  background: "var(--surface-muted)", borderRadius: "var(--radius-m)",
                   padding: 20, display: "flex", justifyContent: "center", alignItems: "center",
                   minHeight: 320,
                 }}>
@@ -4490,7 +4845,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
 
                 {/* Text preview */}
                 <div style={{
-                  padding: 14, background: "#F7F6F3", borderRadius: "var(--radius-s)",
+                  padding: 14, background: "var(--surface-fallback)", borderRadius: "var(--radius-s)",
                   border: "1px solid var(--line)",
                   fontFamily: "var(--mono)", fontSize: 12, color: "var(--ink-2)",
                   lineHeight: 1.6, whiteSpace: "pre-wrap",
@@ -4513,9 +4868,10 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
 
 export default function App() {
   const [state, dispatch, hydrated] = useAppState();
+  const answers = state.answers;
+  const { mode: themeMode, phase: themePhase, cycleTheme } = useTheme(answers);
   const { peers, source: peerSource, sheetState } = usePeerPool();
   const isMobile = useMediaQuery("(max-width: 639px)");
-  const answers = state.answers;
   const totalAnswered = Object.keys(answers).filter(k => answers[k] != null && answers[k] !== "").length;
   const admin = useAdminUnlock();
   const [shareOpen, setShareOpen] = useState(false);
@@ -4642,12 +4998,31 @@ export default function App() {
   const isWelcome = hydrated && (!state.hasSeenWelcome || state.screen === "welcome");
   if (!hydrated) {
     screenNode = (
-      <div style={{ minHeight: "50vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{
+        minHeight: "50vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        padding: "24px",
+      }}>
+        <div style={{ position: "absolute", top: isMobile ? 16 : 20, right: isMobile ? 18 : 24, zIndex: 5 }}>
+          <ThemeToggle mode={themeMode} phase={themePhase} onCycle={cycleTheme} />
+        </div>
         <div className="label">loading</div>
       </div>
     );
   } else if (isWelcome) {
-    screenNode = <WelcomeScreen dispatch={dispatch} peerCount={peers.length} peerSource={peerSource} />;
+    screenNode = (
+      <WelcomeScreen
+        dispatch={dispatch}
+        peerCount={peers.length}
+        peerSource={peerSource}
+        themeMode={themeMode}
+        themePhase={themePhase}
+        onToggleTheme={cycleTheme}
+      />
+    );
   } else if (state.screen === "hub") {
     screenNode = <CategoryHub state={state} dispatch={dispatch} />;
   } else if (state.screen === "question") {
@@ -4683,6 +5058,9 @@ export default function App() {
             peerSource={peerSource}
             peerCount={peers.length}
             onOpenSheetData={() => setSheetModalOpen(true)}
+            themeMode={themeMode}
+            themePhase={themePhase}
+            onToggleTheme={cycleTheme}
           />
         )}
         <div style={{ flex: 1 }}>
@@ -4701,7 +5079,7 @@ export default function App() {
 
         {!isWelcome && (
           <div style={{
-            background: "#fff",
+            background: "var(--bg-raised)",
             borderTop: "1px solid var(--line)",
             marginTop: 20,
           }}>

@@ -3,7 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-    <meta name="theme-color" content="#111111" />
+    <meta name="theme-color" content="#FBFBFA" />
+    <script>
+      (function () {
+        try {
+          var phase = localStorage.getItem("avg_io_theme_phase");
+          if (phase !== "light" && phase !== "dark" && phase !== "auto") phase = null;
+          if (!phase) {
+            var leg = localStorage.getItem("avg_io_theme");
+            if (leg === "dark") phase = "dark";
+            else if (leg === "light") phase = "light";
+            else phase = "auto";
+          }
+          var dark =
+            phase === "auto"
+              ? localStorage.getItem("avg_io_theme_last_computed") === "dark"
+              : phase === "dark";
+          if (dark) document.documentElement.classList.add("dark");
+          else document.documentElement.classList.remove("dark");
+        } catch (e) {}
+      })();
+    </script>
     <meta name="application-name" content="average.io" />
     <meta name="apple-mobile-web-app-title" content="average.io" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

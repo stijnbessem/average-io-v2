@@ -1,61 +1,1225 @@
 {
-  "categories": [
+  "questionnaire": [
     {
-      "id": "demographics",
+      "category": "Basic Info",
       "questions": [
-        { "id": "age", "label": "What is your age?", "type": "select", "options": ["18–24", "25–34", "35–44", "45–54", "55–64", "65+"] },
-        { "id": "gender", "label": "What is your gender?", "type": "select", "options": ["Male", "Female", "Non-binary", "Prefer not to say"] },
-        { "id": "country", "label": "What country do you live in?", "type": "select", "options": "dynamic_country_list" },
-        { "id": "city", "label": "What city size best describes where you live?", "type": "select", "options": ["Capital city", "Large city", "Medium city", "Small city/town", "Village/rural", "Prefer not to say"] },
-        { "id": "skin_color", "label": "What is your skin color?", "type": "select", "options": ["Very light", "Light", "Medium", "Olive", "Brown", "Dark", "Prefer not to say"] },
-        { "id": "dominant_hand", "label": "What is your dominant hand?", "type": "select", "options": ["Left", "Right", "Both"] }
+        {
+          "id": "age",
+          "question": "Age",
+          "options": [
+            { "value": "<18", "label": "<18 🧃" },
+            { "value": "18-24", "label": "18–24 🎓" },
+            { "value": "25-34", "label": "25–34 💼" },
+            { "value": "35-44", "label": "35–44 🏡" },
+            { "value": "45-54", "label": "45–54" },
+            { "value": "55-64", "label": "55–64" },
+            { "value": "65+", "label": "65+" }
+          ]
+        },
+        {
+          "id": "gender",
+          "question": "Gender",
+          "options": [
+            { "value": "male", "label": "Male ♂️" },
+            { "value": "female", "label": "Female ♀️" },
+            { "value": "non_binary", "label": "Non-binary ⚧️" },
+            { "value": "prefer_not", "label": "Prefer not to say 🤐" },
+            { "value": "other", "label": "Other" }
+          ]
+        },
+        {
+          "id": "region",
+          "question": "Where you at",
+          "options": [
+            { "value": "europe", "label": "Europe 🇪🇺" },
+            { "value": "north_america", "label": "North America 🌎" },
+            { "value": "south_america", "label": "South America 🌴" },
+            { "value": "asia", "label": "Asia 🌏" },
+            { "value": "africa", "label": "Africa 🌍" },
+            { "value": "oceania", "label": "Oceania 🐨" },
+            { "value": "middle_east", "label": "Middle East 🕌" },
+            { "value": "caribbean", "label": "Caribbean 🏝️" },
+            { "value": "split_life", "label": "Split between regions 🧳" }
+          ]
+        },
+        {
+          "id": "roots",
+          "question": "Where you're really from (vibes)",
+          "options": [
+            { "value": "born_here", "label": "Born & raised here 🏠" },
+            { "value": "moved_young", "label": "Moved young ✈️" },
+            { "value": "immigrant", "label": "Immigrant chapter 🧳" },
+            { "value": "third_culture", "label": "Third-culture soup 🌐" },
+            { "value": "refugee_displaced", "label": "Refugee / displaced chapter — heavy 🕊️" },
+            { "value": "rural_to_city", "label": "Small town → big city pipeline" },
+            { "value": "city_to_rural", "label": "Escaped the city for trees 🌲" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "skin_tone",
+          "question": "Skin tone (how you see you)",
+          "options": [
+            { "value": "very_fair", "label": "Very fair 🌨️" },
+            { "value": "light", "label": "Light" },
+            { "value": "medium", "label": "Medium" },
+            { "value": "tan", "label": "Tan / olive ☀️" },
+            { "value": "deep", "label": "Deep brown / black ✨" },
+            { "value": "changes_season", "label": "Seasonal shapeshifter 🦎" },
+            { "value": "prefer_not", "label": "Prefer not to say 🤐" }
+          ]
+        },
+        {
+          "id": "city_size",
+          "question": "Your concrete jungle level",
+          "options": [
+            { "value": "megacity", "label": "Megacity 🏙️" },
+            { "value": "mid", "label": "Mid-size city" },
+            { "value": "town", "label": "Town / suburb 🏘️" },
+            { "value": "rural", "label": "Countryside 🌾" },
+            { "value": "nomad", "label": "Nomad / always moving 🎒" },
+            { "value": "split", "label": "Split week — city + somewhere quiet" }
+          ]
+        },
+        {
+          "id": "living",
+          "question": "Living situation",
+          "options": [
+            { "value": "alone", "label": "Alone 🧍" },
+            { "value": "parents", "label": "With parents 🏠" },
+            { "value": "partner", "label": "With partner ❤️" },
+            { "value": "partner_kids", "label": "Partner + kids chaos 👶" },
+            { "value": "solo_parent", "label": "Solo parent mode 💪" },
+            { "value": "roommates", "label": "With roommates 🏘️" },
+            { "value": "multigen", "label": "Multigenerational household 🏚️" },
+            { "value": "other", "label": "Other" }
+          ]
+        },
+        {
+          "id": "siblings",
+          "question": "Sibling headcount",
+          "options": [
+            { "value": "0", "label": "Only child 👑" },
+            { "value": "1", "label": "One partner in crime" },
+            { "value": "2", "label": "Two" },
+            { "value": "3", "label": "Three — middle child lore" },
+            { "value": "4plus", "label": "4+ full house 👯" },
+            { "value": "step_half", "label": "It's complicated — steps / halves / blends" }
+          ]
+        },
+        {
+          "id": "family_vibe",
+          "question": "Family setup growing up",
+          "options": [
+            { "value": "nuclear", "label": "Classic nuclear 📷" },
+            { "value": "single_parent", "label": "Single parent strength 💪" },
+            { "value": "blended", "label": "Blended / step crew" },
+            { "value": "extended", "label": "Extended in one roof 🏚️" },
+            { "value": "foster_care", "label": "Foster / kinship care chapter" },
+            { "value": "mostly_absent", "label": "Figured it out mostly solo" },
+            { "value": "chosen", "label": "Chosen fam > blood" },
+            { "value": "prefer_not", "label": "Rather not say" }
+          ]
+        },
+        {
+          "id": "relationship",
+          "question": "Heart status",
+          "options": [
+            { "value": "single", "label": "Single & vibing" },
+            { "value": "dating", "label": "Dating 💬" },
+            { "value": "partnered", "label": "Partnered ❤️" },
+            { "value": "married", "label": "Married / locked in 💍" },
+            { "value": "open_poly", "label": "Open / poly — our rules 📜" },
+            { "value": "ldr", "label": "Long-distance brain rot 📱" },
+            { "value": "widowed", "label": "Widowed — gentle answer" },
+            { "value": "divorced", "label": "Divorced / done that arc" },
+            { "value": "complicated", "label": "It's complicated 🌀" },
+            { "value": "aro_ace_spec", "label": "Aro / ace / spec — labels evolve 💫" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "longest_relationship",
+          "question": "Longest relationship you've been in (roughly)",
+          "options": [
+            { "value": "never_serious", "label": "Never had a serious one" },
+            { "value": "lt3mo", "label": "Under 3 months" },
+            { "value": "3-6mo", "label": "3–6 months" },
+            { "value": "6-12mo", "label": "6–12 months" },
+            { "value": "1-2yr", "label": "1–2 years" },
+            { "value": "2-5yr", "label": "2–5 years" },
+            { "value": "5-10yr", "label": "5–10 years" },
+            { "value": "10plus", "label": "10+ years" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "partner_proximity",
+          "question": "Partner geography — how far is your person (if you have one)?",
+          "options": [
+            { "value": "na_single", "label": "N/A — single / solo era 🧍" },
+            { "value": "na_dating_around", "label": "N/A — dating around, no anchor label" },
+            { "value": "na_aro_ace", "label": "N/A — not centered on one partner vibe 💫" },
+            { "value": "same_home", "label": "Same home — daily collisions 🏠" },
+            { "value": "same_city", "label": "Same city — short commute love 🚲" },
+            { "value": "nearby_towns", "label": "Nearby towns — weekend loops 🚗" },
+            { "value": "same_region", "label": "Same region — hours apart sometimes 🗺️" },
+            { "value": "same_country_far", "label": "Same country — flight or long train ✈️" },
+            { "value": "ldr_domestic", "label": "Long-distance — same country, far apart 📱" },
+            { "value": "ldr_timezone_ok", "label": "International LDR — timezone annoying but workable 🌍" },
+            { "value": "ldr_timezone_hell", "label": "International LDR — timezone hell / rare overlap ⏰💀" },
+            { "value": "ldr_visa_math", "label": "International LDR — visa math is the third partner 🛂" },
+            { "value": "see_sometimes", "label": "Situationship / see them sometimes — calendar vague 🌀" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "chaos_tolerance",
+          "question": "How much life chaos can you carry?",
+          "options": [
+            { "value": "zero", "label": "Zero — I flatline if plans change 🫠" },
+            { "value": "low", "label": "Low — I need calm 🧘" },
+            { "value": "medium_low", "label": "Medium-low — spice on weekends only" },
+            { "value": "medium", "label": "Medium — some spice ok" },
+            { "value": "medium_high", "label": "Medium-high — I thrive in mild storms" },
+            { "value": "high", "label": "High — noise is fuel 🔊" },
+            { "value": "what_stability", "label": "Stability is a myth anyway 🎲" }
+          ]
+        }
       ]
     },
     {
-      "id": "body",
+      "category": "Body & Stats",
       "questions": [
-        { "id": "height", "label": "What is your height?", "type": "select", "options": ["Under 155 cm", "155–164 cm", "165–174 cm", "175–184 cm", "185–194 cm", "195+ cm"] },
-        { "id": "weight", "label": "What is your weight?", "type": "select", "options": ["Under 55 kg", "55–69 kg", "70–84 kg", "85–99 kg", "100–119 kg", "120+ kg"] },
-        { "id": "eye_color", "label": "What is your eye color?", "type": "select", "options": ["Brown", "Blue", "Green", "Hazel", "Grey", "Other"] },
-        { "id": "hair_color", "label": "What is your hair color?", "type": "select", "options": ["Black", "Brown", "Blonde", "Red", "Grey/White", "Other"] },
-        { "id": "tattoos", "label": "Do you have tattoos?", "type": "toggle" },
-        { "id": "tattoo_count", "label": "How many tattoos do you have?", "type": "select", "options": ["1", "2–3", "4–6", "7–10", "11+"] }
+        {
+          "id": "height",
+          "question": "Height",
+          "options": [
+            { "value": "<155", "label": "<155 cm" },
+            { "value": "155-164", "label": "155–164 cm" },
+            { "value": "165-174", "label": "165–174 cm" },
+            { "value": "175-184", "label": "175–184 cm" },
+            { "value": "185-194", "label": "185–194 cm" },
+            { "value": "195+", "label": "195+ cm 📏" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "weight",
+          "question": "Weight (ballpark)",
+          "options": [
+            { "value": "<50", "label": "<50 kg" },
+            { "value": "50-59", "label": "50–59 kg" },
+            { "value": "60-69", "label": "60–69 kg" },
+            { "value": "70-79", "label": "70–79 kg" },
+            { "value": "80-89", "label": "80–89 kg" },
+            { "value": "90-99", "label": "90–99 kg" },
+            { "value": "100+", "label": "100+ kg 💪" },
+            { "value": "fluctuates", "label": "Yo-yos hard — pick a lane 😮‍💨" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "build",
+          "question": "Build",
+          "options": [
+            { "value": "slim", "label": "Slim 🪶" },
+            { "value": "average", "label": "Average ⚖️" },
+            { "value": "athletic", "label": "Athletic 🏃" },
+            { "value": "muscular", "label": "Muscular 💪" },
+            { "value": "stocky", "label": "Stocky / compact 🧱" },
+            { "value": "curvy", "label": "Curvy / soft sculpt" },
+            { "value": "chubby", "label": "Soft / chubby 🍞" },
+            { "value": "plus", "label": "Plus-size — loud & proud ✨" },
+            { "value": "in_between", "label": "Between every label 🤷" }
+          ]
+        },
+        {
+          "id": "eye_color",
+          "question": "Eye color",
+          "options": [
+            { "value": "brown", "label": "Brown" },
+            { "value": "blue", "label": "Blue" },
+            { "value": "green", "label": "Green" },
+            { "value": "hazel", "label": "Hazel" },
+            { "value": "grey", "label": "Grey" },
+            { "value": "amber", "label": "Amber / honey 🍯" },
+            { "value": "hetero", "label": "Two different — main character ✨" },
+            { "value": "contacts", "label": "Mostly contacts / lenses 👁️" },
+            { "value": "changes_light", "label": "Changes in the light — pick one 😵‍💫" }
+          ]
+        },
+        {
+          "id": "face_shape",
+          "question": "Face shape (roughly)",
+          "options": [
+            { "value": "round", "label": "Round 🌕" },
+            { "value": "oval", "label": "Oval" },
+            { "value": "square", "label": "Square jaw 🧊" },
+            { "value": "heart", "label": "Heart / pointy chin 💗" },
+            { "value": "long", "label": "Long / oblong" },
+            { "value": "diamond", "label": "Diamond cheekbone era 💎" },
+            { "value": "unique", "label": "None of the boxes fit 😤" }
+          ]
+        },
+        {
+          "id": "hair",
+          "question": "Hair situation",
+          "options": [
+            { "value": "buzzed", "label": "Buzzed / super short" },
+            { "value": "short", "label": "Short" },
+            { "value": "medium", "label": "Medium flow" },
+            { "value": "long", "label": "Long 🌊" },
+            { "value": "bald", "label": "Bald & proud 🥚" },
+            { "value": "thinning", "label": "Thinning — we're honest" },
+            { "value": "wig_extensions", "label": "Wig / extensions sometimes ✨" },
+            { "value": "dyed", "label": "Dyed chaos 🌈" }
+          ]
+        },
+        {
+          "id": "activity",
+          "question": "Daily movement",
+          "options": [
+            { "value": "bed", "label": "Bed ↔ desk ↔ fridge only 🛋️" },
+            { "value": "sedentary", "label": "Barely move — desk job curse" },
+            { "value": "light", "label": "Some walking 🚶" },
+            { "value": "moderate", "label": "Regular activity 🏃" },
+            { "value": "high", "label": "Gym rat 🏋️" },
+            { "value": "manual_job", "label": "Physical job — paid to move 💼" }
+          ]
+        },
+        {
+          "id": "sleep",
+          "question": "Sleep hours (typical)",
+          "options": [
+            { "value": "<5", "label": "<5h 😵" },
+            { "value": "5-6", "label": "5–6h 😴" },
+            { "value": "6-7", "label": "6–7h" },
+            { "value": "7-8", "label": "7–8h 😌" },
+            { "value": "8-9", "label": "8–9h — luxury" },
+            { "value": "9+", "label": "9h+ bear mode 🐻" },
+            { "value": "chaos", "label": "So irregular I can't average it 🌀" }
+          ]
+        },
+        {
+          "id": "sleep_pattern",
+          "question": "Sleep pattern honesty",
+          "options": [
+            { "value": "early_bird", "label": "Early bird (suspicious) 🌅" },
+            { "value": "regular", "label": "Pretty regular" },
+            { "value": "weekend_reset", "label": "Weekday zombie / weekend catch-up" },
+            { "value": "night_owl", "label": "Night owl 🦉" },
+            { "value": "insomnia", "label": "Insomnia goblin 🌙" },
+            { "value": "shift", "label": "Shift work chaos" },
+            { "value": "baby_pet", "label": "Baby / pet wakes me — send help 🐕" }
+          ]
+        },
+        {
+          "id": "chronotype",
+          "question": "When are you actually alive?",
+          "options": [
+            { "value": "morning", "label": "Morning — 5am demon energy" },
+            { "value": "late_morning", "label": "Late morning — coffee first ☕" },
+            { "value": "mid", "label": "Midday human" },
+            { "value": "afternoon", "label": "Afternoon — second wind crew" },
+            { "value": "evening", "label": "Evening peak 🌆" },
+            { "value": "late_night", "label": "11pm–2am is my workshop 🛠️" },
+            { "value": "3am", "label": "3am is my golden hour 🕯️" },
+            { "value": "depends", "label": "Depends on the week — who knows" }
+          ]
+        },
+        {
+          "id": "penis_length",
+          "question": "Below the belt (rough, for guys)",
+          "options": [
+            { "value": "skip", "label": "Skip / not applicable ⏭️" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" },
+            { "value": "below_avg", "label": "Shy range 📉" },
+            { "value": "low_avg", "label": "Low-average — it's fine" },
+            { "value": "average", "label": "Solid average 📏" },
+            { "value": "above_avg", "label": "Above average 📈" },
+            { "value": "high", "label": "High tier — gravity concerns" },
+            { "value": "legend", "label": "Legend tier (sure, king) 👑" },
+            { "value": "grower_not_shower", "label": "Grower not shower — chart lies 📊" }
+          ],
+          "sensitive": true
+        },
+        {
+          "id": "bra_cup",
+          "question": "Cup size (rough, for gals)",
+          "options": [
+            { "value": "skip", "label": "Skip / not applicable ⏭️" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" },
+            { "value": "aa", "label": "AA" },
+            { "value": "a", "label": "A" },
+            { "value": "b", "label": "B" },
+            { "value": "c", "label": "C" },
+            { "value": "d", "label": "D" },
+            { "value": "dd_e", "label": "DD–E" },
+            { "value": "f_plus", "label": "F+ — bra is engineering" },
+            { "value": "binding", "label": "Binder / compression fit — cup N/A" },
+            { "value": "post_surgery", "label": "Surgery-adjusted ✨" }
+          ],
+          "sensitive": true
+        },
+        {
+          "id": "plastic_surgery",
+          "question": "Cosmetic / plastic surgery ever?",
+          "options": [
+            { "value": "never", "label": "Nope, factory settings ✨" },
+            { "value": "maybe", "label": "Maybe someday 🤔" },
+            { "value": "injectables", "label": "Injectables / tweak era 💉" },
+            { "value": "minor", "label": "Minor tweaks only" },
+            { "value": "revision", "label": "Revision / fix-up round 🔁" },
+            { "value": "major", "label": "Full storyline arc 🔪" },
+            { "value": "regret_reverse", "label": "Had work — reversed / regretted part of it" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ],
+          "sensitive": true
+        },
+        {
+          "id": "plastic_detail",
+          "question": "If tweaks — what zone?",
+          "options": [
+            { "value": "face", "label": "Face / skin / lift territory" },
+            { "value": "eyes", "label": "Eyes / lids / brows" },
+            { "value": "nose", "label": "Nose" },
+            { "value": "teeth", "label": "Teeth / smile cosmetic" },
+            { "value": "chest", "label": "Chest" },
+            { "value": "body", "label": "Body contour / lipo zone" },
+            { "value": "butt", "label": "Glutes / posterior chat 🍑" },
+            { "value": "hair", "label": "Hair transplant / hairline" },
+            { "value": "mix", "label": "Mix of areas" },
+            { "value": "prefer_not", "label": "Rather not elaborate 🤐" }
+          ],
+          "sensitive": true
+        }
       ]
     },
     {
-      "id": "digital",
+      "category": "Education",
       "questions": [
-        { "id": "phone_unlocks", "label": "Phone unlocks per day", "type": "select", "options": ["0–20", "21–50", "51–90", "91–140", "141–220", "220+"] },
-        { "id": "screen_time", "label": "Screen time per day", "type": "select", "options": ["Under 1h", "1–2h", "2–4h", "4–6h", "6–8h", "8h+"] },
-        { "id": "apps_installed", "label": "Apps installed", "type": "select", "options": ["0–25", "26–60", "61–110", "111–170", "171–240", "240+"] }
+        {
+          "id": "education_level",
+          "question": "Highest level",
+          "options": [
+            { "value": "none", "label": "Still in school / didn't finish basic" },
+            { "value": "basic", "label": "Basic school" },
+            { "value": "highschool", "label": "High school" },
+            { "value": "trade", "label": "Trade school 🔧" },
+            { "value": "associate", "label": "Associate / foundation 🪜" },
+            { "value": "bachelor", "label": "Bachelor 🎓" },
+            { "value": "master", "label": "Master 🧠" },
+            { "value": "professional", "label": "JD / MD / MBA-type professional degree ⚖️" },
+            { "value": "phd", "label": "PhD / doctorate 🧬" },
+            { "value": "self_taught", "label": "Mostly self-taught — school of life 📚" }
+          ]
+        },
+        {
+          "id": "education_field",
+          "question": "Field",
+          "options": [
+            { "value": "stem", "label": "STEM 🤖" },
+            { "value": "business", "label": "Business 💼" },
+            { "value": "arts", "label": "Arts / design 🎨" },
+            { "value": "social", "label": "Humanities / social 📚" },
+            { "value": "health", "label": "Health / care 🏥" },
+            { "value": "education", "label": "Education / teaching 🍎" },
+            { "value": "law_policy", "label": "Law / policy / gov" },
+            { "value": "trades_applied", "label": "Trades / applied hands-on 🔧" },
+            { "value": "mixed", "label": "Mixed / changed fields 🌀" },
+            { "value": "other", "label": "Other" }
+          ]
+        },
+        {
+          "id": "school_vibe",
+          "question": "School era mood",
+          "options": [
+            { "value": "hated", "label": "Hated it 💀" },
+            { "value": "survived", "label": "Survived, no trauma (lies)" },
+            { "value": "ok", "label": "Actually fine 🤷" },
+            { "value": "gleamed", "label": "Straight-A anxiety arc 📎" },
+            { "value": "nerd", "label": "Secret nerd hive 🐝" },
+            { "value": "social_school", "label": "Loved the people / clubs — not the homework" },
+            { "value": "dropout", "label": "Dropped out — still winning" },
+            { "value": "returned_later", "label": "Quit then came back older 🔄" }
+          ]
+        },
+        {
+          "id": "still_learning",
+          "question": "Still learning for fun?",
+          "options": [
+            { "value": "never", "label": "I'm done with books 📕❌" },
+            { "value": "sometimes", "label": "Sometimes a course" },
+            { "value": "often", "label": "Always something new 🧪" },
+            { "value": "cert_hunter", "label": "Certification hunter — LinkedIn sparkle ✨" },
+            { "value": "language", "label": "Languages on the side 🌍" },
+            { "value": "obsessed", "label": "YouTube university PhD 📺" }
+          ]
+        }
       ]
     },
     {
-      "id": "lifestyle",
+      "category": "Work",
       "questions": [
-        { "id": "sleep_hours", "label": "Sleep hours per night", "type": "select", "options": ["Under 5h", "5–6h", "6–7h", "7–8h", "8–9h", "9h+"] },
-        { "id": "water_intake", "label": "Water intake per day", "type": "select", "options": ["Under 1 L", "1–1.5 L", "1.6–2 L", "2.1–2.7 L", "2.8–3.5 L", "3.5+ L"] },
-        { "id": "coffee", "label": "Cups of coffee per day", "type": "select", "options": ["0", "1", "2", "3", "4–5", "6+"] },
-        { "id": "steps", "label": "Steps per day", "type": "select", "options": ["Under 2k", "2k–5k", "5k–8k", "8k–12k", "12k–16k", "16k+"] }
+        {
+          "id": "employment",
+          "question": "Status",
+          "options": [
+            { "value": "unemployed", "label": "Between gigs — searching 🔍" },
+            { "value": "student", "label": "Student 🎓" },
+            { "value": "part_time", "label": "Part-time puzzle 🧩" },
+            { "value": "employed", "label": "Full-time employed 💼" },
+            { "value": "self_employed", "label": "Self-employed 🚀" },
+            { "value": "freelance", "label": "Freelance — feast or famine 💸" },
+            { "value": "parent_leave", "label": "Parental / care leave 🍼" },
+            { "value": "disabled", "label": "Not working — health / disability 🫶" },
+            { "value": "retired", "label": "Retired — earned" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "income",
+          "question": "Income vibe",
+          "options": [
+            { "value": "negative", "label": "Negative net month — send help 💀" },
+            { "value": "very_low", "label": "Broke but breathing" },
+            { "value": "low", "label": "Tight but alive" },
+            { "value": "lower_mid", "label": "Lower-mid — ramen sometimes optional" },
+            { "value": "mid", "label": "Mid — bills mostly paid" },
+            { "value": "upper_mid", "label": "Upper-mid — breathing room 😮‍💨" },
+            { "value": "comfortable", "label": "Comfortable 😌" },
+            { "value": "high", "label": "Rich energy 💸" },
+            { "value": "dependent", "label": "Someone else's tax bracket — dependent era 💳" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "boss_energy",
+          "question": "Work mode",
+          "options": [
+            { "value": "ic", "label": "Individual contributor grind" },
+            { "value": "lead", "label": "I herd people 🐑" },
+            { "value": "exec", "label": "Exec / founder chaos 👔" },
+            { "value": "side_hustle", "label": "Side-hustle goblin" },
+            { "value": "unemployed_chill", "label": "Funemployed chill" },
+            { "value": "student_worker", "label": "Study + grind part-time 📚" },
+            { "value": "between", "label": "Between identities — ask again next quarter" }
+          ]
+        },
+        {
+          "id": "commute_soul",
+          "question": "Commute damage",
+          "options": [
+            { "value": "remote", "label": "Remote — touch grass sometimes" },
+            { "value": "hybrid", "label": "Hybrid blur" },
+            { "value": "onsite", "label": "On-site warrior 🚇" },
+            { "value": "long_haul", "label": "2h+ each way — podcast university 🎧" },
+            { "value": "na", "label": "N/A — student / retired / other" }
+          ]
+        }
       ]
     },
     {
-      "id": "micro",
+      "category": "Lifestyle",
       "questions": [
-        { "id": "alarms", "label": "Alarms per day", "type": "select", "options": ["0", "1", "2", "3–4", "5–7", "8+"] },
-        { "id": "snooze", "label": "Snooze presses", "type": "select", "options": ["0", "1", "2", "3–4", "5–7", "8+"] },
-        { "id": "tabs", "label": "Browser tabs open", "type": "select", "options": ["0–10", "11–25", "26–50", "51–100", "101–200", "200+"] },
-        { "id": "unread_emails", "label": "Unread emails", "type": "select", "options": ["0", "1–10", "11–50", "51–200", "201–1000", "1000+"] }
+        {
+          "id": "screen_time",
+          "question": "Screen time",
+          "options": [
+            { "value": "<2", "label": "<2h (liar?)" },
+            { "value": "2-4", "label": "2–4h" },
+            { "value": "4-6", "label": "4–6h" },
+            { "value": "6-8", "label": "6–8h" },
+            { "value": "8-10", "label": "8–10h — doomscroll PhD" },
+            { "value": "10+", "label": "10h+ — screen is my spine 📱" },
+            { "value": "work_fused", "label": "Can't split work vs leisure anymore 🫠" }
+          ]
+        },
+        {
+          "id": "routine",
+          "question": "Routine",
+          "options": [
+            { "value": "chaotic", "label": "Chaos 🎲" },
+            { "value": "loose", "label": "Loose" },
+            { "value": "structured", "label": "Some structure" },
+            { "value": "strict", "label": "Strict 📅" },
+            { "value": "aspire_fails", "label": "Aspires to routine — fails weekly 📉" },
+            { "value": "seasonal", "label": "Seasonal — winter ≠ summer brain" }
+          ]
+        },
+        {
+          "id": "coffee_habit",
+          "question": "Coffee habit",
+          "options": [
+            { "value": "none", "label": "Zero caffeine — wizard 🧙" },
+            { "value": "tea", "label": "Tea person in denial 🍵" },
+            { "value": "1", "label": "1 cup — civilized" },
+            { "value": "2-3", "label": "2–3 — functional" },
+            { "value": "4plus", "label": "4+ IV drip ☕" },
+            { "value": "energy_drinks", "label": "Energy drinks — different religion ⚡" },
+            { "value": "decaf", "label": "Decaf (respectfully why)" }
+          ]
+        },
+        {
+          "id": "entertainment",
+          "question": "Main entertainment diet",
+          "options": [
+            { "value": "film_tv", "label": "Films & series 🎬" },
+            { "value": "youtube", "label": "YouTube rabbit holes" },
+            { "value": "tiktok_shorts", "label": "Short-form brain melt 📲" },
+            { "value": "podcasts", "label": "Podcasts — pretend productivity 🎙️" },
+            { "value": "sports_watch", "label": "Sports watch party 📺" },
+            { "value": "live", "label": "Live music / gigs 🎤" },
+            { "value": "museums", "label": "Museums / galleries 🖼️" },
+            { "value": "reading", "label": "Reading — paper or e-ink 📖" },
+            { "value": "gaming", "label": "Gaming is life 🎮" },
+            { "value": "outdoors", "label": "Touch grass activities 🌲" },
+            { "value": "mixed", "label": "Rotating hyperfixations 🌀" }
+          ]
+        },
+        {
+          "id": "gaming_intensity",
+          "question": "Gaming intensity",
+          "options": [
+            { "value": "none", "label": "Don't game" },
+            { "value": "casual", "label": "Casual mobile 🐣" },
+            { "value": "party", "label": "Party / couch co-op 🎉" },
+            { "value": "regular", "label": "Regular — story games" },
+            { "value": "competitive", "label": "Ranked sweat 🔥" },
+            { "value": "speedrun", "label": "Speedrun / mastery degenerate ⏱️" },
+            { "value": "retro", "label": "Retro / emulation collector 👾" },
+            { "value": "prefer_not", "label": "Rather not say" }
+          ]
+        }
       ]
     },
     {
-      "id": "sexual",
+      "category": "Habits",
+      "questions": [
+        {
+          "id": "alcohol",
+          "question": "Alcohol",
+          "options": [
+            { "value": "never", "label": "Never — sober hero 🏅" },
+            { "value": "sober_recovery", "label": "Sober — recovery / choice 🫶" },
+            { "value": "rare", "label": "Rare 🍷" },
+            { "value": "social", "label": "Social 🍻" },
+            { "value": "weekly", "label": "Weekly rhythm" },
+            { "value": "few_week", "label": "A few times a week" },
+            { "value": "almost_daily", "label": "Almost daily glass / unwind" },
+            { "value": "frequent", "label": "Frequent — liver in training" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "smoking",
+          "question": "Smoking / vaping",
+          "options": [
+            { "value": "never", "label": "Never touched" },
+            { "value": "tried", "label": "Tried — cringe memory" },
+            { "value": "social_only", "label": "Social-only smoker — rare nights 🚬" },
+            { "value": "occasional", "label": "Occasionally" },
+            { "value": "regular", "label": "Regular cigarettes 🚬" },
+            { "value": "vape_only", "label": "Vape only 💨" },
+            { "value": "quit_recent", "label": "Quit recently — mint gum era 🍬" },
+            { "value": "quit_long", "label": "Quit years ago — smell haunts me" },
+            { "value": "cigar_pipe", "label": "Cigar / pipe hobby — fancy villain 🎩" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "substances_other",
+          "question": "Beyond booze — other stuff?",
+          "options": [
+            { "value": "sober", "label": "Sober squad — nothing else ✋" },
+            { "value": "sober_curious", "label": "Sober curious / mostly abstain 🌱" },
+            { "value": "cbd_only", "label": "CBD / chill legal only 🌿" },
+            { "value": "weed_rare", "label": "Weed rarely 🌿" },
+            { "value": "weed_regular", "label": "Weed often — herbal household" },
+            { "value": "edibles", "label": "Edibles > smoking — lung soft 🍫" },
+            { "value": "psychedelic_rare", "label": "Psychedelics — rare / ceremonial 🍄" },
+            { "value": "party_stack", "label": "Party stack nights (you know the vibe)" },
+            { "value": "stim_focus", "label": "Stim / focus stuff — productivity rabbit hole 💊" },
+            { "value": "rx_only", "label": "Only as prescribed 💊" },
+            { "value": "recovery", "label": "Recovery / former heavy — proud path 🫶" },
+            { "value": "nicotine_else", "label": "Nicotine without cigarettes — gum / patch / lozenge" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ],
+          "sensitive": true
+        }
+      ]
+    },
+    {
+      "category": "Health & Mishaps",
+      "questions": [
+        {
+          "id": "poop_frequency",
+          "question": "Bowel honesty — #2 per day-ish",
+          "options": [
+            { "value": "mystery", "label": "Mystery / irregular 🤫" },
+            { "value": "few_week", "label": "Few times a week — bloated lore" },
+            { "value": "lt1", "label": "Less than daily" },
+            { "value": "1", "label": "~1 — clockwork" },
+            { "value": "2", "label": "~2 — fiber pays off" },
+            { "value": "3plus", "label": "3+ — speedrun digestive" },
+            { "value": "ibs_life", "label": "IBS / GI saga — it's complicated 🌀" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "pee_frequency",
+          "question": "Bathroom trips (number one) per day",
+          "options": [
+            { "value": "few", "label": "Few — camel 🐪" },
+            { "value": "normal", "label": "Normal-ish (4–7)" },
+            { "value": "frequent", "label": "Frequent — hydration flex 💧" },
+            { "value": "hydrated", "label": "Hydrated — always peeing 💧" },
+            { "value": "constant", "label": "Constant — bladder suspicion" },
+            { "value": "night_pee", "label": "Night trips — sleep hates me 🌙" },
+            { "value": "prefer_not", "label": "Rather not say" }
+          ]
+        },
+        {
+          "id": "sick_per_year",
+          "question": "How sick are you per year?",
+          "options": [
+            { "value": "never", "label": "Basically never — suspicious 🛡️" },
+            { "value": "rarely", "label": "Rare sniffle — iron-ish immune" },
+            { "value": "1", "label": "One solid sick week" },
+            { "value": "2-3", "label": "2–3 rounds — normal human" },
+            { "value": "4-6", "label": "4–6 — daycare / petri dish life" },
+            { "value": "often", "label": "Often ill 🤒" },
+            { "value": "chronic", "label": "Chronic stuff — it's a saga" },
+            { "value": "long_covid_adjacent", "label": "Long-term post-viral fatigue adjacent 🫥" }
+          ]
+        },
+        {
+          "id": "broken_bone",
+          "question": "Ever broken a bone?",
+          "options": [
+            { "value": "never", "label": "Never — touch wood 🪵" },
+            { "value": "hairline", "label": "Hairline / stress fracture once" },
+            { "value": "once", "label": "Once — dumb story" },
+            { "value": "few", "label": "A few — sporty childhood" },
+            { "value": "multiple", "label": "Multiple — chaos magnet" },
+            { "value": "face_jaw", "label": "Face / jaw — orthodontic war zone 🦷" },
+            { "value": "prefer_not", "label": "Rather not say" }
+          ]
+        },
+        {
+          "id": "accident",
+          "question": "Bad accident / ER visit ever?",
+          "options": [
+            { "value": "nope", "label": "Nope — boring luck ✅" },
+            { "value": "minor_er", "label": "Minor ER — stitches / sprain arc" },
+            { "value": "minor", "label": "Minor — no overnight" },
+            { "value": "surgery_once", "label": "Surgery once — story for drinks 🏥" },
+            { "value": "major", "label": "Major — ICU / long recovery 🚑" },
+            { "value": "chronic_pain", "label": "Old accident → chronic pain sequel 🫠" },
+            { "value": "mental_after", "label": "Physical was ok — mental aftermath wasn't" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Travel & World",
+      "questions": [
+        {
+          "id": "holidays_per_year",
+          "question": "Trips / holidays per year",
+          "options": [
+            { "value": "hermit", "label": "Hermit — bed is Paris 🛏️" },
+            { "value": "staycations", "label": "Staycations only — budget soul" },
+            { "value": "1", "label": "One escape" },
+            { "value": "2-3", "label": "2–3 — healthy" },
+            { "value": "4-6", "label": "4–6 — passport gets exercise" },
+            { "value": "7plus", "label": "7+ — catch flights not feelings ✈️" },
+            { "value": "work_travel", "label": "Work flies me — vacation is accidental 🧳" }
+          ]
+        },
+        {
+          "id": "countries_visited",
+          "question": "Countries visited (rough count)",
+          "options": [
+            { "value": "0", "label": "0 — hometown hive 🐝" },
+            { "value": "1", "label": "1 country — mine" },
+            { "value": "2-5", "label": "2–5" },
+            { "value": "6-15", "label": "6–15 stamp collector" },
+            { "value": "16-30", "label": "16–30 nomad lite" },
+            { "value": "31-50", "label": "31–50 — counting is a hobby" },
+            { "value": "51plus", "label": "51+ — passport thick 🌍" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Personality",
+      "questions": [
+        {
+          "id": "personality_type",
+          "question": "You are",
+          "options": [
+            { "value": "introvert", "label": "Introvert 🐢" },
+            { "value": "ambivert", "label": "Ambivert ⚖️" },
+            { "value": "extrovert", "label": "Extrovert 🦜" },
+            { "value": "omnivert", "label": "Omnivert — coin flip hourly 🪙" },
+            { "value": "socially_selective", "label": "Introvert who performs extrovert for work 🎭" },
+            { "value": "depends_context", "label": "Depends on the room — stop asking 😤" }
+          ]
+        },
+        {
+          "id": "decision_style",
+          "question": "Decision style",
+          "options": [
+            { "value": "impulsive", "label": "Impulsive 🎲" },
+            { "value": "emotional", "label": "Emotional ❤️" },
+            { "value": "intuitive", "label": "Gut-first intuitive 🔮" },
+            { "value": "balanced", "label": "Balanced ⚖️" },
+            { "value": "logical", "label": "Logical spreadsheet brain 🧠" },
+            { "value": "analysis_paralysis", "label": "Analysis paralysis — decide tomorrow 📊" },
+            { "value": "delegator", "label": "I outsource decisions — committee era 👥" },
+            { "value": "panic_deadline", "label": "Panic decides at deadline ⏰" }
+          ]
+        },
+        {
+          "id": "social_battery",
+          "question": "Social battery",
+          "options": [
+            { "value": "dies_fast", "label": "Dies in 2 hours 🔋" },
+            { "value": "one_event", "label": "One event / weekend max — then cave 🏚️" },
+            { "value": "medium", "label": "Medium — weekend warrior" },
+            { "value": "recharge_alone", "label": "Fine at parties — must recharge solo after 🔌" },
+            { "value": "endless", "label": "Endless — feed me crowds" },
+            { "value": "depends", "label": "Depends who (honest)" },
+            { "value": "online_ok", "label": "Online social counts — IRL drains faster 💬" }
+          ]
+        },
+        {
+          "id": "risk_tolerance",
+          "question": "Risk appetite",
+          "options": [
+            { "value": "risk_averse", "label": "Risk-averse — backup of the backup 📁" },
+            { "value": "low", "label": "Low — I like plans 📋" },
+            { "value": "medium", "label": "Medium — calculated chaos" },
+            { "value": "high", "label": "High — send it 🪂" },
+            { "value": "adhd", "label": "What is consequence anyway" },
+            { "value": "financial_diff", "label": "Financial risk ≠ physical — stocks yes, skydiving no 📈" }
+          ]
+        },
+        {
+          "id": "favorite_colour",
+          "question": "Favorite colour (vibes)",
+          "options": [
+            { "value": "black_mono", "label": "Black / monochrome ⬛" },
+            { "value": "white_cream", "label": "White / cream minimal ⬜" },
+            { "value": "blue", "label": "Navy / blue calm 💙" },
+            { "value": "green", "label": "Green — nature coded 💚" },
+            { "value": "red_coral", "label": "Red / coral bold ❤️" },
+            { "value": "yellow_orange", "label": "Yellow / orange warm 🧡" },
+            { "value": "purple_lilac", "label": "Purple / lilac dream 💜" },
+            { "value": "pink", "label": "Pink blush 💗" },
+            { "value": "earth", "label": "Earth tones 🟤" },
+            { "value": "neon", "label": "Neon chaos ⚡" },
+            { "value": "rainbow_mood", "label": "Can't pick — rainbow mood 🌈" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "love_language",
+          "question": "Love language (how you feel loved)",
+          "options": [
+            { "value": "words", "label": "Words of affirmation 💬" },
+            { "value": "time", "label": "Quality time ⏱️" },
+            { "value": "touch", "label": "Physical touch 🤝" },
+            { "value": "acts", "label": "Acts of service 🧹" },
+            { "value": "gifts", "label": "Receiving gifts 🎁" },
+            { "value": "all_five", "label": "All five — balanced chaos ⚖️" },
+            { "value": "depends", "label": "Depends who — not one box 📦" },
+            { "value": "skeptic", "label": "Skeptic — labels are cringe 🤷" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "dating_types",
+          "question": "Types you're drawn to (dating)",
+          "options": [
+            { "value": "funny_chaotic", "label": "Funny / chaotic (we'll fix it later) 🎲" },
+            { "value": "soft_gentle", "label": "Soft / gentle — golden retriever energy 🐕" },
+            { "value": "ambitious", "label": "Ambitious / career laser 📈" },
+            { "value": "creative", "label": "Creative / artist brain 🎨" },
+            { "value": "gym_health", "label": "Gym / health obsessed (respectfully) 🏋️" },
+            { "value": "intellectual", "label": "Intellectual — debate me 🧠" },
+            { "value": "mysterious", "label": "Mysterious / low posting 🌑" },
+            { "value": "outdoors", "label": "Outdoors — touch-grass couple 🌲" },
+            { "value": "domestic_cozy", "label": "Domestic — cozy home dates 🏠" },
+            { "value": "party_social", "label": "Party — social battery match 🎉" },
+            { "value": "hot_mess_match", "label": "Hot mess matching my mess 🔥" },
+            { "value": "no_types", "label": "Don't do types — person over box 💫" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "the_ick",
+          "question": "What gives you the ick fastest",
+          "options": [
+            { "value": "mouth_sounds", "label": "Mouth sounds / chewing wrong 🫠" },
+            { "value": "clingy_texts", "label": "Clingy texts in the first 48h 📱" },
+            { "value": "rude_staff", "label": "Rude to wait staff 🍽️" },
+            { "value": "baby_voice", "label": "Baby voice unprovoked 👶" },
+            { "value": "crypto_hustle", "label": "Crypto / hustle lecture date 💸" },
+            { "value": "public_fighting", "label": "Fighting publicly for content 📹" },
+            { "value": "socks_mystery", "label": "Sock situation unexplained 🧦" },
+            { "value": "hygiene", "label": "Hygiene mystery / dirty nails 🤢" },
+            { "value": "mirroring", "label": "Too much mirroring — uncanny valley 🪞" },
+            { "value": "chronic_ick", "label": "Everything eventually — chronically icked 😵" },
+            { "value": "nothing", "label": "Nothing — brave or delulu ✨" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Hobbies",
+      "questions": [
+        {
+          "id": "hobby_count",
+          "question": "How many hobbies",
+          "options": [
+            { "value": "0", "label": "None 😶" },
+            { "value": "1", "label": "One hyperfixation only" },
+            { "value": "2", "label": "2 — manageable" },
+            { "value": "3-5", "label": "3–5" },
+            { "value": "6+", "label": "6+ — ADHD hobby stack" },
+            { "value": "serial", "label": "Serial hobbyist — rotate quarterly 🔁" }
+          ]
+        },
+        {
+          "id": "hobby_type",
+          "question": "Main hobby type",
+          "options": [
+            { "value": "passive", "label": "Chill consume 🎮" },
+            { "value": "creative", "label": "Creative 🎨" },
+            { "value": "maker", "label": "Maker / build physical stuff 🛠️" },
+            { "value": "intellectual", "label": "Brainy 🧠" },
+            { "value": "active", "label": "Active 🏃" },
+            { "value": "social", "label": "Social 🎉" },
+            { "value": "volunteer", "label": "Volunteer / community heart 🤝" },
+            { "value": "collector", "label": "Collecting — vinyl, sneakers, regrets 📦" }
+          ]
+        },
+        {
+          "id": "sport_kind",
+          "question": "Sport energy (if any)",
+          "options": [
+            { "value": "none", "label": "Sport is watching others sweat" },
+            { "value": "walk_yoga", "label": "Walk / yoga / gentle movement 🧘" },
+            { "value": "gym", "label": "Gym / weights 🏋️" },
+            { "value": "ball", "label": "Ball sports ⚽" },
+            { "value": "racket", "label": "Racket sports 🎾" },
+            { "value": "water", "label": "Water / swim 🏊" },
+            { "value": "snow", "label": "Snow / board sports 🏂" },
+            { "value": "combat", "label": "Combat / martial 🥊" },
+            { "value": "endurance", "label": "Run / bike endurance 🚴" },
+            { "value": "climb", "label": "Climb / boulder 🧗" },
+            { "value": "dance", "label": "Dance counts — cardio with rhythm 💃" }
+          ]
+        },
+        {
+          "id": "movies_you_like",
+          "question": "Movies you're into",
+          "options": [
+            { "value": "action_blockbuster", "label": "Action / blockbuster adrenaline 🎬" },
+            { "value": "indie_art", "label": "Indie / arthouse patience 🎞️" },
+            { "value": "horror", "label": "Horror — midnight brain 🩸" },
+            { "value": "romcom", "label": "Rom-com soft hours 💘" },
+            { "value": "scifi_fantasy", "label": "Sci-fi / fantasy lore deep 🚀" },
+            { "value": "comedy", "label": "Comedy — laugh track soul 😂" },
+            { "value": "docs_true_crime", "label": "Docs / true crime spiral 🔎" },
+            { "value": "animation_anime", "label": "Animation / anime counts ✨" },
+            { "value": "classics_rewatch", "label": "Classics — comfort rewatches only 🎥" },
+            { "value": "trending_chaos", "label": "Whatever's trending — chaotic picks 🌀" },
+            { "value": "rarely_films", "label": "Rarely films — I'm a series person 📺" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "tv_you_like",
+          "question": "TV you're into",
+          "options": [
+            { "value": "comedy_comfort", "label": "Comedy comfort 📺" },
+            { "value": "prestige_drama", "label": "Prestige drama suffering 🏆" },
+            { "value": "reality", "label": "Reality chaos 🍿" },
+            { "value": "crime_procedural", "label": "Crime / procedural bedtime 🔦" },
+            { "value": "scifi_fantasy_tv", "label": "Sci-fi / fantasy worldbuilding 🌌" },
+            { "value": "anime_tv", "label": "Anime seasons 🇯🇵" },
+            { "value": "docuseries", "label": "Docuseries rabbit hole 📼" },
+            { "value": "cooking_travel", "label": "Cooking / travel cozy 🧳" },
+            { "value": "sports", "label": "Sports — watch party religiously ⚽" },
+            { "value": "background_noise", "label": "Background noise — barely watching 👁️" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "books_you_like",
+          "question": "Books you're into",
+          "options": [
+            { "value": "fiction", "label": "Fiction novels mostly 📘" },
+            { "value": "nonfiction", "label": "Non-fiction brain food 📗" },
+            { "value": "fantasy_scifi", "label": "Fantasy / sci-fi stacks 🐉" },
+            { "value": "thriller", "label": "Thriller page-turner 🔪" },
+            { "value": "romance", "label": "Romance / spicy covers 💕" },
+            { "value": "self_help", "label": "Self-help / productivity guilt 📋" },
+            { "value": "memoir_essays", "label": "Memoir / essays ✍️" },
+            { "value": "audiobooks", "label": "Audiobooks — eyes rest 🎧" },
+            { "value": "graphic_manga", "label": "Graphic novels / manga 📚" },
+            { "value": "screens_won", "label": "Barely read — screens won 📱" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Mind & Mood",
       "sensitive": true,
       "questions": [
-        { "id": "partners_lifetime", "label": "Lifetime sexual partners", "type": "select", "options": ["0", "1", "2–4", "5–9", "10–19", "20+"] },
-        { "id": "frequency", "label": "Sexual activity per month", "type": "select", "options": ["0", "1–2", "3–5", "6–9", "10–15", "16+"] },
-        { "id": "anal", "label": "Anal sex experience", "type": "select", "options": ["Yes", "No", "Prefer not to say"] },
-        { "id": "protection", "label": "Protection usage", "type": "select", "options": ["Always", "Often", "Sometimes", "Never", "Prefer not to say"] }
+        {
+          "id": "mental_health_landscape",
+          "question": "Mental health plot — where are you at (honest buckets)?",
+          "options": [
+            { "value": "none_dx", "label": "No diagnosis — brain mostly behaves ✅" },
+            { "value": "suspect_not_dx", "label": "Strongly suspect something — not formally dx yet 🤔" },
+            { "value": "assessment_pending", "label": "In assessment / waiting list era 📋" },
+            { "value": "depression_anxiety", "label": "Depression / anxiety axis (GAD, panic, etc.) 🌧️" },
+            { "value": "adhd", "label": "ADHD / attention soup 🌀" },
+            { "value": "autism", "label": "Autism spectrum — self or dx 🧩" },
+            { "value": "adhd_asd_combo", "label": "Neurodivergent combo platter (ADHD + ASD vibes)" },
+            { "value": "bipolar_spectrum", "label": "Bipolar spectrum / mood cycles 🎢" },
+            { "value": "ptsd_trauma", "label": "PTSD / trauma-related stuff 🕯️" },
+            { "value": "ocd", "label": "OCD / intrusive thought loops 🔁" },
+            { "value": "eating_disorder", "label": "Eating disorder history — any type 🍽️" },
+            { "value": "bpd_traits", "label": "BPD traits / emotionally intense pattern 💔" },
+            { "value": "psychosis_spectrum", "label": "Psychosis-spectrum — treated / managed 🫶" },
+            { "value": "substance_mh", "label": "Substance use + mental health overlap — recovery included 🔄" },
+            { "value": "multiple_dx", "label": "Multiple diagnoses — chart is a novel 📚" },
+            { "value": "therapy_no_label", "label": "Therapy regular — still no neat label 🛋️" },
+            { "value": "rather_not_say", "label": "Rather not say 🤐" },
+            { "value": "humor_armor", "label": "Coping with memes only — details classified 😅" }
+          ]
+        },
+        {
+          "id": "mental_health_day_to_day",
+          "question": "Day-to-day — how much does it shape life right now?",
+          "options": [
+            { "value": "minimal", "label": "Minimal — background radio volume 🔈" },
+            { "value": "manageable", "label": "Manageable — routines / meds / therapy help ✔️" },
+            { "value": "waves", "label": "Comes in waves — good weeks / bad weeks 🌊" },
+            { "value": "often_hard", "label": "Often hard — still functioning-ish 💪" },
+            { "value": "disability_level", "label": "Disability-level impact — spoons are currency 🥄" },
+            { "value": "good_patch", "label": "In a rare good patch — knock wood 🪵" },
+            { "value": "crisis_adjacent", "label": "Crisis-adjacent lately — holding on 🆘" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "therapy_status",
+          "question": "Therapy / counseling — what's the vibe?",
+          "options": [
+            { "value": "never", "label": "Never been — fridge is my therapist 🧊" },
+            { "value": "tried_stopped", "label": "Tried — stopped / wrong fit / timing 🚪" },
+            { "value": "as_needed", "label": "As-needed episodes — not weekly religion" },
+            { "value": "monthly", "label": "Monthly-ish maintenance 🗓️" },
+            { "value": "weekly", "label": "Weekly regular — standing appointment energy 📆" },
+            { "value": "intensive", "label": "Intensive — IOP / DBT / group era 🏥" },
+            { "value": "online_apps", "label": "Mostly apps / online text therapy 📲" },
+            { "value": "faith_based", "label": "Faith-based counseling / pastoral 🕊️" },
+            { "value": "cant_access", "label": "Want it — access / money / waitlist blocked 💸" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "psychiatric_meds",
+          "question": "Psychiatric meds — ever / now? (zero judgment)",
+          "options": [
+            { "value": "never", "label": "Never — pills not part of story 💊❌" },
+            { "value": "past_only", "label": "Past — tapered off successfully / trial era ⏪" },
+            { "value": "ssri_snri", "label": "SSRI / SNRI lane 🌈" },
+            { "value": "mood_stabilizer", "label": "Mood stabilizer / lamotrigine-type vibes ⚡" },
+            { "value": "adhd_meds", "label": "ADHD stimulant / non-stim 🎯" },
+            { "value": "anti_anxiety_prn", "label": "Anti-anxiety PRN — as-needed chill pill 🆘" },
+            { "value": "antipsychotic_mood", "label": "Antipsychotic / mood combo — higher stakes meds 🧠" },
+            { "value": "sleep_meds", "label": "Sleep meds overlap — ambien rabbit hole adjacent 🌙" },
+            { "value": "cocktail", "label": "Cocktail — more than one prescribed mixologist 🧪" },
+            { "value": "supplements_only", "label": "OTC supplements only — jury out on science 🌿" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        },
+        {
+          "id": "neuro_self_id",
+          "question": "Neurotype self-ID (optional vibe check)",
+          "options": [
+            { "value": "allistic", "label": "Allistic — neurotypical-ish 📗" },
+            { "value": "adhd", "label": "ADHD 🌀" },
+            { "value": "autistic", "label": "Autistic 🧩" },
+            { "value": "dyslexic", "label": "Dyslexic / learning difference 📖" },
+            { "value": "dyspraxia", "label": "Dyspraxia / coordination lore 🤹" },
+            { "value": "combo", "label": "Combo ND platter 🍱" },
+            { "value": "questioning", "label": "Questioning / researching 🕵️" },
+            { "value": "na", "label": "Prefer not to use this frame — skip 🚫" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Private sparks",
+      "sensitive": true,
+      "questions": [
+        {
+          "id": "kink_fetish_radar",
+          "question": "Kink / fetish radar — fantasy lane (consenting-adults energy)",
+          "options": [
+            { "value": "skip_vanilla", "label": "Vanilla royalty — sprinkles optional 🍦" },
+            { "value": "mild_spice", "label": "Mild spice — toys / outfits sometimes 🎁" },
+            { "value": "romantic_only", "label": "Romantic-only horny — candles not chains 🕯️" },
+            { "value": "roleplay_light", "label": "Light roleplay — plot optional 🎭" },
+            { "value": "power_exchange_curious", "label": "Power exchange curious — still reading manuals ⛓️" },
+            { "value": "sub_lean", "label": "Sub-lean — likes direction 🫡" },
+            { "value": "dom_lean", "label": "Dom-lean — likes steering 🦁" },
+            { "value": "switch", "label": "Switch — coin flip per Tuesday 🔄" },
+            { "value": "brat_energy", "label": "Brat energy — consenting chaos 😈" },
+            { "value": "rope_restraint", "label": "Rope / restraint aesthetic — safety first 🪢" },
+            { "value": "impact_play", "label": "Impact play curious — negotiate first ✋" },
+            { "value": "praise_degrade_words", "label": "Praise / degradation wordplay only — theatre brain 🎙️" },
+            { "value": "exhibition_voyeur", "label": "Exhibition / voyeur fantasy — mostly in theory 👀" },
+            { "value": "group_fantasy", "label": "Group fantasy — theory > logistics 👥" },
+            { "value": "feet_respectfully", "label": "Feet respectfully 🦶" },
+            { "value": "body_worship", "label": "Body worship / praise kink 🙏" },
+            { "value": "latex_leather_aesthetic", "label": "Latex / leather / uniform aesthetic 🖤" },
+            { "value": "pet_play_light", "label": "Pet play — light / adults-only cosplay zone 🐾" },
+            { "value": "ageplay_adults_only", "label": "Age-play themes — strictly consenting adults only 🔞" },
+            { "value": "edge_play", "label": "Edgier bucket — only with trust + safewords 🧯" },
+            { "value": "fantasy_only", "label": "Mostly fantasy / fiction — real life is PG-13 📚" },
+            { "value": "ace_aego", "label": "Ace / aego / sex-indifferent — horny for lore not acts 💜" },
+            { "value": "still_exploring", "label": "Still exploring — label stuck on loading 🌀" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ],
+          "sensitive": true
+        },
+        {
+          "id": "sex_episodes_last_year",
+          "question": "Partnered sex-ish moments — last ~12 months (count however you define it)",
+          "options": [
+            { "value": "0_none", "label": "0 — dry spell / choice / not priority 🏜️" },
+            { "value": "0_ace", "label": "0 — ace / sex-not-on-menu vibes 💜" },
+            { "value": "1-3", "label": "1–3 — rare eclipse events 🌑" },
+            { "value": "4-12", "label": "4–12 — monthly-ish rhythm 📅" },
+            { "value": "13-24", "label": "13–24 — bi-weekly-ish energy 📆" },
+            { "value": "25-52", "label": "25–52 — weekly-ish 🐇" },
+            { "value": "53-104", "label": "53–104 — multiple times a week 🔥" },
+            { "value": "105+", "label": "105+ — endurance athlete / honeymoon algorithm 📈" },
+            { "value": "solo_primary", "label": "Solo counts more than partnered — honest 📳" },
+            { "value": "open_poly_math", "label": "Open / poly — body count math is a spreadsheet 📊" },
+            { "value": "lost_count", "label": "Lost count — ballpark impossible 🌀" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ],
+          "sensitive": true
+        },
+        {
+          "id": "sex_ideal_frequency",
+          "question": "Ideal world — how often you'd want partnered play (per month)",
+          "options": [
+            { "value": "0", "label": "0 — celibate peace / not interested 🧘" },
+            { "value": "lt1", "label": "<1 — rare special occasions 🎂" },
+            { "value": "1-2", "label": "1–2 — quality over quantity 🍷" },
+            { "value": "3-4", "label": "3–4 — steady simmer" },
+            { "value": "5-8", "label": "5–8 — healthy appetite 🍽️" },
+            { "value": "9-15", "label": "9–15 — frequent fuel stops ⛽" },
+            { "value": "16-25", "label": "16–25 — rabbit chapter 🐇" },
+            { "value": "26+", "label": "26+ — theoretical horny — logistics TBD 🚀" },
+            { "value": "depends_partner", "label": "Depends entirely on partner's bandwidth 🤝" },
+            { "value": "mood_cycle", "label": "Mood / cycle dependent — ask me weekly 📉" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ],
+          "sensitive": true
+        },
+        {
+          "id": "lifetime_partners_band",
+          "question": "Lifetime sexual partners — rough band (however you count)",
+          "options": [
+            { "value": "0", "label": "0 — none yet / waiting / ace path 🌱" },
+            { "value": "1", "label": "1 — one storyline 💍" },
+            { "value": "2-4", "label": "2–4 — small anthology 📗" },
+            { "value": "5-9", "label": "5–9 — chapter book 📘" },
+            { "value": "10-19", "label": "10–19 — busy seasons 📙" },
+            { "value": "20-39", "label": "20–39 — library card active 📚" },
+            { "value": "40-79", "label": "40–79 — statistic outlier energy 📊" },
+            { "value": "80+", "label": "80+ — spreadsheet retired 🏆" },
+            { "value": "lost_count", "label": "Lost count — memories fuzzy 🌀" },
+            { "value": "open_poly_blur", "label": "Open / poly — counting is philosophical 🤔" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ],
+          "sensitive": true
+        }
+      ]
+    },
+    {
+      "category": "Real Talk",
+      "sensitive": true,
+      "questions": [
+        {
+          "id": "criminal_record",
+          "question": "Criminal record",
+          "options": [
+            { "value": "clean", "label": "Clean ✅" },
+            { "value": "parking_traffic", "label": "Parking tickets only — meter trauma 🅿️" },
+            { "value": "traffic", "label": "Traffic / speeding — points on license 🚗" },
+            { "value": "admin_fines", "label": "Administrative / dumb fines only" },
+            { "value": "youth_sealed", "label": "Youth stuff — sealed / ancient history 🔒" },
+            { "value": "weed_past", "label": "Pot-era charges — past / different laws 🌿" },
+            { "value": "disorderly", "label": "Disorderly / drunk night (past) 🍺" },
+            { "value": "property", "label": "Theft / fraud / property (past) — not proud" },
+            { "value": "violence", "label": "Violence-related (past) — heavy truth" },
+            { "value": "dui", "label": "DUI / DWI chapter — sober now / working on it" },
+            { "value": "immigration", "label": "Immigration paperwork stuff — not 'crime' but scary 📄" },
+            { "value": "active_case", "label": "Active case — lawyer on speed dial ⚖️" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ],
+          "sensitive": true
+        },
+        {
+          "id": "cheated_partner",
+          "question": "Ever cheated on someone?",
+          "options": [
+            { "value": "never", "label": "Never — loyalty is the brand" },
+            { "value": "never_na", "label": "Never — haven't had serious relationships yet" },
+            { "value": "micro_gray", "label": "Grey zone — flirty texts / secret apps 🌫️" },
+            { "value": "emotional", "label": "Emotional affair — didn't touch, still hurt" },
+            { "value": "physical_once", "label": "Physical once — regret arc" },
+            { "value": "physical_more", "label": "More than once — past me was messy" },
+            { "value": "open_ok", "label": "Not cheating — we had explicit rules 📜" },
+            { "value": "poly_misunderstood", "label": "Miscommunication in open-ish setup — painful lesson" },
+            { "value": "prefer_not", "label": "Rather not say 🤐" }
+          ],
+          "sensitive": true
+        },
+        {
+          "id": "been_cheated",
+          "question": "Ever been cheated on?",
+          "options": [
+            { "value": "no", "label": "Nope — lucky or oblivious 😅" },
+            { "value": "emotional", "label": "Emotional cheating — found the thread 💬" },
+            { "value": "physical", "label": "Physical — confirmed 💔" },
+            { "value": "yes", "label": "Yes — full betrayal package" },
+            { "value": "poly_confusion", "label": "Boundary crossed in open/poly — hurt anyway 🌀" },
+            { "value": "unsure", "label": "Sus but unproven 🕵️" },
+            { "value": "rather_not_know", "label": "Probably rather not know 🙈" },
+            { "value": "prefer_not", "label": "Rather not say" }
+          ],
+          "sensitive": true
+        }
       ]
     }
   ]
