@@ -38,9 +38,9 @@ const DEPENDENCIES = {
     dependsOn: "plastic_surgery",
     showIf: [
       "Minor tweaks only",
-      "Injectables / tweak era 💉",
-      "Revision / fix-up round 🔁",
-      "Full storyline arc 🔪",
+      "Injectables / fillers",
+      "Revision / follow-up surgery",
+      "Major surgical work",
     ],
   },
 };
@@ -58,6 +58,7 @@ function flattenQuestions(raw) {
         cat,
         label: q.question,
         options: labels,
+        multi: Boolean(q.multi),
         sensitive: blockSensitive || Boolean(q.sensitive),
         ...dep,
       });
@@ -99,9 +100,25 @@ function downweightAvoid(opts, baseWeights) {
  * Plausible distributions: age/gender/region skew; bell-ish for long Likert-style lists;
  * sensitive blocks slightly more "rather not" via downweightAvoid (still answered).
  */
+/** 1–4 random distinct labels (matches multi-select UX). */
+function pickMultiDistinct(opts) {
+  const n = opts.length;
+  if (n === 0) return [];
+  const maxK = Math.min(4, n);
+  const k = 1 + Math.floor(Math.random() * maxK);
+  const ix = [...Array(n).keys()]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, k);
+  return ix.map((i) => opts[i]);
+}
+
 function pickAnswer(q, answers) {
   const opts = q.options;
   const n = opts.length;
+
+  if (q.multi && n > 0) {
+    return pickMultiDistinct(opts);
+  }
 
   if (q.id === "hairdresser_interval") {
     const w = [8, 14, 22, 24, 14, 6, 6, 4, 2];
@@ -115,11 +132,11 @@ function pickAnswer(q, answers) {
     const home = answers.pets_home || "";
     if (
       !home ||
-      home.includes("Plant era only") ||
-      home.includes("Allergic — fur") ||
-      home.includes("Rather not say 🤐")
+      home.includes("Plants only") ||
+      home.includes("Allergic to animals") ||
+      home.includes("Prefer not to say")
     ) {
-      const naOpts = opts.filter((o) => /N\/A — no pets|Petless but mentally|Rather not say 🤐/.test(o));
+      const naOpts = opts.filter((o) => /N\/A — no pets|Petless but mentally|Prefer not to say/.test(o));
       const pool = naOpts.length ? naOpts : opts;
       return pool[Math.floor(Math.random() * pool.length)];
     }
@@ -186,7 +203,7 @@ function buildSnapshot(i, flatQuestions) {
       value,
       category: meta.cat,
       label: meta.label,
-      type: "single",
+      type: meta.multi ? "multi" : "single",
     };
   }
 

@@ -200,18 +200,18 @@ const CATEGORY_UI_META = {
   relationships: { title: "Relationships & Family", blurb: "Partners, children, siblings.", accent: "blue" },
   living: { title: "Living & Finance", blurb: "Home and household.", accent: "yellow" },
   intimate: { title: "Intimate", blurb: "Private. Fully optional.", accent: "red" },
-  basic_info: { title: "Basic Info", blurb: "Who you are, where you land, family vibes.", accent: "blue" },
-  body_stats: { title: "Body & Stats", blurb: "Measurements, look, sleep honesty.", accent: "green" },
-  education: { title: "Education", blurb: "School era and field.", accent: "violet" },
-  work: { title: "Work", blurb: "Job mode and money mood.", accent: "yellow" },
-  habits: { title: "Habits", blurb: "Drinks, smokes, other substances.", accent: "red" },
-  health_mishaps: { title: "Health & Mishaps", blurb: "Body stats you don't post on IG.", accent: "green" },
-  travel_world: { title: "Travel & World", blurb: "Stamps, trips, wanderlust.", accent: "blue" },
-  personality: { title: "Personality", blurb: "How you decide and recharge.", accent: "violet" },
-  hobbies: { title: "Hobbies", blurb: "What you do when no one's paying.", accent: "yellow" },
-  real_talk: { title: "Real Talk", blurb: "Heavy stuff. All skippable.", accent: "red" },
-  mind_mood: { title: "Mind & Mood", blurb: "Brains are weird. Answer what feels safe.", accent: "violet" },
-  private_sparks: { title: "Private sparks", blurb: "Extra private. Skip anything you don’t vibe with.", accent: "red" },
+  basic_info: { title: "Basic Info", blurb: "Age, background, household — the basics.", accent: "blue" },
+  body_stats: { title: "Body & Stats", blurb: "Measurements, appearance, sleep.", accent: "green" },
+  education: { title: "Education", blurb: "Schooling, field, ongoing learning.", accent: "violet" },
+  work: { title: "Work", blurb: "Job, stress, hours, industry.", accent: "yellow" },
+  habits: { title: "Habits", blurb: "Alcohol, smoking, substances.", accent: "red" },
+  health_mishaps: { title: "Health & Mishaps", blurb: "Bodies, checkups, injuries.", accent: "green" },
+  travel_world: { title: "Travel & World", blurb: "Trips, passports, travel style.", accent: "blue" },
+  personality: { title: "Personality", blurb: "Decisions, energy, conflict style.", accent: "violet" },
+  hobbies: { title: "Hobbies", blurb: "Free time, media, sports.", accent: "yellow" },
+  real_talk: { title: "Real Talk", blurb: "Harder topics — skip anything you want.", accent: "red" },
+  mind_mood: { title: "Mind & Mood", blurb: "Mental health — only what feels safe.", accent: "violet" },
+  private_sparks: { title: "Private sparks", blurb: "Very personal — all optional.", accent: "red" },
 };
 
 const QUESTION_DEPENDENCIES = {
@@ -222,9 +222,9 @@ const QUESTION_DEPENDENCIES = {
     dependsOn: "plastic_surgery",
     showIf: [
       "Minor tweaks only",
-      "Injectables / tweak era 💉",
-      "Revision / fix-up round 🔁",
-      "Full storyline arc 🔪",
+      "Injectables / fillers",
+      "Revision / follow-up surgery",
+      "Major surgical work",
     ],
   },
 };
@@ -248,7 +248,7 @@ function normalizeQuestionnaireV2(raw) {
       questions: (block.questions || []).map((q) => ({
         id: q.id,
         label: q.question,
-        type: "select",
+        type: q.multi ? "multi" : "select",
         options: (q.options || []).map((o) => (typeof o === "string" ? o : o.label)),
         sensitive: Boolean(q.sensitive),
         global: typeof q.global === "string" ? q.global : "",
@@ -357,6 +357,7 @@ function titleCase(value) {
 }
 
 function mapQuestionType(question) {
+  if (question.type === "multi") return "multi";
   if (question.type === "select" && question.options === "dynamic_country_list") return "single";
   if (question.type === "select") return "single";
   if (question.type === "toggle") return "single";
@@ -512,16 +513,41 @@ function toMultiChoiceQuestion(question) {
 
   return {
     ...q,
-    type: "single",
+    type: q.type === "multi" ? "multi" : "single",
     options,
     optionRanges: ranges,
   };
 }
 
 function normalizeAnswerForQuestion(raw, question) {
-  if (raw == null || raw === "") return null;
   if (!question) return raw;
   const options = Array.isArray(question.options) ? question.options : [];
+  if (question.type === "multi") {
+    let arr = [];
+    if (Array.isArray(raw)) arr = raw;
+    else if (typeof raw === "string") {
+      const t = raw.trim();
+      if (t.startsWith("[")) {
+        try {
+          const p = JSON.parse(t);
+          if (Array.isArray(p)) arr = p;
+        } catch (_) {}
+      } else if (t.includes("||")) {
+        arr = t.split("||").map((s) => s.trim());
+      } else if (t) arr = [t];
+    }
+    const seen = new Set();
+    const out = [];
+    arr.forEach((item) => {
+      const lab = typeof item === "string" ? item.trim() : String(item);
+      if (!options.includes(lab) || seen.has(lab)) return;
+      seen.add(lab);
+      out.push(lab);
+    });
+    return out.length ? out : null;
+  }
+
+  if (raw == null || raw === "") return null;
   const asString = String(raw).trim();
   if (options.includes(asString)) return asString;
 
@@ -587,6 +613,12 @@ const QUESTIONS_BY_CAT = CATEGORIES.reduce((acc, c) => {
 }, {});
 const CATEGORY_BY_ID = Object.fromEntries(CATEGORIES.map(c => [c.id, c]));
 
+function answerIsFilled(val) {
+  if (val == null || val === "") return false;
+  if (Array.isArray(val)) return val.length > 0;
+  return true;
+}
+
 /* Should a question be shown given current answers? (handles dependencies) */
 function isQuestionVisible(q, answers) {
   if (!q.dependsOn) return true;
@@ -635,7 +667,19 @@ function generatePeer(rand) {
     if (q.dependsOn && (p[q.dependsOn] == null || !q.showIf.includes(p[q.dependsOn]))) {
       return;
     }
-    if (Array.isArray(q.options) && q.options.length > 0) p[q.id] = pick(rand, q.options);
+    if (!Array.isArray(q.options) || q.options.length === 0) return;
+    if (q.type === "multi") {
+      const opts = [...q.options];
+      const maxK = Math.min(4, opts.length);
+      const k = 1 + Math.floor(rand() * maxK);
+      const picks = [];
+      for (let i = 0; i < k && opts.length > 0; i++) {
+        picks.push(opts.splice(Math.floor(rand() * opts.length), 1)[0]);
+      }
+      p[q.id] = picks;
+      return;
+    }
+    p[q.id] = pick(rand, q.options);
   });
   return p;
 }
@@ -873,6 +917,65 @@ function computeCategoricalStats(peers, qid, userVal) {
   return { dist, userPct, userCount, mostCommon, n: total };
 }
 
+/** Peer cell may be a label, JSON array string, or array (multi-select). */
+function peerValueToMultiArray(v) {
+  if (v == null || v === "") return [];
+  if (Array.isArray(v)) return v.filter((x) => x != null && x !== "");
+  if (typeof v === "string") {
+    const t = v.trim();
+    if (t.startsWith("[")) {
+      try {
+        const p = JSON.parse(t);
+        if (Array.isArray(p)) return p.map((x) => String(x).trim()).filter(Boolean);
+      } catch (_) {}
+    }
+    if (t.includes("||")) return t.split("||").map((s) => s.trim()).filter(Boolean);
+    return [t];
+  }
+  return [];
+}
+
+function setsIntersect(a, b) {
+  const A = new Set(a);
+  for (let i = 0; i < b.length; i++) if (A.has(b[i])) return true;
+  return false;
+}
+
+/* Multi-select: per-option prevalence among respondents; overlap % shares ≥1 tag with user */
+function computeMultiCategoricalStats(peers, qid, userVal) {
+  const q = QUESTIONS_BY_ID[qid];
+  const userSet = Array.isArray(userVal) ? userVal : (userVal != null && userVal !== "" ? [userVal] : []);
+  if (!userSet.length) return null;
+  const optionList = Array.isArray(q?.options) ? q.options : [];
+  const counts = {};
+  let n = 0;
+  peers.forEach((p) => {
+    const arr = peerValueToMultiArray(p[qid]);
+    if (!arr.length) return;
+    n++;
+    const set = new Set(arr);
+    optionList.forEach((opt) => {
+      if (set.has(opt)) counts[opt] = (counts[opt] || 0) + 1;
+    });
+  });
+  if (n < 1) return null;
+  const dist = optionList
+    .map((opt) => ({ option: opt, n: counts[opt] || 0, pct: ((counts[opt] || 0) / n) * 100 }))
+    .filter((d) => d.n > 0)
+    .sort((a, b) => b.pct - a.pct);
+  let overlap = 0;
+  peers.forEach((p) => {
+    const arr = peerValueToMultiArray(p[qid]);
+    if (!arr.length) return;
+    if (setsIntersect(userSet, arr)) overlap++;
+  });
+  const overlapPct = (overlap / n) * 100;
+  const tagPcts = userSet.map((tag) => ((counts[tag] || 0) / n) * 100);
+  const userPct = tagPcts.length ? tagPcts.reduce((a, b) => a + b, 0) / tagPcts.length : 0;
+  const mostCommon = dist[0];
+  return { dist, userPct, overlapPct, mostCommon, n };
+}
+
 /* Per-answer rarity (0 = very common, 1 = very unique) */
 function answerRarity(peers, qid, userVal) {
   if (userVal == null) return null;
@@ -886,6 +989,11 @@ function answerRarity(peers, qid, userVal) {
     const dist = Math.abs(userVal - s.median) / range;
     return clamp(dist * 2.2, 0, 1);
   }
+  if (q.type === "multi") {
+    const s = computeMultiCategoricalStats(peers, qid, userVal);
+    if (!s) return null;
+    return clamp(1 - s.overlapPct / 100, 0, 1);
+  }
   const s = computeCategoricalStats(peers, qid, userVal);
   if (!s) return null;
   return clamp(1 - s.userPct / 100, 0, 1);
@@ -893,7 +1001,7 @@ function answerRarity(peers, qid, userVal) {
 
 /* Category uniqueness = mean rarity across answered questions in that category */
 function computeCategoryUniqueness(peers, answers, catId) {
-  const qs = QUESTIONS_BY_CAT[catId].filter(q => answers[q.id] != null && answers[q.id] !== "" && isQuestionVisible(q, answers));
+  const qs = QUESTIONS_BY_CAT[catId].filter(q => answerIsFilled(answers[q.id]) && isQuestionVisible(q, answers));
   if (qs.length === 0) return null;
   const rarities = qs.map(q => answerRarity(peers, q.id, answers[q.id])).filter(r => r != null);
   if (rarities.length === 0) return null;
@@ -925,6 +1033,14 @@ function comparisonPhrase(kind, peerStat) {
     if (peerStat.userPct >= 10) return `Less common — about ${share}% picked this.`;
     return `Uncommon — only around ${share}% of users chose this.`;
   }
+  if (kind === "multi") {
+    const o = peerStat.overlapPct;
+    const share = roundPct(o);
+    if (o >= 62) return `Heavy overlap — ${friendlyShare(o)} picked at least one of the same options you did.`;
+    if (o >= 38) return `Solid overlap — about ${share}% share one or more picks with you.`;
+    if (o >= 18) return `Selective overlap — roughly ${share}% touched one of your choices.`;
+    return `Distinct combo — only about ${share}% picked any of the same options.`;
+  }
   return "";
 }
 
@@ -933,7 +1049,7 @@ function buildRealityCheckItems(peers, answers) {
   Object.keys(answers).forEach((qid) => {
     const q = QUESTIONS_BY_ID[qid];
     const value = answers[qid];
-    if (!q || value == null || value === "" || !isQuestionVisible(q, answers)) return;
+    if (!q || !answerIsFilled(value) || !isQuestionVisible(q, answers)) return;
 
     if (["number", "slider"].includes(q.type)) {
       const stat = computeNumericStats(peers, qid, value);
@@ -979,6 +1095,25 @@ function buildRealityCheckItems(peers, answers) {
         responses: stat.n,
         tone,
         strength: Math.max(Math.abs(samePct - 50), Math.abs(uncommonPct - 50)),
+      });
+      return;
+    }
+
+    if (q.type === "multi") {
+      const stat = computeMultiCategoricalStats(peers, qid, value);
+      if (!stat) return;
+      const ov = roundPct(stat.overlapPct);
+      const agreementPct = ov;
+      const sentence = `${ov}% picked at least one of the same options as you.`;
+      const tone = ov >= 58 ? "positive" : ov <= 22 ? "rare" : "neutral";
+      items.push({
+        qid,
+        label: q.label,
+        agreementPct,
+        sentence,
+        responses: stat.n,
+        tone,
+        strength: Math.abs(ov - 50),
       });
     }
   });
@@ -1045,12 +1180,18 @@ function DistributionHistogram({ values, userValue, min, max, unit = "", accent 
   );
 }
 
+function optionMatchesUserChoice(option, userOption) {
+  if (userOption == null) return false;
+  if (Array.isArray(userOption)) return userOption.includes(option);
+  return userOption === option;
+}
+
 function HorizontalBars({ dist, userOption, accent = "var(--ink)" }) {
   const max = Math.max(...dist.map(d => d.pct), 1);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {dist.map((d, i) => {
-        const isUser = d.option === userOption;
+        const isUser = optionMatchesUserChoice(d.option, userOption);
         return (
           <div key={d.option} style={{ display: "grid", gridTemplateColumns: "minmax(100px, 1fr) 2.2fr 40px", gap: 10, alignItems: "center" }}>
             <div style={{
@@ -1088,7 +1229,7 @@ function Donut({ dist, userOption, accent = "var(--ink)", size = 120 }) {
     const large = end - start > Math.PI ? 1 : 0;
     const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start);
     const x2 = cx + r * Math.cos(end), y2 = cy + r * Math.sin(end);
-    const isUser = d.option === userOption;
+    const isUser = optionMatchesUserChoice(d.option, userOption);
     return { d: `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`, isUser, color: isUser ? accent : palette[i % palette.length], option: d.option, pct: d.pct };
   });
   const userSeg = segs.find(s => s.isUser);
@@ -1715,7 +1856,7 @@ function SheetDataModal({ open, onClose, sheetState }) {
                 Gathered peer rows
               </div>
             </div>
-            <Button size="sm" variant="ghost" onClick={onClose}>Close ×</Button>
+            <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
@@ -1797,16 +1938,16 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
           transition={{ duration: 0.6, delay: 0.08, ease: EASE_OUT }}
           className="serif"
           style={{ fontSize: "clamp(44px, 6.4vw, 76px)", margin: "48px 0 18px", color: "var(--ink)" }}>
-          See how you compare —<br/>
-          <span style={{ color: "var(--ink-3)" }}>locally, globally, uniquely.</span>
+          See how you compare<br/>
+          <span style={{ color: "var(--ink-3)" }}>to answers from real people.</span>
         </motion.h1>
 
         <motion.p {...FADE_UP}
           transition={{ duration: 0.6, delay: 0.16, ease: EASE_OUT }}
           style={{ fontSize: 17, color: "var(--ink-3)", maxWidth: 520, lineHeight: 1.55 }}>
-          Answer a few playful questions about yourself. We'll show you how common
-          or unusual you are, answer by answer. The more you share, the more the
-          mirror opens up.
+          Answer plain questions about your life and habits. We show how common or
+          unusual each answer is compared with everyone else. The more you answer,
+          the fuller your overview becomes.
         </motion.p>
 
         <motion.div {...FADE_UP}
@@ -1817,10 +1958,10 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
             dispatch({ type: "setCat", catId: "demographics", idx: 0 });
             dispatch({ type: "go", screen: "question" });
           }}>
-            Quick start →
+            Start questionnaire →
           </Button>
           <Button variant="secondary" onClick={() => { dispatch({ type: "seenWelcome" }); dispatch({ type: "go", screen: "hub" }); }}>
-            Choose categories
+            Browse categories
           </Button>
           <Button variant="ghost" onClick={() => { dispatch({ type: "seenWelcome" }); dispatch({ type: "go", screen: "overview" }); }}>
             Open overview
@@ -1840,8 +1981,8 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
 
         <div style={{ marginTop: 64, fontSize: 12, color: "var(--ink-4)", maxWidth: 520, lineHeight: 1.6 }}>
           {peerSource === "live"
-            ? "Comparisons are currently powered by live community submissions from the shared sheet."
-            : "Live community data is temporarily unavailable, so comparisons are using a seeded synthetic fallback peer pool."}
+            ? "Comparisons use live answers from the community dataset."
+            : "Community data isn’t available right now, so we’re using a built-in sample for comparison."}
         </div>
         </div>
       </div>
@@ -1852,20 +1993,20 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
 function WelcomeBenefits() {
   const items = [
     {
-      title: "See yourself in context",
-      body: "Compare your answers against real users and rounded global data — without turning it into a test.",
+      title: "Context, not a test",
+      body: "See how your answers line up with other people. No right or wrong—just distribution.",
     },
     {
-      title: "Answer only what you want",
-      body: "Skip, come back, edit anytime. Sensitive categories are fully optional.",
+      title: "You’re in control",
+      body: "Skip questions, go back, or edit answers anytime. Sensitive topics are optional.",
     },
     {
-      title: "Progressive reveal",
-      body: "Each answer unlocks richer charts, category insights, and your uniqueness score.",
+      title: "Results build as you go",
+      body: "Charts, category scores, and a simple “uniqueness” view appear as you answer more.",
     },
     {
-      title: "Private by default",
-      body: "Your answers stay on your device. No account, no tracking.",
+      title: "Stays on this device",
+      body: "No account. Your answers are stored locally in your browser unless you choose to share.",
     },
   ];
   return (
@@ -2052,14 +2193,14 @@ function CategoryHub({ state, dispatch }) {
   const { answers } = state;
   const cats = CATEGORIES.map(c => {
     const qs = QUESTIONS_BY_CAT[c.id].filter(q => isQuestionVisible(q, answers));
-    const answered = qs.filter(q => answers[q.id] != null && answers[q.id] !== "").length;
+    const answered = qs.filter(q => answerIsFilled(answers[q.id])).length;
     return { ...c, qs, answered, total: qs.length, pct: qs.length ? answered / qs.length : 0 };
   });
 
   const openCat = (catId) => {
     const cat = cats.find(c => c.id === catId);
     // Find first unanswered visible question, or start at 0
-    let idx = cat.qs.findIndex(q => answers[q.id] == null || answers[q.id] === "");
+    let idx = cat.qs.findIndex(q => !answerIsFilled(answers[q.id]));
     if (idx < 0) idx = 0;
     dispatch({ type: "setCat", catId, idx });
     dispatch({ type: "go", screen: "question" });
@@ -2068,12 +2209,12 @@ function CategoryHub({ state, dispatch }) {
   return (
     <PageShell>
       <motion.div {...FADE_UP}>
-        <span className="label">Step 1 · Pick your path</span>
+        <span className="label">Categories</span>
         <h2 className="serif" style={{ fontSize: 44, margin: "14px 0 10px", color: "var(--ink)" }}>
-          Choose a category to answer
+          Where do you want to start?
         </h2>
         <p style={{ color: "var(--ink-3)", fontSize: 15, maxWidth: 560, margin: 0 }}>
-          You can jump around. The more you answer, the more unlocks in your overview.
+          Jump between topics anytime. More answers unlock more detail on your overview.
         </p>
       </motion.div>
 
@@ -2096,7 +2237,7 @@ function CategoryHub({ state, dispatch }) {
                   </span>
                   <Tag tone={c.accent}>{c.title}</Tag>
                 </div>
-                {c.optional && <Tag tone="red">optional</Tag>}
+                {c.optional && <Tag tone="red">Optional</Tag>}
               </div>
               <div className="serif" style={{ fontSize: 26, color: "var(--ink)", margin: "18px 0 8px" }}>
                 {c.title}
@@ -2160,7 +2301,7 @@ function QuestionScreen({ state, dispatch, peers }) {
           </h2>
           <p style={{ color: "var(--ink-3)", marginBottom: 32 }}>
             {nextCat
-              ? `See your comparisons, continue to ${nextCat.title}, or pick another category.`
+              ? `Open your overview, continue to ${nextCat.title}, or choose another category.`
               : "You've finished every category. Take a look at your full overview."}
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -2181,7 +2322,7 @@ function QuestionScreen({ state, dispatch, peers }) {
   }
 
   const value = state.answers[q.id];
-  const canNext = value != null && value !== "";
+  const canNext = answerIsFilled(value);
   const setValue = (v) => dispatch({ type: "answer", qid: q.id, value: v });
 
   const goToNextQuestion = () => {
@@ -2207,6 +2348,10 @@ function QuestionScreen({ state, dispatch, peers }) {
       previewKind = "categorical";
       previewStats = computeCategoricalStats(peers, q.id, value);
       if (previewStats) previewCopy = comparisonPhrase("categorical", previewStats);
+    } else if (q.type === "multi") {
+      previewKind = "multi";
+      previewStats = computeMultiCategoricalStats(peers, q.id, value);
+      if (previewStats) previewCopy = comparisonPhrase("multi", previewStats);
     }
   }
 
@@ -2235,9 +2380,15 @@ function QuestionScreen({ state, dispatch, peers }) {
             {q.label}
           </h2>
 
+          {q.type === "multi" && (
+            <p style={{ fontSize: 15, color: "var(--ink-3)", margin: "-12px 0 28px", lineHeight: 1.45, maxWidth: 560 }}>
+              Select all that apply. Click or tap to turn each option on or off.
+            </p>
+          )}
+
           {q.sensitive && (
             <div style={{ marginBottom: 24 }}>
-              <Tag tone="red">Sensitive · skippable</Tag>
+              <Tag tone="red">Sensitive · optional</Tag>
             </div>
           )}
 
@@ -2274,7 +2425,7 @@ function QuestionScreen({ state, dispatch, peers }) {
                   borderRadius: "var(--radius-m)",
                   display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
                 }}>
-                  <span className="label">Live comparison</span>
+                  <span className="label">Comparison preview</span>
                   <span style={{ fontSize: 14, color: "var(--ink)" }}>{previewCopy}</span>
                   {previewKind === "numeric" && previewStats && (
                     <span style={{ marginLeft: "auto" }}>
@@ -2303,7 +2454,7 @@ function QuestionScreen({ state, dispatch, peers }) {
               onClick={() => dispatch({ type: "go", screen: "overview" })}
               style={{ justifyContent: "center", alignSelf: "center" }}
             >
-              View comparisons
+              View overview
             </Button>
           </>
         ) : (
@@ -2314,7 +2465,7 @@ function QuestionScreen({ state, dispatch, peers }) {
             <Button variant="ghost" onClick={onPrev}>← Back</Button>
             <div style={{ display: "flex", gap: 8 }}>
               <Button variant="quiet" onClick={() => dispatch({ type: "go", screen: "overview" })}>
-                View comparisons
+                View overview
               </Button>
               <Button variant="secondary" onClick={onSkip}>Skip</Button>
               <Button onClick={goToNextQuestion} disabled={!canNext}>
@@ -2329,7 +2480,36 @@ function QuestionScreen({ state, dispatch, peers }) {
   );
 }
 
+function MultiSelect({ options, value, onChange }) {
+  const selected = Array.isArray(value) ? value : [];
+  const toggle = (opt) => {
+    const set = new Set(selected);
+    if (set.has(opt)) set.delete(opt);
+    else set.add(opt);
+    onChange([...set]);
+  };
+  const columns = options.length > 8 ? 2 : 1;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: 10 }}>
+      {options.map((opt) => (
+        <Chip key={opt} active={selected.includes(opt)} onClick={() => toggle(opt)}>
+          {opt}
+        </Chip>
+      ))}
+    </div>
+  );
+}
+
 function AnswerInput({ q, value, onChange, onAnswered = null }) {
+  if (q.type === "multi") {
+    return (
+      <MultiSelect
+        options={q.options || []}
+        value={value}
+        onChange={onChange}
+      />
+    );
+  }
   return (
     <SingleSelect
       options={q.options || []}
@@ -2347,7 +2527,7 @@ function AnswerInput({ q, value, onChange, onAnswered = null }) {
 
 function OverviewDashboard({ state, dispatch, peers, onShare }) {
   const { answers, segment } = state;
-  const totalAnswered = Object.keys(answers).filter(k => answers[k] != null && answers[k] !== "").length;
+  const totalAnswered = Object.keys(answers).filter(k => answerIsFilled(answers[k])).length;
   const segmentedPeers = useMemo(() => segmentPeers(peers, answers, segment), [peers, answers, segment]);
   const prefersReducedMotion = useReducedMotion();
   const [isUnlockedForVisit, setIsUnlockedForVisit] = useState(false);
@@ -2410,11 +2590,11 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
 
   // Snapshot metrics
   const catsStarted = CATEGORIES.filter(c =>
-    QUESTIONS_BY_CAT[c.id].some(q => answers[q.id] != null && answers[q.id] !== "")
+    QUESTIONS_BY_CAT[c.id].some(q => answerIsFilled(answers[q.id]))
   ).length;
   const catsCompleted = CATEGORIES.filter(c => {
     const vis = QUESTIONS_BY_CAT[c.id].filter(q => isQuestionVisible(q, answers));
-    return vis.length > 0 && vis.every(q => answers[q.id] != null && answers[q.id] !== "");
+    return vis.length > 0 && vis.every(q => answerIsFilled(answers[q.id]));
   }).length;
   const localUnlocked = Object.keys(answers).filter(qid => {
     const q = QUESTIONS_BY_ID[qid];
@@ -2455,7 +2635,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
         aria-hidden={paywallActive}
       >
       <motion.div {...FADE_UP}>
-        <span className="label">Your mirror</span>
+        <span className="label">Results</span>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", gap: 20, marginTop: 10 }}>
           <h2 className="serif" style={{ fontSize: 48, margin: 0, color: "var(--ink)" }}>
             Overview
@@ -2466,10 +2646,10 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                 value={segment}
                 onChange={(v) => dispatch({ type: "setSegment", segment: v })}
                 options={[
-                  { value: "all", label: "All users" },
+                  { value: "all", label: "Everyone" },
                   { value: "gender", label: "Same gender" },
-                  { value: "age", label: "Same age band" },
-                  { value: "age_gender", label: "Age + gender" },
+                  { value: "age", label: "Same age range" },
+                  { value: "age_gender", label: "Same age and gender" },
                   { value: "country", label: "Same country" },
                 ]}
               />
@@ -2486,16 +2666,16 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
       }}>
         <SnapshotCard label="Answered" value={totalAnswered} sub={`of ${QUESTIONS.length} questions`} />
         <SnapshotCard label="Categories started" value={catsStarted} sub={`${catsCompleted} complete`} />
-        <SnapshotCard label="Local comparisons" value={localUnlocked} sub="unlocked" />
+        <SnapshotCard label="Answers compared" value={localUnlocked} sub="included in charts" />
         <SnapshotCard label="Global benchmarks"
           value={Object.keys(answers).filter(qid => QUESTIONS_BY_ID[qid]?.global).length}
-          sub="rounded summaries" />
+          sub="brief stats" />
         <SnapshotCard
           label="Uniqueness"
           value={overallUniq != null ? `${Math.round(overallUniq * 100)}` : "—"}
-          sub={overallUniq != null ? labelForUniqueness(overallUniq) : "answer more to reveal"}
+          sub={overallUniq != null ? labelForUniqueness(overallUniq) : "Answer more to see your score"}
           accent
-          info="Average rarity of your answers across all categories. 0–100, higher means fewer people answer like you."
+          info="Average rarity of your answers across categories compared with the peer group you selected (0–100). Higher means fewer people answered like you overall."
         />
       </div>
 
@@ -2538,12 +2718,12 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
       <div style={{ marginTop: 38 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 18 }}>
           <h3 className="serif" style={{ fontSize: 26, color: "var(--ink)", margin: 0 }}>Reality check</h3>
-          <span className="label">strongest signals first</span>
+          <span className="label">Strongest signals first</span>
         </div>
         {realityItems.length === 0 ? (
           <Card padding={18}>
             <div style={{ fontSize: 14, color: "var(--ink-3)" }}>
-              Answer a few more questions to unlock quick comparison highlights.
+              Answer a few more questions to see standout comparisons here.
             </div>
           </Card>
         ) : (
@@ -2639,11 +2819,10 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
               >
                 <div style={{ display: "grid", gap: 14 }}>
                   <div className="serif" style={{ color: "var(--ink)", fontSize: 26, lineHeight: 1.1 }}>
-                    Unlock full overview
+                    Unlock the full overview
                   </div>
                   <div style={{ color: "var(--ink-3)", fontSize: 14, maxWidth: 640 }}>
-                    Get the complete picture for <strong style={{ color: "var(--ink)" }}>just €1</strong> and help keep average.io independent.
-                    Your support funds new questions, cleaner comparisons, and better weekly updates.
+                    Pay <strong style={{ color: "var(--ink)" }}>€1</strong> once (demo checkout) to remove the blur and support hosting and updates.
                   </div>
                   <div
                     style={{
@@ -2658,20 +2837,20 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
                       maxWidth: 640,
                     }}
                   >
-                    <div><strong style={{ color: "var(--ink)" }}>What you unlock:</strong></div>
-                    <div>• Full category breakdowns and deeper reality-check signals</div>
-                    <div>• Stronger uniqueness insights as your answers grow</div>
-                    <div>• Thousands of additional data comparisons unlocked across categories</div>
+                    <div><strong style={{ color: "var(--ink)" }}>Includes:</strong></div>
+                    <div>• Full category breakdowns and the reality-check list</div>
+                    <div>• Uniqueness scores that stabilize as you answer more</div>
+                    <div>• Every comparison unlocked for all categories you’ve answered</div>
                   </div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
                     <Button onClick={startStripeDemo} disabled={isStripeLoading}>
-                      {isStripeLoading ? "Opening Stripe demo..." : "Pay €1 (Stripe demo)"}
+                      {isStripeLoading ? "Opening checkout…" : "Pay €1 (demo checkout)"}
                     </Button>
                     <Button variant="secondary" onClick={() => releasePaywallWithReverseStack()}>
-                      Bypass paywall (demo)
+                      Continue without paying (demo)
                     </Button>
                     <Button variant="ghost" onClick={() => dispatch({ type: "go", screen: "hub" })}>
-                      Back to questions
+                      Back to questionnaire
                     </Button>
                   </div>
                 </div>
@@ -2687,11 +2866,11 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
 /* Friendly explainer for what the uniqueness numbers mean */
 function UniquenessExplainer() {
   const tiers = [
-    { range: "0–20", label: "Very common", note: "your answers line up with the crowd" },
-    { range: "20–40", label: "A bit above average", note: "you nudge away from the middle here and there" },
-    { range: "40–60", label: "Somewhat uncommon", note: "a few answers set you apart" },
-    { range: "60–80", label: "Rare", note: "you're clearly your own shape" },
-    { range: "80–100", label: "Highly unique", note: "almost nobody answers quite like you" },
+    { range: "0–20", label: "Very common", note: "most answers are close to the average" },
+    { range: "20–40", label: "A bit above average", note: "a few answers drift from the middle" },
+    { range: "40–60", label: "Somewhat uncommon", note: "several answers are less typical" },
+    { range: "60–80", label: "Rare", note: "your mix of answers is unusual" },
+    { range: "80–100", label: "Highly unique", note: "very few people answer this similarly overall" },
   ];
   return (
     <motion.div
@@ -2710,12 +2889,12 @@ function UniquenessExplainer() {
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <span className="label">What is uniqueness?</span>
             <InfoTip align="left">
-              Calculated as the average rarity of your answers within a category — compared to the current segment. Higher = answers that fewer people share.
+              For each category, we look at how common or rare your answers are, then average that. The filter you pick (e.g. same age) changes who you’re compared with. Higher = less common overall.
             </InfoTip>
           </div>
           <div style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.55 }}>
-            A friendly 0–100 score that tells you how far your answers drift from the middle of the pack.
-            Not a judgment — just a mirror. Think of it as the texture of your quirks.
+            A 0–100 score for how far your overall pattern sits from the most common mix of answers.
+            It’s descriptive, not a grade.
           </div>
         </div>
 
@@ -2767,10 +2946,10 @@ function SnapshotCard({ label, value, sub, accent, info }) {
 
 function StageHint({ stage, totalAnswered, dispatch }) {
   const hints = [
-    { need: 5, copy: "Answer a few more to unlock your first local comparisons." },
-    { need: 10, copy: "Keep going — charts and category distributions unlock at 10 answers." },
-    { need: 20, copy: "Uniqueness scoring gets richer as you cross 20 answers." },
-    { need: 45, copy: "Full overview unlocked. Edit any answer from its category detail." },
+    { need: 5, copy: "Add a few more answers to turn on basic comparison charts." },
+    { need: 10, copy: "At 10 answers, category charts and distributions open up." },
+    { need: 20, copy: "After 20 answers, the uniqueness view is more reliable." },
+    { need: 45, copy: "You’ve unlocked the full overview. You can still edit any answer from a category." },
   ];
   const hint = hints[stage];
   if (!hint) return null;
@@ -2778,7 +2957,7 @@ function StageHint({ stage, totalAnswered, dispatch }) {
   return (
     <Card padding={18} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
       <div>
-        <div className="label">Progressive reveal</div>
+        <div className="label">Progress</div>
         <div style={{ fontSize: 15, color: "var(--ink)", marginTop: 6, maxWidth: 600 }}>
           {hint.copy} {remaining > 0 && <span style={{ color: "var(--ink-3)" }}>{remaining} to go.</span>}
         </div>
@@ -2790,7 +2969,7 @@ function StageHint({ stage, totalAnswered, dispatch }) {
 
 function CategoryCard({ cat, answers, peers, onOpen }) {
   const vis = QUESTIONS_BY_CAT[cat.id].filter(q => isQuestionVisible(q, answers));
-  const answered = vis.filter(q => answers[q.id] != null && answers[q.id] !== "");
+  const answered = vis.filter(q => answerIsFilled(answers[q.id]));
   const pct = vis.length ? answered.length / vis.length : 0;
   const uniq = computeCategoryUniqueness(peers, answers, cat.id);
   const preview = answered[0];
@@ -2800,6 +2979,9 @@ function CategoryCard({ cat, answers, peers, onOpen }) {
     if (["number", "slider"].includes(previewQ.type)) {
       const s = computeNumericStats(peers, previewQ.id, answers[previewQ.id]);
       if (s) previewText = `${previewQ.label.replace(/\?$/, "")}: ${comparisonPhrase("numeric", s)}`;
+    } else if (previewQ.type === "multi") {
+      const s = computeMultiCategoricalStats(peers, previewQ.id, answers[previewQ.id]);
+      if (s) previewText = `${previewQ.label.replace(/\?$/, "")}: ${comparisonPhrase("multi", s)}`;
     } else {
       const s = computeCategoricalStats(peers, previewQ.id, answers[previewQ.id]);
       if (s) previewText = `${previewQ.label.replace(/\?$/, "")}: ${comparisonPhrase("categorical", s)}`;
@@ -2824,7 +3006,7 @@ function CategoryCard({ cat, answers, peers, onOpen }) {
         WebkitBoxOrient: "vertical",
         overflow: "hidden",
       }}>
-        {answered.length === 0 ? "Not answered yet — start to unlock comparisons." : previewText || "Tap to see detailed comparisons."}
+        {answered.length === 0 ? "No answers in this category yet." : previewText || "Open for charts and per-question detail."}
       </div>
       <div style={{ marginTop: "auto", paddingTop: 18 }}>
         <ProgressBar value={answered.length} max={vis.length} />
@@ -2918,7 +3100,7 @@ function CategoryDetail({ state, dispatch, peers }) {
 
 function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
   const [editing, setEditing] = useState(false);
-  const unanswered = value == null || value === "";
+  const unanswered = !answerIsFilled(value);
 
   let localStats = null, comparison = null, kind = null;
   if (!unanswered) {
@@ -2926,6 +3108,10 @@ function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
       kind = "numeric";
       localStats = computeNumericStats(peers, q.id, value);
       if (localStats) comparison = comparisonPhrase("numeric", localStats);
+    } else if (q.type === "multi") {
+      kind = "multi";
+      localStats = computeMultiCategoricalStats(peers, q.id, value);
+      if (localStats) comparison = comparisonPhrase("multi", localStats);
     } else {
       kind = "categorical";
       localStats = computeCategoricalStats(peers, q.id, value);
@@ -2940,7 +3126,11 @@ function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
           <div style={{ fontSize: 15, color: "var(--ink)", fontWeight: 500 }}>{q.label}</div>
           {!unanswered && (
             <div className="mono" style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 4 }}>
-              Your answer: <span style={{ color: "var(--ink)" }}>{String(value)}{q.unit ? ` ${q.unit}` : ""}</span>
+              Your answer:{" "}
+              <span style={{ color: "var(--ink)" }}>
+                {Array.isArray(value) ? value.join(" · ") : String(value)}
+                {q.unit ? ` ${q.unit}` : ""}
+              </span>
             </div>
           )}
         </div>
@@ -2982,7 +3172,9 @@ function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
                 Your answer compared against <strong style={{ color: "var(--btn-solid-fg)" }}>{localStats.n}</strong> other users in the current segment.
                 {kind === "numeric"
                   ? " The percentile is the share of users who answered lower than you."
-                  : " The bars show how often each option was picked."}
+                  : kind === "multi"
+                    ? " Each bar is the share of users who included that option in their picks."
+                    : " The bars show how often each option was picked."}
               </InfoTip>
               {kind === "numeric" && <PercentileBadge percentile={localStats.percentile} />}
             </div>
@@ -3315,12 +3507,15 @@ async function saveSessionSnapshot(state, peers, { finished = false, sessionId =
     const q = QUESTIONS_BY_ID[qid];
     if (!q) return;
     const val = answers[qid];
-    if (val == null || val === "") return;
+    if (!answerIsFilled(val)) return;
     const segPeers = segmentPeers(peers, answers, segment);
     let stat = null, kind = null;
     if (["number", "slider"].includes(q.type)) {
       kind = "numeric";
       stat = computeNumericStats(segPeers, qid, val);
+    } else if (q.type === "multi") {
+      kind = "multi";
+      stat = computeMultiCategoricalStats(segPeers, qid, val);
     } else if (q.type === "single") {
       kind = "categorical";
       stat = computeCategoricalStats(segPeers, qid, val);
@@ -3337,7 +3532,8 @@ async function saveSessionSnapshot(state, peers, { finished = false, sessionId =
         mean: stat.mean != null ? Math.round(stat.mean * 10) / 10 : null,
         median: stat.median ?? null,
         userPct: stat.userPct != null ? Math.round(stat.userPct * 10) / 10 : null,
-        mostCommon: stat.mostCommon?.option || null,
+        overlapPct: stat.overlapPct != null ? Math.round(stat.overlapPct * 10) / 10 : null,
+        mostCommon: stat.mostCommon?.option ?? stat.mostCommon ?? null,
         n: stat.n,
       } : null,
     };
@@ -3416,7 +3612,17 @@ function answerInterestingness(entry) {
     const rare = 1 - entry.stat.userPct / 100;
     return rare > 0.6 ? rare : 0; // only flag genuinely uncommon picks
   }
+  if (entry.kind === "multi" && entry.stat.overlapPct != null) {
+    const rare = 1 - entry.stat.overlapPct / 100;
+    return rare > 0.38 ? rare : 0;
+  }
   return 0;
+}
+
+function formatStoredAnswer(e) {
+  if (!e || e.value == null) return "";
+  if (Array.isArray(e.value)) return e.value.join(", ");
+  return `${e.value}${e.unit ? ` ${e.unit}` : ""}`;
 }
 
 function phraseForEntry(entry) {
@@ -3440,6 +3646,11 @@ function phraseForEntry(entry) {
     if (pct >= 25) return `common (~${roundPct(pct)}%; most pick "${mc}")`;
     if (pct >= 10) return `less common (~${roundPct(pct)}%; most pick "${mc}")`;
     return `uncommon (~${roundPct(pct)}%; most pick "${mc}")`;
+  }
+  if (entry.kind === "multi") {
+    const o = entry.stat.overlapPct;
+    if (o == null) return "—";
+    return `overlap with peers ~${roundPct(o)}% (tags you chose)`;
   }
   return "—";
 }
@@ -3498,7 +3709,7 @@ function buildMarkdownExport(sessions) {
       lines.push(`### Standout findings`);
       lines.push(``);
       standouts.forEach(e => {
-        const display = `**${e.value}${e.unit ? ` ${e.unit}` : ""}**`;
+        const display = `**${formatStoredAnswer(e)}**`;
         lines.push(`- ${e.label.replace(/\?$/, "")} → ${display} — ${phraseForEntry(e)}`);
       });
       lines.push(``);
@@ -3529,7 +3740,7 @@ function buildMarkdownExport(sessions) {
       lines.push(`| Question | Answer | Peer comparison |`);
       lines.push(`| --- | --- | --- |`);
       catEntries.forEach(([, e]) => {
-        const ans = `${e.value}${e.unit ? ` ${e.unit}` : ""}`;
+        const ans = formatStoredAnswer(e);
         const phrase = phraseForEntry(e).replace(/\|/g, "\\|");
         const label = e.label.replace(/\|/g, "\\|").replace(/\?$/, "");
         lines.push(`| ${label} | ${ans} | ${phrase} |`);
@@ -4128,7 +4339,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                       Recorded sessions
                     </h3>
                   </div>
-                  <Button size="sm" variant="ghost" onClick={close}>Close ×</Button>
+                  <Button size="sm" variant="ghost" onClick={close}>Close</Button>
                 </div>
 
                 <div style={{
@@ -4323,11 +4534,14 @@ function buildSnapshotData(answers, peers, segment) {
     const q = QUESTIONS_BY_ID[qid];
     if (!q) return;
     const v = answers[qid];
-    if (v == null || v === "") return;
+    if (!answerIsFilled(v)) return;
     let kind = null, stat = null;
     if (["number", "slider"].includes(q.type)) {
       kind = "numeric";
       stat = computeNumericStats(segPeers, qid, v);
+    } else if (q.type === "multi") {
+      kind = "multi";
+      stat = computeMultiCategoricalStats(segPeers, qid, v);
     } else if (q.type === "single") {
       kind = "categorical";
       stat = computeCategoricalStats(segPeers, qid, v);
@@ -4363,7 +4577,7 @@ function buildSnapshotData(answers, peers, segment) {
   const totalAnswered = entries.length;
   const catsCompleted = CATEGORIES.filter(c => {
     const vis = QUESTIONS_BY_CAT[c.id].filter(q => isQuestionVisible(q, answers));
-    return vis.length > 0 && vis.every(q => answers[q.id] != null && answers[q.id] !== "");
+    return vis.length > 0 && vis.every(q => answerIsFilled(answers[q.id]));
   }).length;
 
   return { entries, standouts, catUniq, overallUniq, totalAnswered, catsCompleted };
@@ -4372,7 +4586,6 @@ function buildSnapshotData(answers, peers, segment) {
 /* Short headline for each standout, shown on the card */
 function cardLineFor(e) {
   if (!e.stat) return null;
-  const val = `${e.value}${e.q.unit ? ` ${e.q.unit}` : ""}`;
   const label = e.q.label.replace(/\?$/, "");
   let phrase = "";
   if (e.kind === "numeric") {
@@ -4392,8 +4605,15 @@ function cardLineFor(e) {
     else if (pct >= 25) phrase = `Common (${friendlyShare(pct)})`;
     else if (pct >= 10) phrase = `Less common (~${roundPct(pct)}%)`;
     else phrase = `Uncommon — only ${friendlyShare(pct)}`;
+  } else if (e.kind === "multi") {
+    const o = e.stat.overlapPct;
+    if (o == null) return null;
+    if (o >= 58) phrase = `High overlap (${friendlyShare(o)} share a pick)`;
+    else if (o >= 35) phrase = `Moderate overlap (~${roundPct(o)}%)`;
+    else phrase = `Distinct picks (~${roundPct(o)}% overlap)`;
   }
-  return { label, val, phrase };
+  const valDisplay = Array.isArray(e.value) ? e.value.join(", ") : `${e.value}${e.q.unit ? ` ${e.q.unit}` : ""}`;
+  return { label, val: valDisplay, phrase };
 }
 
 /* Short phrase for the overall uniqueness number on the card */
@@ -4664,7 +4884,7 @@ function buildShareText(data) {
   const pct = data.overallUniq != null ? Math.round(data.overallUniq * 100) : null;
   const headline = uniquenessHeadline(data.overallUniq);
   const lines = [];
-  lines.push(pct != null ? `My uniqueness: ${pct}/100 — ${headline.toLowerCase()}` : "My snapshot (just getting started)");
+  lines.push(pct != null ? `Uniqueness: ${pct}/100 — ${headline.toLowerCase()}` : "My average.io snapshot (just getting started)");
   lines.push("");
   data.standouts.slice(0, 3).forEach(e => {
     const l = cardLineFor(e);
@@ -4672,7 +4892,7 @@ function buildShareText(data) {
     lines.push(`• ${l.label} — ${l.phrase.toLowerCase()}`);
   });
   lines.push("");
-  lines.push("see how you compare — average.io");
+  lines.push("average.io · Compare your answers with real people.");
   return lines.join("\n");
 }
 
@@ -4737,7 +4957,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
   const nativeShare = async () => {
     if (!hasWebShare || !blob) return;
     const file = new File([blob], "average-io-snapshot.png", { type: "image/png" });
-    const payload = { title: "My average.io snapshot", text };
+    const payload = { title: "average.io snapshot", text };
     // Prefer file sharing where supported
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ ...payload, files: [file] }); return; }
@@ -4789,7 +5009,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
                   Your snapshot
                 </h3>
               </div>
-              <Button size="sm" variant="ghost" onClick={onClose}>Close ×</Button>
+              <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
             </div>
 
             {notEnough ? (
@@ -4798,7 +5018,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
                 background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-m)",
                 color: "var(--ink-3)", fontSize: 14, lineHeight: 1.55,
               }}>
-                Answer at least 5 questions to unlock your snapshot.
+                Answer at least five questions to build a snapshot card.
                 <div style={{ marginTop: 14 }}>
                   <span className="mono" style={{ color: "var(--ink)" }}>{data.totalAnswered}</span>
                   <span style={{ marginLeft: 6 }}>answered so far.</span>
@@ -4813,7 +5033,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
                   minHeight: 320,
                 }}>
                   {rendering || !dataUrl ? (
-                    <div style={{ color: "var(--ink-3)", fontSize: 13 }}>Rendering…</div>
+                    <div style={{ color: "var(--ink-3)", fontSize: 13 }}>Generating image…</div>
                   ) : (
                     <img
                       src={dataUrl} alt="Your snapshot"
@@ -4872,7 +5092,7 @@ export default function App() {
   const { mode: themeMode, phase: themePhase, cycleTheme } = useTheme(answers);
   const { peers, source: peerSource, sheetState } = usePeerPool();
   const isMobile = useMediaQuery("(max-width: 639px)");
-  const totalAnswered = Object.keys(answers).filter(k => answers[k] != null && answers[k] !== "").length;
+  const totalAnswered = Object.keys(answers).filter(k => answerIsFilled(answers[k])).length;
   const admin = useAdminUnlock();
   const [shareOpen, setShareOpen] = useState(false);
   const [sheetModalOpen, setSheetModalOpen] = useState(false);
@@ -5009,7 +5229,7 @@ export default function App() {
         <div style={{ position: "absolute", top: isMobile ? 16 : 20, right: isMobile ? 18 : 24, zIndex: 5 }}>
           <ThemeToggle mode={themeMode} phase={themePhase} onCycle={cycleTheme} />
         </div>
-        <div className="label">loading</div>
+        <div className="label">Loading…</div>
       </div>
     );
   } else if (isWelcome) {
@@ -5036,7 +5256,7 @@ export default function App() {
   }
 
   const onReset = async () => {
-    if (!confirm("Reset your current answers? The finished session will remain in the admin log.")) return;
+    if (!confirm("Clear all answers and start over? Your last saved session stays in the admin log.")) return;
     dispatch({ type: "reset" });
     try {
       await window.storage.delete(STORAGE_KEY);
