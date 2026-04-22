@@ -119,11 +119,73 @@ const CATEGORY_UI_META = {
   lifestyle: { title: "Lifestyle", blurb: "Sleep, hydration, coffee, movement.", accent: "yellow" },
   micro: { title: "Micro Habits", blurb: "Tiny habits and day-to-day signals.", accent: "blue" },
   sexual: { title: "Sexual", blurb: "Private and sensitive answers.", accent: "red" },
+  fitness: { title: "Fitness", blurb: "Exercise and training.", accent: "green" },
+  daily: { title: "Daily Behaviour", blurb: "Phone, work, coffee, food.", accent: "violet" },
+  relationships: { title: "Relationships & Family", blurb: "Partners, children, siblings.", accent: "blue" },
+  living: { title: "Living & Finance", blurb: "Home and household.", accent: "yellow" },
+  intimate: { title: "Intimate", blurb: "Private. Fully optional.", accent: "red" },
 };
 
 const QUESTION_DEPENDENCIES = {
   tattoo_count: { dependsOn: "tattoos", showIf: ["Yes"] },
 };
+
+const LEGACY_CATEGORIES = [
+  { id: "demographics", title: "Demographics", blurb: "Age, place, work.", accent: "blue", optional: false },
+  { id: "body", title: "Body", blurb: "Height, weight, traits.", accent: "green", optional: false },
+  { id: "lifestyle", title: "Lifestyle", blurb: "Sleep, drink, smoke, steps.", accent: "yellow", optional: false },
+  { id: "fitness", title: "Fitness", blurb: "Exercise and training.", accent: "green", optional: false },
+  { id: "daily", title: "Daily Behaviour", blurb: "Phone, work, coffee, food.", accent: "violet", optional: false },
+  { id: "relationships", title: "Relationships & Family", blurb: "Partners, children, siblings.", accent: "blue", optional: false },
+  { id: "living", title: "Living & Finance", blurb: "Home and household.", accent: "yellow", optional: false },
+  { id: "intimate", title: "Intimate", blurb: "Private. Fully optional.", accent: "red", optional: true },
+];
+
+const LEGACY_QUESTIONS = [
+  { id: "age", cat: "demographics", label: "How old are you?", type: "number", min: 13, max: 100, unit: "years", global: "The median age worldwide is about 30.", sensitive: false },
+  { id: "gender", cat: "demographics", label: "Which best describes you?", type: "single", options: ["Female", "Male", "Non-binary", "Prefer not to say"], global: "Roughly half of people identify as female, half as male; a small share identify otherwise.", sensitive: false },
+  { id: "country", cat: "demographics", label: "Where do you live?", type: "country", global: "About 1 in 8 people worldwide live in India or China.", sensitive: false },
+  { id: "education", cat: "demographics", label: "Your highest completed education?", type: "single", options: ["No formal schooling", "Primary", "Secondary / high school", "Vocational", "Bachelor's", "Master's", "Doctorate"], global: "Roughly 40% of adults worldwide have some form of tertiary education.", sensitive: false },
+  { id: "employment", cat: "demographics", label: "Current employment status?", type: "single", options: ["Full-time employed", "Part-time employed", "Self-employed", "Studying", "Looking for work", "Retired", "Other"], global: "About 6 in 10 working-age adults are employed.", sensitive: false },
+  { id: "height", cat: "body", label: "How tall are you?", type: "slider", min: 140, max: 210, unit: "cm", step: 1, global: "The average adult height is around 171 cm for men and 159 cm for women.", sensitive: false },
+  { id: "weight", cat: "body", label: "How much do you weigh?", type: "slider", min: 40, max: 160, unit: "kg", step: 1, global: "The average adult weight is around 75 kg worldwide, with wide regional variation.", sensitive: true },
+  { id: "shoe_size", cat: "body", label: "Your shoe size (EU)?", type: "number", min: 30, max: 52, unit: "EU", global: "Most adults wear between EU 37 and EU 44.", sensitive: false },
+  { id: "eye_color", cat: "body", label: "Eye colour?", type: "single", options: ["Brown", "Blue", "Green", "Hazel", "Grey", "Amber"], global: "About 3 in 4 people worldwide have brown eyes.", sensitive: false },
+  { id: "hair_color", cat: "body", label: "Natural hair colour?", type: "single", options: ["Black", "Brown", "Blonde", "Red", "Grey / white", "Other"], global: "Around 75-85% of people are born with black or brown hair.", sensitive: false },
+  { id: "tattoos", cat: "body", label: "Do you have any tattoos?", type: "single", options: ["None", "One", "A few (2–5)", "Many (6+)"], global: "Roughly 1 in 3 adults in Western countries have at least one tattoo.", sensitive: false },
+  { id: "piercings", cat: "body", label: "Piercings (beyond standard ear lobes)?", type: "single", options: ["None", "One", "A few", "Many"], global: "About 1 in 4 adults have a piercing beyond the ear lobes.", sensitive: false },
+  { id: "sleep", cat: "lifestyle", label: "Hours of sleep per night on average?", type: "slider", min: 3, max: 12, step: 0.5, unit: "hrs", global: "Adults average around 7 hours of sleep per night.", sensitive: false },
+  { id: "smoking", cat: "lifestyle", label: "Do you smoke?", type: "single", options: ["Never", "Former smoker", "Occasionally", "Daily"], global: "About 1 in 5 adults worldwide smoke regularly.", sensitive: false },
+  { id: "cigs_day", cat: "lifestyle", label: "Cigarettes per day (if you smoke)?", type: "number", min: 0, max: 60, unit: "/day", global: "Regular smokers average around 10–15 cigarettes per day.", sensitive: false, dependsOn: "smoking", showIf: ["Occasionally", "Daily"] },
+  { id: "alcohol", cat: "lifestyle", label: "How often do you drink alcohol?", type: "single", options: ["Never", "Rarely", "Monthly", "Weekly", "Several times a week", "Daily"], global: "Roughly 40% of adults worldwide drink alcohol at least occasionally.", sensitive: false },
+  { id: "alcohol_units", cat: "lifestyle", label: "Alcoholic drinks per week?", type: "number", min: 0, max: 50, unit: "drinks", global: "Among drinkers, the average is around 4–7 drinks per week.", sensitive: false, dependsOn: "alcohol", showIf: ["Rarely", "Monthly", "Weekly", "Several times a week", "Daily"] },
+  { id: "water", cat: "lifestyle", label: "Glasses of water per day?", type: "number", min: 0, max: 20, unit: "glasses", global: "Most adults drink about 6–8 glasses of water per day.", sensitive: false },
+  { id: "steps", cat: "lifestyle", label: "Steps per day (typical)?", type: "slider", min: 1000, max: 20000, step: 500, unit: "steps", global: "The average adult walks around 5,000–7,000 steps per day.", sensitive: false },
+  { id: "exercise_freq", cat: "fitness", label: "How often do you exercise?", type: "single", options: ["Never", "Rarely", "1x week", "2–3x week", "4–5x week", "Daily"], global: "About 1 in 4 adults does not meet basic physical activity guidelines.", sensitive: false },
+  { id: "exercise_type", cat: "fitness", label: "Main type of exercise?", type: "single", options: ["Walking", "Running", "Cycling", "Gym / weights", "Yoga / pilates", "Team sports", "Swimming", "Other", "None"], global: "Walking is the most common form of physical activity for adults.", sensitive: false },
+  { id: "years_exercising", cat: "fitness", label: "For how many years have you exercised regularly?", type: "number", min: 0, max: 60, unit: "years", global: "Most regular exercisers report 2–10 years of consistent practice.", sensitive: false },
+  { id: "gym_member", cat: "fitness", label: "Do you have a gym membership?", type: "single", options: ["Yes", "No"], global: "Roughly 1 in 5 adults in high-income countries has a gym membership.", sensitive: false },
+  { id: "gym_visits", cat: "fitness", label: "Gym visits per week?", type: "number", min: 0, max: 14, unit: "/week", global: "Active gym members average about 2–3 visits per week.", sensitive: false, dependsOn: "gym_member", showIf: ["Yes"] },
+  { id: "phone_hours", cat: "daily", label: "Hours on your phone per day?", type: "slider", min: 0, max: 14, step: 0.5, unit: "hrs", global: "The average adult spends around 3–4 hours per day on their phone.", sensitive: false },
+  { id: "social_hours", cat: "daily", label: "Hours on social media per day?", type: "slider", min: 0, max: 10, step: 0.5, unit: "hrs", global: "Average social media use is about 2.5 hours per day.", sensitive: false },
+  { id: "work_hours", cat: "daily", label: "Working hours per week?", type: "number", min: 0, max: 90, unit: "hrs", global: "Full-time workers average around 38–42 hours per week.", sensitive: false },
+  { id: "meals", cat: "daily", label: "Meals per day (including snacks)?", type: "number", min: 1, max: 8, unit: "/day", global: "Most adults eat 3 main meals plus 1–2 snacks.", sensitive: false },
+  { id: "coffee", cat: "daily", label: "Cups of coffee per day?", type: "number", min: 0, max: 10, unit: "cups", global: "Coffee drinkers average around 2 cups per day.", sensitive: false },
+  { id: "eat_out", cat: "daily", label: "How often do you eat out or order in?", type: "single", options: ["Never", "Monthly", "Weekly", "Several times a week", "Daily"], global: "The average adult eats out or orders in 2–3 times per week.", sensitive: false },
+  { id: "relationship", cat: "relationships", label: "Your relationship status?", type: "single", options: ["Single", "Dating", "In a relationship", "Married / partnered", "Separated", "Divorced", "Widowed"], global: "Roughly half of adults are married or in a committed partnership.", sensitive: false },
+  { id: "long_term_count", cat: "relationships", label: "Number of long-term relationships you've had?", type: "number", min: 0, max: 20, unit: "", global: "Most adults report 1–3 long-term relationships over a lifetime.", sensitive: false },
+  { id: "children", cat: "relationships", label: "Do you have children?", type: "single", options: ["No", "Yes"], global: "About 3 in 4 adults over 40 have at least one child.", sensitive: false },
+  { id: "children_count", cat: "relationships", label: "How many children?", type: "number", min: 1, max: 12, unit: "", global: "Parents in high-income countries average around 2 children.", sensitive: false, dependsOn: "children", showIf: ["Yes"] },
+  { id: "first_child_age", cat: "relationships", label: "Your age when your first child was born?", type: "number", min: 14, max: 60, unit: "years", global: "The average age at first childbirth is around 28–31 in high-income countries.", sensitive: false, dependsOn: "children", showIf: ["Yes"] },
+  { id: "siblings", cat: "relationships", label: "Number of siblings?", type: "number", min: 0, max: 15, unit: "", global: "The global average is around 2 siblings per person.", sensitive: false },
+  { id: "living", cat: "living", label: "Your current living situation?", type: "single", options: ["Alone", "With partner", "With family", "With roommates", "With parents", "Other"], global: "Living alone has become the most common arrangement in many cities.", sensitive: false },
+  { id: "own_rent", cat: "living", label: "Do you own or rent?", type: "single", options: ["Own", "Rent", "Living with family", "Other"], global: "In high-income countries, roughly 60% of adults own their home.", sensitive: false },
+  { id: "household", cat: "living", label: "People in your household?", type: "number", min: 1, max: 12, unit: "people", global: "The average household has around 2.5 people.", sensitive: false },
+  { id: "income", cat: "living", label: "Your household income range (USD/yr)?", type: "single", options: ["Under 20k", "20–40k", "40–70k", "70–120k", "120–200k", "Over 200k", "Prefer not to say"], global: "The global median household income is around 10,000 USD; high-income countries median around 40–60k.", sensitive: true },
+  { id: "orientation", cat: "intimate", label: "Sexual orientation?", type: "single", options: ["Straight", "Gay / lesbian", "Bisexual", "Pansexual", "Asexual", "Other", "Prefer not to say"], global: "Most surveys find around 90% of adults identify as straight.", sensitive: true },
+  { id: "first_sex_age", cat: "intimate", label: "Age of first sexual experience?", type: "number", min: 12, max: 50, unit: "years", global: "The median age of first sexual experience is around 17.", sensitive: true },
+  { id: "active", cat: "intimate", label: "Currently sexually active?", type: "single", options: ["Yes", "No", "Prefer not to say"], global: "About 2 in 3 adults report being sexually active in the past year.", sensitive: true },
+];
 
 function titleCase(value) {
   return String(value || "")
@@ -140,7 +202,7 @@ function mapQuestionType(question) {
   return question.type;
 }
 
-const CATEGORIES = canonicalQuestionSet.categories.map((category, idx) => {
+const canonicalCategories = canonicalQuestionSet.categories.map((category, idx) => {
   const meta = CATEGORY_UI_META[category.id] || {};
   return {
     id: category.id,
@@ -152,6 +214,15 @@ const CATEGORIES = canonicalQuestionSet.categories.map((category, idx) => {
   };
 });
 
+const legacyOnlyCategories = LEGACY_CATEGORIES.filter(
+  (legacyCategory) => !canonicalCategories.some((category) => category.id === legacyCategory.id)
+).map((category, idx) => ({
+  ...category,
+  order: canonicalCategories.length + idx + 1,
+}));
+
+const CATEGORIES = [...canonicalCategories, ...legacyOnlyCategories];
+
 const COUNTRIES = [
   "United States", "United Kingdom", "Germany", "France", "Netherlands", "Spain", "Italy",
   "Sweden", "Norway", "Denmark", "Poland", "Ireland", "Portugal", "Belgium", "Austria",
@@ -160,7 +231,7 @@ const COUNTRIES = [
   "United Arab Emirates", "Turkey", "Greece", "Czechia", "Finland", "Romania", "Hungary", "Other",
 ];
 
-const QUESTIONS = canonicalQuestionSet.categories.flatMap((category) =>
+const canonicalQuestions = canonicalQuestionSet.categories.flatMap((category) =>
   (category.questions || []).map((question) => {
     const mappedType = mapQuestionType(question);
     const dependency = QUESTION_DEPENDENCIES[question.id] || {};
@@ -187,6 +258,12 @@ const QUESTIONS = canonicalQuestionSet.categories.flatMap((category) =>
     };
   })
 );
+
+const legacyOnlyQuestions = LEGACY_QUESTIONS.filter(
+  (legacyQuestion) => !canonicalQuestions.some((question) => question.id === legacyQuestion.id)
+);
+
+const QUESTIONS = [...canonicalQuestions, ...legacyOnlyQuestions];
 
 /* Index helpers */
 const QUESTIONS_BY_ID = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
