@@ -1300,10 +1300,11 @@ function PageShell({ children, maxWidth = 1120 }) {
    ============================================================================ */
 
 function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic" }) {
+  const isMobile = useMediaQuery("(max-width: 639px)");
   return (
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "flex-start", justifyContent: "center",
-      padding: "clamp(56px, 10vh, 120px) 24px 80px",
+      padding: isMobile ? "40px 24px 80px" : "clamp(56px, 10vh, 120px) 24px 80px",
       background: "transparent",
       position: "relative", overflow: "hidden",
     }}>
@@ -1793,10 +1794,10 @@ function QuestionScreen({ state, dispatch, peers }) {
               >
                 <div style={{
                   padding: "14px 18px",
-                  background: "#F7F6F3",
-                  border: "1px solid var(--line)",
+                  background: "transparent",
+                  border: "1px solid var(--ink-2)",
                   borderRadius: "var(--radius-m)",
-                  display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap",
+                  display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
                 }}>
                   <span className="label">Live comparison</span>
                   <span style={{ fontSize: 14, color: "#111" }}>{previewCopy}</span>
@@ -1822,7 +1823,11 @@ function QuestionScreen({ state, dispatch, peers }) {
                 {idx === visible.length - 1 && !nextCat ? "Finish →" : "Next →"}
               </Button>
             </div>
-            <Button variant="quiet" onClick={() => dispatch({ type: "go", screen: "overview" })}>
+            <Button
+              variant="quiet"
+              onClick={() => dispatch({ type: "go", screen: "overview" })}
+              style={{ justifyContent: "center", alignSelf: "center" }}
+            >
               View comparisons
             </Button>
           </>
@@ -3110,7 +3115,7 @@ function Button({ children, onClick, variant = "primary", size = "md", disabled,
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.4 : 1,
     transition: "transform 160ms var(--ease-out), background 200ms ease, border-color 200ms ease, color 200ms ease",
-    display: "inline-flex", alignItems: "center", gap: 8,
+    display: "inline-flex", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 8,
     userSelect: "none",
   };
   const variants = {
@@ -4406,6 +4411,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
 export default function App() {
   const [state, dispatch, hydrated] = useAppState();
   const { peers, source: peerSource, sheetState } = usePeerPool();
+  const isMobile = useMediaQuery("(max-width: 639px)");
   const answers = state.answers;
   const totalAnswered = Object.keys(answers).filter(k => answers[k] != null && answers[k] !== "").length;
   const admin = useAdminUnlock();
@@ -4598,8 +4604,9 @@ export default function App() {
           }}>
             <div style={{
               maxWidth: 1120, margin: "0 auto", padding: "24px 24px 28px",
-              display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16,
+              display: "flex", justifyContent: isMobile ? "center" : "space-between", alignItems: "center", gap: 16,
               flexWrap: "wrap",
+              textAlign: isMobile ? "center" : "left",
             }}>
               <button
                 onClick={() => dispatch({ type: "go", screen: "welcome" })}
@@ -4609,6 +4616,7 @@ export default function App() {
                   color: "var(--ink-4)", fontSize: 12,
                   background: "none", border: "none", padding: 0, cursor: "pointer",
                   fontFamily: "inherit",
+                  justifyContent: isMobile ? "center" : "flex-start",
                 }}
               >
                 <Logo size={14} muted />
