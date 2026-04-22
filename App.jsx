@@ -4418,19 +4418,26 @@ export default function App() {
   const [sheetModalOpen, setSheetModalOpen] = useState(false);
 
   // Force scroll to top on every screen/category transition.
-  // We run multiple phases to catch late layout shifts and ensure reliability.
+  // We run repeated passes to handle Safari momentum + late layout shifts.
   useLayoutEffect(() => {
     if (typeof window === "undefined") return undefined;
-    const scrollTopNow = () => {
-      try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }
-      catch (_) { window.scrollTo(0, 0); }
+    const forceTop = () => {
+      try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); } catch (_) {}
+      try { window.scrollTo(0, 0); } catch (_) {}
+      const root = document.scrollingElement || document.documentElement;
+      if (root) root.scrollTop = 0;
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
     };
-    scrollTopNow();
-    const rafId = requestAnimationFrame(scrollTopNow);
-    const timeoutId = setTimeout(scrollTopNow, 70);
+    forceTop();
+    const rafIds = [];
+    for (let i = 0; i < 12; i += 1) {
+      rafIds.push(requestAnimationFrame(forceTop));
+    }
+    const timeoutIds = [40, 100, 180, 280].map((ms) => setTimeout(forceTop, ms));
     return () => {
-      cancelAnimationFrame(rafId);
-      clearTimeout(timeoutId);
+      rafIds.forEach((id) => cancelAnimationFrame(id));
+      timeoutIds.forEach((id) => clearTimeout(id));
     };
   }, [state.screen, state.currentCatId]);
 
