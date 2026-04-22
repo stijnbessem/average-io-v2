@@ -1955,7 +1955,8 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
           style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 40 }}>
           <Button onClick={() => {
             dispatch({ type: "seenWelcome" });
-            dispatch({ type: "setCat", catId: "demographics", idx: 0 });
+            const firstCat = CATEGORIES[0]?.id || "demographics";
+            dispatch({ type: "setCat", catId: firstCat, idx: 0 });
             dispatch({ type: "go", screen: "question" });
           }}>
             Start questionnaire →

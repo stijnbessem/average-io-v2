@@ -504,597 +504,1208 @@
       ]
     },
     {
-      "category": "Body & Stats",
+      "category": "Lifestyle",
       "questions": [
         {
-          "id": "height",
-          "question": "Height",
+          "id": "screen_time",
+          "question": "Screen time",
           "options": [
             {
-              "value": "<155",
-              "label": "<155 cm"
+              "value": "<2",
+              "label": "<2h (liar?)"
             },
             {
-              "value": "155-164",
-              "label": "155–164 cm"
+              "value": "2-4",
+              "label": "2–4h"
             },
             {
-              "value": "165-174",
-              "label": "165–174 cm"
+              "value": "4-6",
+              "label": "4–6h"
             },
             {
-              "value": "175-184",
-              "label": "175–184 cm"
+              "value": "6-8",
+              "label": "6–8h"
             },
             {
-              "value": "185-194",
-              "label": "185–194 cm"
+              "value": "8-10",
+              "label": "8–10h — endless scrolling PhD"
             },
             {
-              "value": "195+",
-              "label": "195+ cm 📏"
+              "value": "10+",
+              "label": "10h+ — Screens all day"
             },
             {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
+              "value": "work_fused",
+              "label": "Work and leisure blur together"
             }
           ]
         },
         {
-          "id": "weight",
-          "question": "Weight (ballpark)",
+          "id": "routine",
+          "question": "Routine",
           "options": [
             {
-              "value": "<50",
-              "label": "<50 kg"
+              "value": "chaotic",
+              "label": "Chaos 🎲"
             },
             {
-              "value": "50-59",
-              "label": "50–59 kg"
+              "value": "loose",
+              "label": "Loose"
             },
             {
-              "value": "60-69",
-              "label": "60–69 kg"
+              "value": "structured",
+              "label": "Some structure"
             },
             {
-              "value": "70-79",
-              "label": "70–79 kg"
+              "value": "strict",
+              "label": "Strict 📅"
             },
             {
-              "value": "80-89",
-              "label": "80–89 kg"
+              "value": "aspire_fails",
+              "label": "Aspires to routine — slips weekly"
             },
             {
-              "value": "90-99",
-              "label": "90–99 kg"
-            },
-            {
-              "value": "100+",
-              "label": "100+ kg 💪"
-            },
-            {
-              "value": "fluctuates",
-              "label": "Yo-yos hard — pick a lane 😮‍💨"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
+              "value": "seasonal",
+              "label": "Seasonal — winter vs summer"
             }
           ]
         },
         {
-          "id": "build",
-          "question": "Build",
+          "id": "coffee_habit",
+          "question": "Coffee habit",
           "options": [
             {
-              "value": "slim",
-              "label": "Slim 🪶"
+              "value": "none",
+              "label": "Zero caffeine — wizard 🧙"
             },
             {
-              "value": "average",
-              "label": "Average ⚖️"
+              "value": "tea",
+              "label": "Mostly tea"
             },
             {
-              "value": "athletic",
-              "label": "Athletic 🏃"
+              "value": "1",
+              "label": "1 cup — civilized"
             },
             {
-              "value": "muscular",
-              "label": "Muscular 💪"
+              "value": "2-3",
+              "label": "2–3 — functional"
             },
             {
-              "value": "stocky",
-              "label": "Stocky / compact 🧱"
+              "value": "4plus",
+              "label": "4+ IV drip ☕"
             },
             {
-              "value": "curvy",
-              "label": "Curvy / soft sculpt"
+              "value": "energy_drinks",
+              "label": "Energy drinks"
             },
             {
-              "value": "chubby",
-              "label": "Soft / chubby 🍞"
-            },
-            {
-              "value": "plus",
-              "label": "Plus-size — loud & proud ✨"
-            },
-            {
-              "value": "in_between",
-              "label": "Between every label 🤷"
+              "value": "decaf",
+              "label": "Decaf (respectfully why)"
             }
           ]
         },
         {
-          "id": "eye_color",
-          "question": "Eye color",
+          "id": "entertainment",
+          "multi": true,
+          "question": "Main entertainment diet",
           "options": [
             {
-              "value": "brown",
-              "label": "Brown"
+              "value": "film_tv",
+              "label": "Films & series 🎬"
             },
             {
-              "value": "blue",
-              "label": "Blue"
+              "value": "youtube",
+              "label": "YouTube rabbit holes"
             },
             {
-              "value": "green",
-              "label": "Green"
+              "value": "tiktok_shorts",
+              "label": "Short-form short-form video 📲"
             },
             {
-              "value": "hazel",
-              "label": "Hazel"
+              "value": "podcasts",
+              "label": "Podcasts"
             },
             {
-              "value": "grey",
-              "label": "Grey"
+              "value": "sports_watch",
+              "label": "Sports watch party 📺"
             },
             {
-              "value": "amber",
-              "label": "Amber / honey 🍯"
+              "value": "live",
+              "label": "Live music / gigs 🎤"
             },
             {
-              "value": "hetero",
-              "label": "Two different — main character ✨"
+              "value": "museums",
+              "label": "Museums / galleries 🖼️"
             },
             {
-              "value": "contacts",
-              "label": "Mostly contacts / lenses 👁️"
+              "value": "reading",
+              "label": "Reading — paper or e-ink 📖"
             },
             {
-              "value": "changes_light",
-              "label": "Changes in the light — pick one 😵‍💫"
+              "value": "gaming",
+              "label": "Gaming"
+            },
+            {
+              "value": "outdoors",
+              "label": "get outside activities 🌲"
+            },
+            {
+              "value": "mixed",
+              "label": "Rotating obsessions 🌀"
             }
           ]
         },
         {
-          "id": "face_shape",
-          "question": "Face shape (roughly)",
+          "id": "gaming_intensity",
+          "question": "Gaming intensity",
           "options": [
             {
-              "value": "round",
-              "label": "Round 🌕"
+              "value": "none",
+              "label": "Don't game"
             },
             {
-              "value": "oval",
-              "label": "Oval"
+              "value": "casual",
+              "label": "Casual mobile 🐣"
             },
             {
-              "value": "square",
-              "label": "Square jaw 🧊"
-            },
-            {
-              "value": "heart",
-              "label": "Heart / pointy chin 💗"
-            },
-            {
-              "value": "long",
-              "label": "Long / oblong"
-            },
-            {
-              "value": "diamond",
-              "label": "Diamond cheekbone era 💎"
-            },
-            {
-              "value": "unique",
-              "label": "None of the boxes fit 😤"
-            }
-          ]
-        },
-        {
-          "id": "hair",
-          "question": "Hair situation",
-          "options": [
-            {
-              "value": "buzzed",
-              "label": "Buzzed / super short"
-            },
-            {
-              "value": "short",
-              "label": "Short"
-            },
-            {
-              "value": "medium",
-              "label": "Medium flow"
-            },
-            {
-              "value": "long",
-              "label": "Long 🌊"
-            },
-            {
-              "value": "bald",
-              "label": "Bald & proud 🥚"
-            },
-            {
-              "value": "thinning",
-              "label": "Thinning — we're honest"
-            },
-            {
-              "value": "wig_extensions",
-              "label": "Wig / extensions sometimes ✨"
-            },
-            {
-              "value": "dyed",
-              "label": "Dyed chaos 🌈"
-            }
-          ]
-        },
-        {
-          "id": "hairdresser_interval",
-          "question": "Salon / barber rhythm (cuts & pro trims)",
-          "options": [
-            {
-              "value": "diy_only",
-              "label": "DIY / clippers only — pros never 👀"
-            },
-            {
-              "value": "under_3wk",
-              "label": "Every few weeks — fresh fade religion ✂️"
-            },
-            {
-              "value": "4-6wk",
-              "label": "Roughly 4–6 weeks"
-            },
-            {
-              "value": "2-3mo",
-              "label": "Every 2–3 months"
-            },
-            {
-              "value": "few_times_year",
-              "label": "A few times a year — grows out seasons 🌿"
-            },
-            {
-              "value": "yearish",
-              "label": "About once a year — intervention haircut"
-            },
-            {
-              "value": "when_shamed",
-              "label": "When partner / mum / mirror negotiates 📣"
-            },
-            {
-              "value": "buzz_none",
-              "label": "Buzzed/bald/none needed — zero salon drama 🥚"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "activity",
-          "question": "Daily movement",
-          "options": [
-            {
-              "value": "bed",
-              "label": "Bed ↔ desk ↔ fridge only 🛋️"
-            },
-            {
-              "value": "sedentary",
-              "label": "Barely move — desk job curse"
-            },
-            {
-              "value": "light",
-              "label": "Some walking 🚶"
-            },
-            {
-              "value": "moderate",
-              "label": "Regular activity 🏃"
-            },
-            {
-              "value": "high",
-              "label": "Gym rat 🏋️"
-            },
-            {
-              "value": "manual_job",
-              "label": "Physical job — paid to move 💼"
-            }
-          ]
-        },
-        {
-          "id": "sleep",
-          "question": "Sleep hours (typical)",
-          "options": [
-            {
-              "value": "<5",
-              "label": "<5h 😵"
-            },
-            {
-              "value": "5-6",
-              "label": "5–6h 😴"
-            },
-            {
-              "value": "6-7",
-              "label": "6–7h"
-            },
-            {
-              "value": "7-8",
-              "label": "7–8h 😌"
-            },
-            {
-              "value": "8-9",
-              "label": "8–9h — luxury"
-            },
-            {
-              "value": "9+",
-              "label": "9h+ bear mode 🐻"
-            },
-            {
-              "value": "chaos",
-              "label": "So irregular I can't average it 🌀"
-            }
-          ]
-        },
-        {
-          "id": "sleep_pattern",
-          "question": "Sleep pattern honesty",
-          "options": [
-            {
-              "value": "early_bird",
-              "label": "Early bird (suspicious) 🌅"
+              "value": "party",
+              "label": "Party / couch co-op 🎉"
             },
             {
               "value": "regular",
-              "label": "Pretty regular"
+              "label": "Regular — story games"
             },
             {
-              "value": "weekend_reset",
-              "label": "Weekday zombie / weekend catch-up"
+              "value": "competitive",
+              "label": "Ranked sweat 🔥"
             },
             {
-              "value": "night_owl",
-              "label": "Night owl 🦉"
+              "value": "speedrun",
+              "label": "Speedrun / mastery degenerate ⏱️"
             },
             {
-              "value": "insomnia",
-              "label": "Insomnia goblin 🌙"
+              "value": "retro",
+              "label": "Retro / emulation collector 👾"
             },
             {
-              "value": "shift",
-              "label": "Shift work chaos"
-            },
-            {
-              "value": "baby_pet",
-              "label": "Baby / pet wakes me — send help 🐕"
+              "value": "prefer_not",
+              "label": "Prefer not to say"
             }
           ]
         },
         {
-          "id": "chronotype",
-          "question": "When are you actually alive?",
+          "id": "pets_home",
+          "question": "Pets under your roof",
           "options": [
             {
-              "value": "morning",
-              "label": "Morning — 5am demon energy"
+              "value": "none",
+              "label": "Plants only — no pets"
             },
             {
-              "value": "late_morning",
-              "label": "Late morning — coffee first ☕"
+              "value": "dog",
+              "label": "Dog(s) — sworn bestie(s) 🐕"
             },
             {
-              "value": "mid",
-              "label": "Midday human"
+              "value": "cat",
+              "label": "Cat(s) — household royalty 🐈"
             },
             {
-              "value": "afternoon",
-              "label": "Afternoon — second wind crew"
+              "value": "dog_cat",
+              "label": "Dog + cat diplomacy zone 🐕‍🦺🐈"
             },
             {
-              "value": "evening",
-              "label": "Evening peak 🌆"
+              "value": "small_critters",
+              "label": "Small mammals / rodents / hopping chaos 🐹"
             },
             {
-              "value": "late_night",
-              "label": "11pm–2am is my workshop 🛠️"
+              "value": "birds_reptiles_fish",
+              "label": "Bird / reptile / aquarium cabinet 🐠🦎"
             },
             {
-              "value": "3am",
-              "label": "3am is my golden hour 🕯️"
+              "value": "multi_zoo",
+              "label": "Full zoo energy — multiple species 📦"
+            },
+            {
+              "value": "shared_not_mine",
+              "label": "Roomie's / partner's pets — I'm the uncle"
+            },
+            {
+              "value": "soon_maybe",
+              "label": "Planning for a pet — researching shelters"
+            },
+            {
+              "value": "allergic_obstacle",
+              "label": "Allergic to animals"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "pet_energy",
+          "question": "Pet parenting style (if you have pets — otherwise pick closest)",
+          "options": [
+            {
+              "value": "na_none",
+              "label": "N/A — no pets / plants only 🌿"
+            },
+            {
+              "value": "low_key",
+              "label": "Low-key — chill coexistence"
+            },
+            {
+              "value": "spoiled_soft",
+              "label": "Rotten spoiled — treats budget exists 🧺"
+            },
+            {
+              "value": "structured",
+              "label": "Structured walks / routines — spreadsheet brain 📋"
+            },
+            {
+              "value": "chaos_pack",
+              "label": "Chaos pack — zoomies at 3am 🌀"
+            },
+            {
+              "value": "outdoor_partner",
+              "label": "Outdoor partner — hikes & mud 🥾"
+            },
+            {
+              "value": "senior_care",
+              "label": "Senior pet — medications / comfort care 💊"
+            },
+            {
+              "value": "foster_rotation",
+              "label": "Foster / rotate — heart always breaking 💔"
+            },
+            {
+              "value": "want_so_bad",
+              "label": "Petless but mentally at the dog park 🫠"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "self_care_frequency",
+          "question": "Self-care cadence (intentional you-time)",
+          "options": [
+            {
+              "value": "what_self_care",
+              "label": "\"Self-care?\" — survival mode"
+            },
+            {
+              "value": "rare_guilt",
+              "label": "Rare bursts — guilt spiral after 📉"
+            },
+            {
+              "value": "weekly_slot",
+              "label": "Weekly-ish — calendar decides"
+            },
+            {
+              "value": "few_week",
+              "label": "Few times a week micro rituals ✨"
+            },
+            {
+              "value": "daily_small",
+              "label": "Small daily habits"
+            },
+            {
+              "value": "main_character",
+              "label": "Priority maintenance — non-negotiable 👑"
+            },
+            {
+              "value": "cyclical",
+              "label": "Cyclical — great month then offline month 🌙"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "self_care_lane",
+          "multi": true,
+          "question": "Self-care lane that hits hardest",
+          "options": [
+            {
+              "value": "skin_body",
+              "label": "Skin / bath / body rituals 🛁"
+            },
+            {
+              "value": "therapy_mind",
+              "label": "Therapy / journaling / inner work 🛋️"
+            },
+            {
+              "value": "movement",
+              "label": "Movement — gym walk stretch dance 🏃"
+            },
+            {
+              "value": "sleep_nest",
+              "label": "Sleep / nest / Sleep / blackout setup"
+            },
+            {
+              "value": "social_refuel",
+              "label": "People time — extrovert refill ☕"
+            },
+            {
+              "value": "solo_silence",
+              "label": "Alone silence — battery sacred 🔌"
+            },
+            {
+              "value": "creative_play",
+              "label": "Creative play — art music games 🎨"
+            },
+            {
+              "value": "nature_reset",
+              "label": "Nature reset — Getting outside"
+            },
+            {
+              "value": "food_treat",
+              "label": "Food treat — chef brain or nice takeout 🍜"
+            },
+            {
+              "value": "no_sparkle",
+              "label": "No frills — coping is low-key"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "cooking_at_home",
+          "question": "Cooking at home",
+          "options": [
+            {
+              "value": "rare",
+              "label": "Rare — mostly takeout / dining out"
+            },
+            {
+              "value": "few_week",
+              "label": "A few times a week"
+            },
+            {
+              "value": "most_days",
+              "label": "Most days — simple meals"
+            },
+            {
+              "value": "almost_all",
+              "label": "Almost every meal — kitchen is HQ"
+            },
+            {
+              "value": "partner_cooks",
+              "label": "Someone else cooks most nights"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Hobbies",
+      "questions": [
+        {
+          "id": "hobby_count",
+          "question": "How many hobbies",
+          "options": [
+            {
+              "value": "0",
+              "label": "None 😶"
+            },
+            {
+              "value": "1",
+              "label": "One deep dive only"
+            },
+            {
+              "value": "2",
+              "label": "2 — manageable"
+            },
+            {
+              "value": "3-5",
+              "label": "3–5"
+            },
+            {
+              "value": "6+",
+              "label": "6+ — ADHD hobby stack"
+            },
+            {
+              "value": "serial",
+              "label": "Serial hobbyist — rotate quarterly 🔁"
+            }
+          ]
+        },
+        {
+          "id": "hobby_type",
+          "question": "Main hobby type",
+          "options": [
+            {
+              "value": "passive",
+              "label": "Chill consume 🎮"
+            },
+            {
+              "value": "creative",
+              "label": "Creative 🎨"
+            },
+            {
+              "value": "maker",
+              "label": "Maker / build physical stuff 🛠️"
+            },
+            {
+              "value": "intellectual",
+              "label": "Brainy 🧠"
+            },
+            {
+              "value": "active",
+              "label": "Active 🏃"
+            },
+            {
+              "value": "social",
+              "label": "Social 🎉"
+            },
+            {
+              "value": "volunteer",
+              "label": "Volunteer / community heart 🤝"
+            },
+            {
+              "value": "collector",
+              "label": "Collecting — vinyl, sneakers, regrets 📦"
+            }
+          ]
+        },
+        {
+          "id": "sport_kind",
+          "question": "Sport energy (if any)",
+          "options": [
+            {
+              "value": "none",
+              "label": "Sport is watching others sweat"
+            },
+            {
+              "value": "walk_yoga",
+              "label": "Walk / yoga / gentle movement 🧘"
+            },
+            {
+              "value": "gym",
+              "label": "Gym / weights 🏋️"
+            },
+            {
+              "value": "ball",
+              "label": "Ball sports ⚽"
+            },
+            {
+              "value": "racket",
+              "label": "Racket sports 🎾"
+            },
+            {
+              "value": "water",
+              "label": "Water / swim 🏊"
+            },
+            {
+              "value": "snow",
+              "label": "Snow / board sports 🏂"
+            },
+            {
+              "value": "combat",
+              "label": "Combat / martial 🥊"
+            },
+            {
+              "value": "endurance",
+              "label": "Run / bike endurance 🚴"
+            },
+            {
+              "value": "climb",
+              "label": "Climb / boulder 🧗"
+            },
+            {
+              "value": "dance",
+              "label": "Dance counts — cardio with rhythm 💃"
+            }
+          ]
+        },
+        {
+          "id": "movies_you_like",
+          "multi": true,
+          "question": "Movies you're into",
+          "options": [
+            {
+              "value": "action_blockbuster",
+              "label": "Action / blockbuster adrenaline 🎬"
+            },
+            {
+              "value": "indie_art",
+              "label": "Indie / arthouse patience 🎞️"
+            },
+            {
+              "value": "horror",
+              "label": "Horror — midnight brain 🩸"
+            },
+            {
+              "value": "romcom",
+              "label": "Rom-com soft hours 💘"
+            },
+            {
+              "value": "scifi_fantasy",
+              "label": "Sci-fi / fantasy deep dives"
+            },
+            {
+              "value": "comedy",
+              "label": "Comedy — laugh track soul 😂"
+            },
+            {
+              "value": "docs_true_crime",
+              "label": "Docs / true crime spiral 🔎"
+            },
+            {
+              "value": "animation_anime",
+              "label": "Animation / anime counts ✨"
+            },
+            {
+              "value": "classics_rewatch",
+              "label": "Classics — comfort rewatches only 🎥"
+            },
+            {
+              "value": "trending_chaos",
+              "label": "Whatever's trending — chaotic picks 🌀"
+            },
+            {
+              "value": "rarely_films",
+              "label": "Rarely films — I'm a series person 📺"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "tv_you_like",
+          "multi": true,
+          "question": "TV you're into",
+          "options": [
+            {
+              "value": "comedy_comfort",
+              "label": "Comedy comfort 📺"
+            },
+            {
+              "value": "prestige_drama",
+              "label": "Prestige drama suffering 🏆"
+            },
+            {
+              "value": "reality",
+              "label": "Reality chaos 🍿"
+            },
+            {
+              "value": "crime_procedural",
+              "label": "Crime / procedural bedtime 🔦"
+            },
+            {
+              "value": "scifi_fantasy_tv",
+              "label": "Sci-fi / fantasy worldbuilding 🌌"
+            },
+            {
+              "value": "anime_tv",
+              "label": "Anime seasons 🇯🇵"
+            },
+            {
+              "value": "docuseries",
+              "label": "Docuseries rabbit hole 📼"
+            },
+            {
+              "value": "cooking_travel",
+              "label": "Cooking / travel cozy 🧳"
+            },
+            {
+              "value": "sports",
+              "label": "Sports — watch party religiously ⚽"
+            },
+            {
+              "value": "background_noise",
+              "label": "Background noise — barely watching 👁️"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "books_you_like",
+          "multi": true,
+          "question": "Books you're into",
+          "options": [
+            {
+              "value": "fiction",
+              "label": "Fiction novels mostly 📘"
+            },
+            {
+              "value": "nonfiction",
+              "label": "Non-fiction brain food 📗"
+            },
+            {
+              "value": "fantasy_scifi",
+              "label": "Fantasy / sci-fi stacks 🐉"
+            },
+            {
+              "value": "thriller",
+              "label": "Thriller page-turner 🔪"
+            },
+            {
+              "value": "romance",
+              "label": "Romance / spicy covers 💕"
+            },
+            {
+              "value": "self_help",
+              "label": "Self-help / productivity guilt 📋"
+            },
+            {
+              "value": "memoir_essays",
+              "label": "Memoir / essays ✍️"
+            },
+            {
+              "value": "audiobooks",
+              "label": "Audiobooks — eyes rest 🎧"
+            },
+            {
+              "value": "graphic_manga",
+              "label": "Graphic novels / manga 📚"
+            },
+            {
+              "value": "screens_won",
+              "label": "Barely read — screens won 📱"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "instrument_play",
+          "question": "Playing an instrument",
+          "options": [
+            {
+              "value": "none",
+              "label": "Don't play"
+            },
+            {
+              "value": "used_to",
+              "label": "Used to — rusty now"
+            },
+            {
+              "value": "casual",
+              "label": "Casual — for fun"
+            },
+            {
+              "value": "serious",
+              "label": "Serious — lessons / gigs"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "maker_crafts",
+          "question": "Making things with your hands",
+          "options": [
+            {
+              "value": "no",
+              "label": "Rarely"
+            },
+            {
+              "value": "sometimes",
+              "label": "Sometimes — small projects"
+            },
+            {
+              "value": "often",
+              "label": "Often — woodworking, sewing, etc."
+            },
+            {
+              "value": "primary",
+              "label": "Main hobby"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "collecting_hobby",
+          "question": "Collecting",
+          "options": [
+            {
+              "value": "no",
+              "label": "Not really"
+            },
+            {
+              "value": "casual",
+              "label": "Casual — a shelf or two"
+            },
+            {
+              "value": "serious",
+              "label": "Serious — time and money go here"
+            },
+            {
+              "value": "digital",
+              "label": "Mostly digital — games, NFT phase, etc."
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "weekend_projects",
+          "question": "Weekend projects",
+          "options": [
+            {
+              "value": "rest",
+              "label": "Rest — minimal plans"
+            },
+            {
+              "value": "social",
+              "label": "Social — people first"
+            },
+            {
+              "value": "home",
+              "label": "House / errands / fixing things"
+            },
+            {
+              "value": "creative",
+              "label": "Creative — deep sessions"
+            },
+            {
+              "value": "outdoor",
+              "label": "Outdoors — sports or nature"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Personality",
+      "questions": [
+        {
+          "id": "personality_type",
+          "question": "You are",
+          "options": [
+            {
+              "value": "introvert",
+              "label": "Introvert 🐢"
+            },
+            {
+              "value": "ambivert",
+              "label": "Ambivert ⚖️"
+            },
+            {
+              "value": "extrovert",
+              "label": "Extrovert 🦜"
+            },
+            {
+              "value": "omnivert",
+              "label": "Omnivert — coin flip hourly 🪙"
+            },
+            {
+              "value": "socially_selective",
+              "label": "Introvert who performs extrovert for work 🎭"
+            },
+            {
+              "value": "depends_context",
+              "label": "Depends on the room — stop asking 😤"
+            }
+          ]
+        },
+        {
+          "id": "decision_style",
+          "question": "Decision style",
+          "options": [
+            {
+              "value": "impulsive",
+              "label": "Impulsive 🎲"
+            },
+            {
+              "value": "emotional",
+              "label": "Emotional ❤️"
+            },
+            {
+              "value": "intuitive",
+              "label": "Gut-first intuitive 🔮"
+            },
+            {
+              "value": "balanced",
+              "label": "Balanced ⚖️"
+            },
+            {
+              "value": "logical",
+              "label": "Logical spreadsheet brain 🧠"
+            },
+            {
+              "value": "analysis_paralysis",
+              "label": "Analysis paralysis — decide tomorrow 📊"
+            },
+            {
+              "value": "delegator",
+              "label": "I outsource decisions — committee era 👥"
+            },
+            {
+              "value": "panic_deadline",
+              "label": "Panic decides at deadline ⏰"
+            }
+          ]
+        },
+        {
+          "id": "social_battery",
+          "question": "Social battery",
+          "options": [
+            {
+              "value": "dies_fast",
+              "label": "Drains in a couple of hours"
+            },
+            {
+              "value": "one_event",
+              "label": "One event / weekend max — then cave 🏚️"
+            },
+            {
+              "value": "medium",
+              "label": "Medium — weekend warrior"
+            },
+            {
+              "value": "recharge_alone",
+              "label": "Fine at parties — must recharge solo after 🔌"
+            },
+            {
+              "value": "endless",
+              "label": "Endless — feed me crowds"
             },
             {
               "value": "depends",
-              "label": "Depends on the week — who knows"
+              "label": "Depends who (honest)"
+            },
+            {
+              "value": "online_ok",
+              "label": "Online social counts — IRL drains faster 💬"
             }
           ]
         },
         {
-          "id": "penis_length",
-          "question": "Below the belt (rough, for guys)",
+          "id": "risk_tolerance",
+          "question": "Risk appetite",
           "options": [
             {
-              "value": "skip",
-              "label": "Skip / not applicable ⏭️"
+              "value": "risk_averse",
+              "label": "Risk-averse — backup of the backup 📁"
             },
             {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
+              "value": "low",
+              "label": "Low — I like plans 📋"
             },
             {
-              "value": "below_avg",
-              "label": "Shy range 📉"
-            },
-            {
-              "value": "low_avg",
-              "label": "Low-average — it's fine"
-            },
-            {
-              "value": "average",
-              "label": "Solid average 📏"
-            },
-            {
-              "value": "above_avg",
-              "label": "Above average 📈"
+              "value": "medium",
+              "label": "Medium — calculated chaos"
             },
             {
               "value": "high",
-              "label": "High tier — gravity concerns"
+              "label": "High — Say yes often"
             },
             {
-              "value": "legend",
-              "label": "Legend tier (sure, king) 👑"
+              "value": "adhd",
+              "label": "Impulsive wiring"
             },
             {
-              "value": "grower_not_shower",
-              "label": "Grower not shower — chart lies 📊"
+              "value": "financial_diff",
+              "label": "Financial risk ≠ physical — stocks yes, skydiving no 📈"
             }
-          ],
-          "sensitive": true
+          ]
         },
         {
-          "id": "bra_cup",
-          "question": "Cup size (rough, for gals)",
+          "id": "favorite_colour",
+          "question": "Favorite colour",
           "options": [
             {
-              "value": "skip",
-              "label": "Skip / not applicable ⏭️"
+              "value": "black_mono",
+              "label": "Black / monochrome ⬛"
             },
             {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
+              "value": "white_cream",
+              "label": "White / cream minimal ⬜"
             },
             {
-              "value": "aa",
-              "label": "AA"
+              "value": "blue",
+              "label": "Navy / blue calm 💙"
             },
             {
-              "value": "a",
-              "label": "A"
+              "value": "green",
+              "label": "Green — nature coded 💚"
             },
             {
-              "value": "b",
-              "label": "B"
+              "value": "red_coral",
+              "label": "Red / coral bold ❤️"
             },
             {
-              "value": "c",
-              "label": "C"
+              "value": "yellow_orange",
+              "label": "Yellow / orange warm 🧡"
             },
             {
-              "value": "d",
-              "label": "D"
+              "value": "purple_lilac",
+              "label": "Purple / lilac dream 💜"
             },
             {
-              "value": "dd_e",
-              "label": "DD–E"
+              "value": "pink",
+              "label": "Pink blush 💗"
             },
             {
-              "value": "f_plus",
-              "label": "F+ — bra is engineering"
+              "value": "earth",
+              "label": "Earth tones 🟤"
             },
             {
-              "value": "binding",
-              "label": "Binder / compression fit — cup N/A"
+              "value": "neon",
+              "label": "Neon chaos ⚡"
             },
             {
-              "value": "post_surgery",
-              "label": "Surgery-adjusted ✨"
-            }
-          ],
-          "sensitive": true
-        },
-        {
-          "id": "plastic_surgery",
-          "question": "Cosmetic / plastic surgery ever?",
-          "options": [
-            {
-              "value": "never",
-              "label": "No — untouched"
-            },
-            {
-              "value": "maybe",
-              "label": "Maybe someday 🤔"
-            },
-            {
-              "value": "injectables",
-              "label": "Injectables / fillers"
-            },
-            {
-              "value": "minor",
-              "label": "Minor tweaks only"
-            },
-            {
-              "value": "revision",
-              "label": "Revision / follow-up surgery"
-            },
-            {
-              "value": "major",
-              "label": "Major surgical work"
-            },
-            {
-              "value": "regret_reverse",
-              "label": "Had work — reversed / regretted part of it"
+              "value": "rainbow_mood",
+              "label": "Can't pick — rainbow mood 🌈"
             },
             {
               "value": "prefer_not",
               "label": "Prefer not to say"
             }
-          ],
-          "sensitive": true
+          ]
         },
         {
-          "id": "plastic_detail",
-          "question": "If tweaks — what zone?",
+          "id": "love_language",
+          "multi": true,
+          "question": "Love language (how you feel loved)",
           "options": [
             {
-              "value": "face",
-              "label": "Face / skin / lift territory"
+              "value": "words",
+              "label": "Words of affirmation 💬"
             },
             {
-              "value": "eyes",
-              "label": "Eyes / lids / brows"
+              "value": "time",
+              "label": "Quality time ⏱️"
             },
             {
-              "value": "nose",
-              "label": "Nose"
+              "value": "touch",
+              "label": "Physical touch 🤝"
             },
             {
-              "value": "teeth",
-              "label": "Teeth / smile cosmetic"
+              "value": "acts",
+              "label": "Acts of service 🧹"
             },
             {
-              "value": "chest",
-              "label": "Chest"
+              "value": "gifts",
+              "label": "Receiving gifts 🎁"
             },
             {
-              "value": "body",
-              "label": "Body contour / lipo zone"
+              "value": "all_five",
+              "label": "All five — balanced chaos ⚖️"
             },
             {
-              "value": "butt",
-              "label": "Glutes / buttocks"
+              "value": "depends",
+              "label": "Depends who — not one box 📦"
             },
             {
-              "value": "hair",
-              "label": "Hair transplant / hairline"
-            },
-            {
-              "value": "mix",
-              "label": "Mix of areas"
+              "value": "skeptic",
+              "label": "Skeptic — Skeptical of labels"
             },
             {
               "value": "prefer_not",
-              "label": "Prefer not to elaborate"
+              "label": "Prefer not to say"
             }
-          ],
-          "sensitive": true
+          ]
+        },
+        {
+          "id": "dating_types",
+          "multi": true,
+          "question": "Types you're drawn to (dating)",
+          "options": [
+            {
+              "value": "funny_chaotic",
+              "label": "Funny / chaotic (we'll fix it later) 🎲"
+            },
+            {
+              "value": "soft_gentle",
+              "label": "Soft / gentle — Warm and steady"
+            },
+            {
+              "value": "ambitious",
+              "label": "Ambitious / career laser 📈"
+            },
+            {
+              "value": "creative",
+              "label": "Creative / artist brain 🎨"
+            },
+            {
+              "value": "gym_health",
+              "label": "Gym / health obsessed (respectfully) 🏋️"
+            },
+            {
+              "value": "intellectual",
+              "label": "Intellectual — debate me 🧠"
+            },
+            {
+              "value": "mysterious",
+              "label": "Mysterious / low posting 🌑"
+            },
+            {
+              "value": "outdoors",
+              "label": "Outdoors — outdoorsy couple 🌲"
+            },
+            {
+              "value": "domestic_cozy",
+              "label": "Domestic — cozy home dates 🏠"
+            },
+            {
+              "value": "party_social",
+              "label": "Party — social battery match 🎉"
+            },
+            {
+              "value": "hot_mess_match",
+              "label": "Hot mess matching my mess 🔥"
+            },
+            {
+              "value": "no_types",
+              "label": "Don't do types — person over box 💫"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "the_ick",
+          "question": "What gives you the instant turnoff fastest",
+          "options": [
+            {
+              "value": "mouth_sounds",
+              "label": "Mouth sounds / chewing wrong 🫠"
+            },
+            {
+              "value": "clingy_texts",
+              "label": "Clingy texts in the first 48h 📱"
+            },
+            {
+              "value": "rude_staff",
+              "label": "Rude to wait staff 🍽️"
+            },
+            {
+              "value": "baby_voice",
+              "label": "Baby voice unprovoked 👶"
+            },
+            {
+              "value": "crypto_hustle",
+              "label": "Crypto / hustle lecture date 💸"
+            },
+            {
+              "value": "public_fighting",
+              "label": "Fighting publicly for content 📹"
+            },
+            {
+              "value": "socks_mystery",
+              "label": "Sock situation unexplained 🧦"
+            },
+            {
+              "value": "hygiene",
+              "label": "Hygiene mystery / dirty nails 🤢"
+            },
+            {
+              "value": "mirroring",
+              "label": "Too much mirroring — uncanny valley 🪞"
+            },
+            {
+              "value": "chronic_ick",
+              "label": "Everything eventually — easily turned off 😵"
+            },
+            {
+              "value": "nothing",
+              "label": "Nothing — brave or optimistic ✨"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "conflict_style",
+          "question": "In conflict you tend to",
+          "options": [
+            {
+              "value": "address",
+              "label": "Address it directly"
+            },
+            {
+              "value": "cool_off",
+              "label": "Cool off first — talk later"
+            },
+            {
+              "value": "avoid",
+              "label": "Avoid until it fades"
+            },
+            {
+              "value": "humor",
+              "label": "Deflect with humor"
+            },
+            {
+              "value": "shutdown",
+              "label": "Shut down / withdraw"
+            },
+            {
+              "value": "depends",
+              "label": "Depends who it is"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "punctuality",
+          "question": "Arriving on time",
+          "options": [
+            {
+              "value": "early",
+              "label": "Usually early"
+            },
+            {
+              "value": "on_time",
+              "label": "On time — intentional"
+            },
+            {
+              "value": "few_late",
+              "label": "A few minutes late — often"
+            },
+            {
+              "value": "chaotic",
+              "label": "Chronically late — working on it"
+            },
+            {
+              "value": "depends",
+              "label": "Depends what's at stake"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
         }
       ]
     },
@@ -1782,409 +2393,597 @@
       ]
     },
     {
-      "category": "Lifestyle",
+      "category": "Body & Stats",
       "questions": [
         {
-          "id": "screen_time",
-          "question": "Screen time",
+          "id": "height",
+          "question": "Height",
           "options": [
             {
-              "value": "<2",
-              "label": "<2h (liar?)"
+              "value": "<155",
+              "label": "<155 cm"
             },
             {
-              "value": "2-4",
-              "label": "2–4h"
+              "value": "155-164",
+              "label": "155–164 cm"
             },
             {
-              "value": "4-6",
-              "label": "4–6h"
+              "value": "165-174",
+              "label": "165–174 cm"
             },
             {
-              "value": "6-8",
-              "label": "6–8h"
+              "value": "175-184",
+              "label": "175–184 cm"
             },
             {
-              "value": "8-10",
-              "label": "8–10h — endless scrolling PhD"
+              "value": "185-194",
+              "label": "185–194 cm"
             },
             {
-              "value": "10+",
-              "label": "10h+ — Screens all day"
+              "value": "195+",
+              "label": "195+ cm 📏"
             },
             {
-              "value": "work_fused",
-              "label": "Work and leisure blur together"
+              "value": "prefer_not",
+              "label": "Prefer not to say"
             }
           ]
         },
         {
-          "id": "routine",
-          "question": "Routine",
+          "id": "weight",
+          "question": "Weight (ballpark)",
           "options": [
             {
-              "value": "chaotic",
-              "label": "Chaos 🎲"
+              "value": "<50",
+              "label": "<50 kg"
             },
             {
-              "value": "loose",
-              "label": "Loose"
+              "value": "50-59",
+              "label": "50–59 kg"
             },
             {
-              "value": "structured",
-              "label": "Some structure"
+              "value": "60-69",
+              "label": "60–69 kg"
             },
             {
-              "value": "strict",
-              "label": "Strict 📅"
+              "value": "70-79",
+              "label": "70–79 kg"
             },
             {
-              "value": "aspire_fails",
-              "label": "Aspires to routine — slips weekly"
+              "value": "80-89",
+              "label": "80–89 kg"
             },
             {
-              "value": "seasonal",
-              "label": "Seasonal — winter vs summer"
+              "value": "90-99",
+              "label": "90–99 kg"
+            },
+            {
+              "value": "100+",
+              "label": "100+ kg 💪"
+            },
+            {
+              "value": "fluctuates",
+              "label": "Yo-yos hard — pick a lane 😮‍💨"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
             }
           ]
         },
         {
-          "id": "coffee_habit",
-          "question": "Coffee habit",
+          "id": "build",
+          "question": "Build",
           "options": [
             {
-              "value": "none",
-              "label": "Zero caffeine — wizard 🧙"
+              "value": "slim",
+              "label": "Slim 🪶"
             },
             {
-              "value": "tea",
-              "label": "Mostly tea"
+              "value": "average",
+              "label": "Average ⚖️"
             },
             {
-              "value": "1",
-              "label": "1 cup — civilized"
+              "value": "athletic",
+              "label": "Athletic 🏃"
             },
             {
-              "value": "2-3",
-              "label": "2–3 — functional"
+              "value": "muscular",
+              "label": "Muscular 💪"
             },
             {
-              "value": "4plus",
-              "label": "4+ IV drip ☕"
+              "value": "stocky",
+              "label": "Stocky / compact 🧱"
             },
             {
-              "value": "energy_drinks",
-              "label": "Energy drinks"
+              "value": "curvy",
+              "label": "Curvy / soft sculpt"
             },
             {
-              "value": "decaf",
-              "label": "Decaf (respectfully why)"
+              "value": "chubby",
+              "label": "Soft / chubby 🍞"
+            },
+            {
+              "value": "plus",
+              "label": "Plus-size — loud & proud ✨"
+            },
+            {
+              "value": "in_between",
+              "label": "Between every label 🤷"
             }
           ]
         },
         {
-          "id": "entertainment",
-          "multi": true,
-          "question": "Main entertainment diet",
+          "id": "eye_color",
+          "question": "Eye color",
           "options": [
             {
-              "value": "film_tv",
-              "label": "Films & series 🎬"
+              "value": "brown",
+              "label": "Brown"
             },
             {
-              "value": "youtube",
-              "label": "YouTube rabbit holes"
+              "value": "blue",
+              "label": "Blue"
             },
             {
-              "value": "tiktok_shorts",
-              "label": "Short-form short-form video 📲"
+              "value": "green",
+              "label": "Green"
             },
             {
-              "value": "podcasts",
-              "label": "Podcasts"
+              "value": "hazel",
+              "label": "Hazel"
             },
             {
-              "value": "sports_watch",
-              "label": "Sports watch party 📺"
+              "value": "grey",
+              "label": "Grey"
             },
             {
-              "value": "live",
-              "label": "Live music / gigs 🎤"
+              "value": "amber",
+              "label": "Amber / honey 🍯"
             },
             {
-              "value": "museums",
-              "label": "Museums / galleries 🖼️"
+              "value": "hetero",
+              "label": "Two different — main character ✨"
             },
             {
-              "value": "reading",
-              "label": "Reading — paper or e-ink 📖"
+              "value": "contacts",
+              "label": "Mostly contacts / lenses 👁️"
             },
             {
-              "value": "gaming",
-              "label": "Gaming"
-            },
-            {
-              "value": "outdoors",
-              "label": "get outside activities 🌲"
-            },
-            {
-              "value": "mixed",
-              "label": "Rotating obsessions 🌀"
+              "value": "changes_light",
+              "label": "Changes in the light — pick one 😵‍💫"
             }
           ]
         },
         {
-          "id": "gaming_intensity",
-          "question": "Gaming intensity",
+          "id": "face_shape",
+          "question": "Face shape (roughly)",
           "options": [
             {
-              "value": "none",
-              "label": "Don't game"
+              "value": "round",
+              "label": "Round 🌕"
             },
             {
-              "value": "casual",
-              "label": "Casual mobile 🐣"
+              "value": "oval",
+              "label": "Oval"
             },
             {
-              "value": "party",
-              "label": "Party / couch co-op 🎉"
+              "value": "square",
+              "label": "Square jaw 🧊"
+            },
+            {
+              "value": "heart",
+              "label": "Heart / pointy chin 💗"
+            },
+            {
+              "value": "long",
+              "label": "Long / oblong"
+            },
+            {
+              "value": "diamond",
+              "label": "Diamond cheekbone era 💎"
+            },
+            {
+              "value": "unique",
+              "label": "None of the boxes fit 😤"
+            }
+          ]
+        },
+        {
+          "id": "hair",
+          "question": "Hair situation",
+          "options": [
+            {
+              "value": "buzzed",
+              "label": "Buzzed / super short"
+            },
+            {
+              "value": "short",
+              "label": "Short"
+            },
+            {
+              "value": "medium",
+              "label": "Medium flow"
+            },
+            {
+              "value": "long",
+              "label": "Long 🌊"
+            },
+            {
+              "value": "bald",
+              "label": "Bald & proud 🥚"
+            },
+            {
+              "value": "thinning",
+              "label": "Thinning — we're honest"
+            },
+            {
+              "value": "wig_extensions",
+              "label": "Wig / extensions sometimes ✨"
+            },
+            {
+              "value": "dyed",
+              "label": "Dyed chaos 🌈"
+            }
+          ]
+        },
+        {
+          "id": "hairdresser_interval",
+          "question": "Salon / barber rhythm (cuts & pro trims)",
+          "options": [
+            {
+              "value": "diy_only",
+              "label": "DIY / clippers only — pros never 👀"
+            },
+            {
+              "value": "under_3wk",
+              "label": "Every few weeks — fresh fade religion ✂️"
+            },
+            {
+              "value": "4-6wk",
+              "label": "Roughly 4–6 weeks"
+            },
+            {
+              "value": "2-3mo",
+              "label": "Every 2–3 months"
+            },
+            {
+              "value": "few_times_year",
+              "label": "A few times a year — grows out seasons 🌿"
+            },
+            {
+              "value": "yearish",
+              "label": "About once a year — intervention haircut"
+            },
+            {
+              "value": "when_shamed",
+              "label": "When partner / mum / mirror negotiates 📣"
+            },
+            {
+              "value": "buzz_none",
+              "label": "Buzzed/bald/none needed — zero salon drama 🥚"
+            },
+            {
+              "value": "prefer_not",
+              "label": "Prefer not to say"
+            }
+          ]
+        },
+        {
+          "id": "activity",
+          "question": "Daily movement",
+          "options": [
+            {
+              "value": "bed",
+              "label": "Bed ↔ desk ↔ fridge only 🛋️"
+            },
+            {
+              "value": "sedentary",
+              "label": "Barely move — desk job curse"
+            },
+            {
+              "value": "light",
+              "label": "Some walking 🚶"
+            },
+            {
+              "value": "moderate",
+              "label": "Regular activity 🏃"
+            },
+            {
+              "value": "high",
+              "label": "Gym rat 🏋️"
+            },
+            {
+              "value": "manual_job",
+              "label": "Physical job — paid to move 💼"
+            }
+          ]
+        },
+        {
+          "id": "sleep",
+          "question": "Sleep hours (typical)",
+          "options": [
+            {
+              "value": "<5",
+              "label": "<5h 😵"
+            },
+            {
+              "value": "5-6",
+              "label": "5–6h 😴"
+            },
+            {
+              "value": "6-7",
+              "label": "6–7h"
+            },
+            {
+              "value": "7-8",
+              "label": "7–8h 😌"
+            },
+            {
+              "value": "8-9",
+              "label": "8–9h — luxury"
+            },
+            {
+              "value": "9+",
+              "label": "9h+ bear mode 🐻"
+            },
+            {
+              "value": "chaos",
+              "label": "So irregular I can't average it 🌀"
+            }
+          ]
+        },
+        {
+          "id": "sleep_pattern",
+          "question": "Sleep pattern honesty",
+          "options": [
+            {
+              "value": "early_bird",
+              "label": "Early bird (suspicious) 🌅"
             },
             {
               "value": "regular",
-              "label": "Regular — story games"
+              "label": "Pretty regular"
             },
             {
-              "value": "competitive",
-              "label": "Ranked sweat 🔥"
+              "value": "weekend_reset",
+              "label": "Weekday zombie / weekend catch-up"
             },
             {
-              "value": "speedrun",
-              "label": "Speedrun / mastery degenerate ⏱️"
+              "value": "night_owl",
+              "label": "Night owl 🦉"
             },
             {
-              "value": "retro",
-              "label": "Retro / emulation collector 👾"
+              "value": "insomnia",
+              "label": "Insomnia goblin 🌙"
             },
             {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
+              "value": "shift",
+              "label": "Shift work chaos"
+            },
+            {
+              "value": "baby_pet",
+              "label": "Baby / pet wakes me — send help 🐕"
             }
           ]
         },
         {
-          "id": "pets_home",
-          "question": "Pets under your roof",
+          "id": "chronotype",
+          "question": "When are you actually alive?",
           "options": [
             {
-              "value": "none",
-              "label": "Plants only — no pets"
+              "value": "morning",
+              "label": "Morning — 5am demon energy"
             },
             {
-              "value": "dog",
-              "label": "Dog(s) — sworn bestie(s) 🐕"
+              "value": "late_morning",
+              "label": "Late morning — coffee first ☕"
             },
             {
-              "value": "cat",
-              "label": "Cat(s) — household royalty 🐈"
+              "value": "mid",
+              "label": "Midday human"
             },
             {
-              "value": "dog_cat",
-              "label": "Dog + cat diplomacy zone 🐕‍🦺🐈"
+              "value": "afternoon",
+              "label": "Afternoon — second wind crew"
             },
             {
-              "value": "small_critters",
-              "label": "Small mammals / rodents / hopping chaos 🐹"
+              "value": "evening",
+              "label": "Evening peak 🌆"
             },
             {
-              "value": "birds_reptiles_fish",
-              "label": "Bird / reptile / aquarium cabinet 🐠🦎"
+              "value": "late_night",
+              "label": "11pm–2am is my workshop 🛠️"
             },
             {
-              "value": "multi_zoo",
-              "label": "Full zoo energy — multiple species 📦"
+              "value": "3am",
+              "label": "3am is my golden hour 🕯️"
             },
             {
-              "value": "shared_not_mine",
-              "label": "Roomie's / partner's pets — I'm the uncle"
-            },
-            {
-              "value": "soon_maybe",
-              "label": "Planning for a pet — researching shelters"
-            },
-            {
-              "value": "allergic_obstacle",
-              "label": "Allergic to animals"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
+              "value": "depends",
+              "label": "Depends on the week — who knows"
             }
           ]
         },
         {
-          "id": "pet_energy",
-          "question": "Pet parenting style (if you have pets — otherwise pick closest)",
+          "id": "penis_length",
+          "question": "Below the belt (rough, for guys)",
           "options": [
             {
-              "value": "na_none",
-              "label": "N/A — no pets / plants only 🌿"
-            },
-            {
-              "value": "low_key",
-              "label": "Low-key — chill coexistence"
-            },
-            {
-              "value": "spoiled_soft",
-              "label": "Rotten spoiled — treats budget exists 🧺"
-            },
-            {
-              "value": "structured",
-              "label": "Structured walks / routines — spreadsheet brain 📋"
-            },
-            {
-              "value": "chaos_pack",
-              "label": "Chaos pack — zoomies at 3am 🌀"
-            },
-            {
-              "value": "outdoor_partner",
-              "label": "Outdoor partner — hikes & mud 🥾"
-            },
-            {
-              "value": "senior_care",
-              "label": "Senior pet — medications / comfort care 💊"
-            },
-            {
-              "value": "foster_rotation",
-              "label": "Foster / rotate — heart always breaking 💔"
-            },
-            {
-              "value": "want_so_bad",
-              "label": "Petless but mentally at the dog park 🫠"
+              "value": "skip",
+              "label": "Skip / not applicable ⏭️"
             },
             {
               "value": "prefer_not",
               "label": "Prefer not to say"
+            },
+            {
+              "value": "below_avg",
+              "label": "Shy range 📉"
+            },
+            {
+              "value": "low_avg",
+              "label": "Low-average — it's fine"
+            },
+            {
+              "value": "average",
+              "label": "Solid average 📏"
+            },
+            {
+              "value": "above_avg",
+              "label": "Above average 📈"
+            },
+            {
+              "value": "high",
+              "label": "High tier — gravity concerns"
+            },
+            {
+              "value": "legend",
+              "label": "Legend tier (sure, king) 👑"
+            },
+            {
+              "value": "grower_not_shower",
+              "label": "Grower not shower — chart lies 📊"
             }
-          ]
+          ],
+          "sensitive": true
         },
         {
-          "id": "self_care_frequency",
-          "question": "Self-care cadence (intentional you-time)",
+          "id": "bra_cup",
+          "question": "Cup size (rough, for gals)",
           "options": [
             {
-              "value": "what_self_care",
-              "label": "\"Self-care?\" — survival mode"
-            },
-            {
-              "value": "rare_guilt",
-              "label": "Rare bursts — guilt spiral after 📉"
-            },
-            {
-              "value": "weekly_slot",
-              "label": "Weekly-ish — calendar decides"
-            },
-            {
-              "value": "few_week",
-              "label": "Few times a week micro rituals ✨"
-            },
-            {
-              "value": "daily_small",
-              "label": "Small daily habits"
-            },
-            {
-              "value": "main_character",
-              "label": "Priority maintenance — non-negotiable 👑"
-            },
-            {
-              "value": "cyclical",
-              "label": "Cyclical — great month then offline month 🌙"
+              "value": "skip",
+              "label": "Skip / not applicable ⏭️"
             },
             {
               "value": "prefer_not",
               "label": "Prefer not to say"
+            },
+            {
+              "value": "aa",
+              "label": "AA"
+            },
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            },
+            {
+              "value": "d",
+              "label": "D"
+            },
+            {
+              "value": "dd_e",
+              "label": "DD–E"
+            },
+            {
+              "value": "f_plus",
+              "label": "F+ — bra is engineering"
+            },
+            {
+              "value": "binding",
+              "label": "Binder / compression fit — cup N/A"
+            },
+            {
+              "value": "post_surgery",
+              "label": "Surgery-adjusted ✨"
             }
-          ]
+          ],
+          "sensitive": true
         },
         {
-          "id": "self_care_lane",
-          "multi": true,
-          "question": "Self-care lane that hits hardest",
+          "id": "plastic_surgery",
+          "question": "Cosmetic / plastic surgery ever?",
           "options": [
             {
-              "value": "skin_body",
-              "label": "Skin / bath / body rituals 🛁"
+              "value": "never",
+              "label": "No — untouched"
             },
             {
-              "value": "therapy_mind",
-              "label": "Therapy / journaling / inner work 🛋️"
+              "value": "maybe",
+              "label": "Maybe someday 🤔"
             },
             {
-              "value": "movement",
-              "label": "Movement — gym walk stretch dance 🏃"
+              "value": "injectables",
+              "label": "Injectables / fillers"
             },
             {
-              "value": "sleep_nest",
-              "label": "Sleep / nest / Sleep / blackout setup"
+              "value": "minor",
+              "label": "Minor tweaks only"
             },
             {
-              "value": "social_refuel",
-              "label": "People time — extrovert refill ☕"
+              "value": "revision",
+              "label": "Revision / follow-up surgery"
             },
             {
-              "value": "solo_silence",
-              "label": "Alone silence — battery sacred 🔌"
+              "value": "major",
+              "label": "Major surgical work"
             },
             {
-              "value": "creative_play",
-              "label": "Creative play — art music games 🎨"
-            },
-            {
-              "value": "nature_reset",
-              "label": "Nature reset — Getting outside"
-            },
-            {
-              "value": "food_treat",
-              "label": "Food treat — chef brain or nice takeout 🍜"
-            },
-            {
-              "value": "no_sparkle",
-              "label": "No frills — coping is low-key"
+              "value": "regret_reverse",
+              "label": "Had work — reversed / regretted part of it"
             },
             {
               "value": "prefer_not",
               "label": "Prefer not to say"
             }
-          ]
+          ],
+          "sensitive": true
         },
         {
-          "id": "cooking_at_home",
-          "question": "Cooking at home",
+          "id": "plastic_detail",
+          "question": "If tweaks — what zone?",
           "options": [
             {
-              "value": "rare",
-              "label": "Rare — mostly takeout / dining out"
+              "value": "face",
+              "label": "Face / skin / lift territory"
             },
             {
-              "value": "few_week",
-              "label": "A few times a week"
+              "value": "eyes",
+              "label": "Eyes / lids / brows"
             },
             {
-              "value": "most_days",
-              "label": "Most days — simple meals"
+              "value": "nose",
+              "label": "Nose"
             },
             {
-              "value": "almost_all",
-              "label": "Almost every meal — kitchen is HQ"
+              "value": "teeth",
+              "label": "Teeth / smile cosmetic"
             },
             {
-              "value": "partner_cooks",
-              "label": "Someone else cooks most nights"
+              "value": "chest",
+              "label": "Chest"
+            },
+            {
+              "value": "body",
+              "label": "Body contour / lipo zone"
+            },
+            {
+              "value": "butt",
+              "label": "Glutes / buttocks"
+            },
+            {
+              "value": "hair",
+              "label": "Hair transplant / hairline"
+            },
+            {
+              "value": "mix",
+              "label": "Mix of areas"
             },
             {
               "value": "prefer_not",
-              "label": "Prefer not to say"
+              "label": "Prefer not to elaborate"
             }
-          ]
+          ],
+          "sensitive": true
         }
       ]
     },
@@ -3167,805 +3966,6 @@
             {
               "value": "none",
               "label": "No barrier — just haven't"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "category": "Personality",
-      "questions": [
-        {
-          "id": "personality_type",
-          "question": "You are",
-          "options": [
-            {
-              "value": "introvert",
-              "label": "Introvert 🐢"
-            },
-            {
-              "value": "ambivert",
-              "label": "Ambivert ⚖️"
-            },
-            {
-              "value": "extrovert",
-              "label": "Extrovert 🦜"
-            },
-            {
-              "value": "omnivert",
-              "label": "Omnivert — coin flip hourly 🪙"
-            },
-            {
-              "value": "socially_selective",
-              "label": "Introvert who performs extrovert for work 🎭"
-            },
-            {
-              "value": "depends_context",
-              "label": "Depends on the room — stop asking 😤"
-            }
-          ]
-        },
-        {
-          "id": "decision_style",
-          "question": "Decision style",
-          "options": [
-            {
-              "value": "impulsive",
-              "label": "Impulsive 🎲"
-            },
-            {
-              "value": "emotional",
-              "label": "Emotional ❤️"
-            },
-            {
-              "value": "intuitive",
-              "label": "Gut-first intuitive 🔮"
-            },
-            {
-              "value": "balanced",
-              "label": "Balanced ⚖️"
-            },
-            {
-              "value": "logical",
-              "label": "Logical spreadsheet brain 🧠"
-            },
-            {
-              "value": "analysis_paralysis",
-              "label": "Analysis paralysis — decide tomorrow 📊"
-            },
-            {
-              "value": "delegator",
-              "label": "I outsource decisions — committee era 👥"
-            },
-            {
-              "value": "panic_deadline",
-              "label": "Panic decides at deadline ⏰"
-            }
-          ]
-        },
-        {
-          "id": "social_battery",
-          "question": "Social battery",
-          "options": [
-            {
-              "value": "dies_fast",
-              "label": "Drains in a couple of hours"
-            },
-            {
-              "value": "one_event",
-              "label": "One event / weekend max — then cave 🏚️"
-            },
-            {
-              "value": "medium",
-              "label": "Medium — weekend warrior"
-            },
-            {
-              "value": "recharge_alone",
-              "label": "Fine at parties — must recharge solo after 🔌"
-            },
-            {
-              "value": "endless",
-              "label": "Endless — feed me crowds"
-            },
-            {
-              "value": "depends",
-              "label": "Depends who (honest)"
-            },
-            {
-              "value": "online_ok",
-              "label": "Online social counts — IRL drains faster 💬"
-            }
-          ]
-        },
-        {
-          "id": "risk_tolerance",
-          "question": "Risk appetite",
-          "options": [
-            {
-              "value": "risk_averse",
-              "label": "Risk-averse — backup of the backup 📁"
-            },
-            {
-              "value": "low",
-              "label": "Low — I like plans 📋"
-            },
-            {
-              "value": "medium",
-              "label": "Medium — calculated chaos"
-            },
-            {
-              "value": "high",
-              "label": "High — Say yes often"
-            },
-            {
-              "value": "adhd",
-              "label": "Impulsive wiring"
-            },
-            {
-              "value": "financial_diff",
-              "label": "Financial risk ≠ physical — stocks yes, skydiving no 📈"
-            }
-          ]
-        },
-        {
-          "id": "favorite_colour",
-          "question": "Favorite colour",
-          "options": [
-            {
-              "value": "black_mono",
-              "label": "Black / monochrome ⬛"
-            },
-            {
-              "value": "white_cream",
-              "label": "White / cream minimal ⬜"
-            },
-            {
-              "value": "blue",
-              "label": "Navy / blue calm 💙"
-            },
-            {
-              "value": "green",
-              "label": "Green — nature coded 💚"
-            },
-            {
-              "value": "red_coral",
-              "label": "Red / coral bold ❤️"
-            },
-            {
-              "value": "yellow_orange",
-              "label": "Yellow / orange warm 🧡"
-            },
-            {
-              "value": "purple_lilac",
-              "label": "Purple / lilac dream 💜"
-            },
-            {
-              "value": "pink",
-              "label": "Pink blush 💗"
-            },
-            {
-              "value": "earth",
-              "label": "Earth tones 🟤"
-            },
-            {
-              "value": "neon",
-              "label": "Neon chaos ⚡"
-            },
-            {
-              "value": "rainbow_mood",
-              "label": "Can't pick — rainbow mood 🌈"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "love_language",
-          "multi": true,
-          "question": "Love language (how you feel loved)",
-          "options": [
-            {
-              "value": "words",
-              "label": "Words of affirmation 💬"
-            },
-            {
-              "value": "time",
-              "label": "Quality time ⏱️"
-            },
-            {
-              "value": "touch",
-              "label": "Physical touch 🤝"
-            },
-            {
-              "value": "acts",
-              "label": "Acts of service 🧹"
-            },
-            {
-              "value": "gifts",
-              "label": "Receiving gifts 🎁"
-            },
-            {
-              "value": "all_five",
-              "label": "All five — balanced chaos ⚖️"
-            },
-            {
-              "value": "depends",
-              "label": "Depends who — not one box 📦"
-            },
-            {
-              "value": "skeptic",
-              "label": "Skeptic — Skeptical of labels"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "dating_types",
-          "multi": true,
-          "question": "Types you're drawn to (dating)",
-          "options": [
-            {
-              "value": "funny_chaotic",
-              "label": "Funny / chaotic (we'll fix it later) 🎲"
-            },
-            {
-              "value": "soft_gentle",
-              "label": "Soft / gentle — Warm and steady"
-            },
-            {
-              "value": "ambitious",
-              "label": "Ambitious / career laser 📈"
-            },
-            {
-              "value": "creative",
-              "label": "Creative / artist brain 🎨"
-            },
-            {
-              "value": "gym_health",
-              "label": "Gym / health obsessed (respectfully) 🏋️"
-            },
-            {
-              "value": "intellectual",
-              "label": "Intellectual — debate me 🧠"
-            },
-            {
-              "value": "mysterious",
-              "label": "Mysterious / low posting 🌑"
-            },
-            {
-              "value": "outdoors",
-              "label": "Outdoors — outdoorsy couple 🌲"
-            },
-            {
-              "value": "domestic_cozy",
-              "label": "Domestic — cozy home dates 🏠"
-            },
-            {
-              "value": "party_social",
-              "label": "Party — social battery match 🎉"
-            },
-            {
-              "value": "hot_mess_match",
-              "label": "Hot mess matching my mess 🔥"
-            },
-            {
-              "value": "no_types",
-              "label": "Don't do types — person over box 💫"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "the_ick",
-          "question": "What gives you the instant turnoff fastest",
-          "options": [
-            {
-              "value": "mouth_sounds",
-              "label": "Mouth sounds / chewing wrong 🫠"
-            },
-            {
-              "value": "clingy_texts",
-              "label": "Clingy texts in the first 48h 📱"
-            },
-            {
-              "value": "rude_staff",
-              "label": "Rude to wait staff 🍽️"
-            },
-            {
-              "value": "baby_voice",
-              "label": "Baby voice unprovoked 👶"
-            },
-            {
-              "value": "crypto_hustle",
-              "label": "Crypto / hustle lecture date 💸"
-            },
-            {
-              "value": "public_fighting",
-              "label": "Fighting publicly for content 📹"
-            },
-            {
-              "value": "socks_mystery",
-              "label": "Sock situation unexplained 🧦"
-            },
-            {
-              "value": "hygiene",
-              "label": "Hygiene mystery / dirty nails 🤢"
-            },
-            {
-              "value": "mirroring",
-              "label": "Too much mirroring — uncanny valley 🪞"
-            },
-            {
-              "value": "chronic_ick",
-              "label": "Everything eventually — easily turned off 😵"
-            },
-            {
-              "value": "nothing",
-              "label": "Nothing — brave or optimistic ✨"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "conflict_style",
-          "question": "In conflict you tend to",
-          "options": [
-            {
-              "value": "address",
-              "label": "Address it directly"
-            },
-            {
-              "value": "cool_off",
-              "label": "Cool off first — talk later"
-            },
-            {
-              "value": "avoid",
-              "label": "Avoid until it fades"
-            },
-            {
-              "value": "humor",
-              "label": "Deflect with humor"
-            },
-            {
-              "value": "shutdown",
-              "label": "Shut down / withdraw"
-            },
-            {
-              "value": "depends",
-              "label": "Depends who it is"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "punctuality",
-          "question": "Arriving on time",
-          "options": [
-            {
-              "value": "early",
-              "label": "Usually early"
-            },
-            {
-              "value": "on_time",
-              "label": "On time — intentional"
-            },
-            {
-              "value": "few_late",
-              "label": "A few minutes late — often"
-            },
-            {
-              "value": "chaotic",
-              "label": "Chronically late — working on it"
-            },
-            {
-              "value": "depends",
-              "label": "Depends what's at stake"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "category": "Hobbies",
-      "questions": [
-        {
-          "id": "hobby_count",
-          "question": "How many hobbies",
-          "options": [
-            {
-              "value": "0",
-              "label": "None 😶"
-            },
-            {
-              "value": "1",
-              "label": "One deep dive only"
-            },
-            {
-              "value": "2",
-              "label": "2 — manageable"
-            },
-            {
-              "value": "3-5",
-              "label": "3–5"
-            },
-            {
-              "value": "6+",
-              "label": "6+ — ADHD hobby stack"
-            },
-            {
-              "value": "serial",
-              "label": "Serial hobbyist — rotate quarterly 🔁"
-            }
-          ]
-        },
-        {
-          "id": "hobby_type",
-          "question": "Main hobby type",
-          "options": [
-            {
-              "value": "passive",
-              "label": "Chill consume 🎮"
-            },
-            {
-              "value": "creative",
-              "label": "Creative 🎨"
-            },
-            {
-              "value": "maker",
-              "label": "Maker / build physical stuff 🛠️"
-            },
-            {
-              "value": "intellectual",
-              "label": "Brainy 🧠"
-            },
-            {
-              "value": "active",
-              "label": "Active 🏃"
-            },
-            {
-              "value": "social",
-              "label": "Social 🎉"
-            },
-            {
-              "value": "volunteer",
-              "label": "Volunteer / community heart 🤝"
-            },
-            {
-              "value": "collector",
-              "label": "Collecting — vinyl, sneakers, regrets 📦"
-            }
-          ]
-        },
-        {
-          "id": "sport_kind",
-          "question": "Sport energy (if any)",
-          "options": [
-            {
-              "value": "none",
-              "label": "Sport is watching others sweat"
-            },
-            {
-              "value": "walk_yoga",
-              "label": "Walk / yoga / gentle movement 🧘"
-            },
-            {
-              "value": "gym",
-              "label": "Gym / weights 🏋️"
-            },
-            {
-              "value": "ball",
-              "label": "Ball sports ⚽"
-            },
-            {
-              "value": "racket",
-              "label": "Racket sports 🎾"
-            },
-            {
-              "value": "water",
-              "label": "Water / swim 🏊"
-            },
-            {
-              "value": "snow",
-              "label": "Snow / board sports 🏂"
-            },
-            {
-              "value": "combat",
-              "label": "Combat / martial 🥊"
-            },
-            {
-              "value": "endurance",
-              "label": "Run / bike endurance 🚴"
-            },
-            {
-              "value": "climb",
-              "label": "Climb / boulder 🧗"
-            },
-            {
-              "value": "dance",
-              "label": "Dance counts — cardio with rhythm 💃"
-            }
-          ]
-        },
-        {
-          "id": "movies_you_like",
-          "multi": true,
-          "question": "Movies you're into",
-          "options": [
-            {
-              "value": "action_blockbuster",
-              "label": "Action / blockbuster adrenaline 🎬"
-            },
-            {
-              "value": "indie_art",
-              "label": "Indie / arthouse patience 🎞️"
-            },
-            {
-              "value": "horror",
-              "label": "Horror — midnight brain 🩸"
-            },
-            {
-              "value": "romcom",
-              "label": "Rom-com soft hours 💘"
-            },
-            {
-              "value": "scifi_fantasy",
-              "label": "Sci-fi / fantasy deep dives"
-            },
-            {
-              "value": "comedy",
-              "label": "Comedy — laugh track soul 😂"
-            },
-            {
-              "value": "docs_true_crime",
-              "label": "Docs / true crime spiral 🔎"
-            },
-            {
-              "value": "animation_anime",
-              "label": "Animation / anime counts ✨"
-            },
-            {
-              "value": "classics_rewatch",
-              "label": "Classics — comfort rewatches only 🎥"
-            },
-            {
-              "value": "trending_chaos",
-              "label": "Whatever's trending — chaotic picks 🌀"
-            },
-            {
-              "value": "rarely_films",
-              "label": "Rarely films — I'm a series person 📺"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "tv_you_like",
-          "multi": true,
-          "question": "TV you're into",
-          "options": [
-            {
-              "value": "comedy_comfort",
-              "label": "Comedy comfort 📺"
-            },
-            {
-              "value": "prestige_drama",
-              "label": "Prestige drama suffering 🏆"
-            },
-            {
-              "value": "reality",
-              "label": "Reality chaos 🍿"
-            },
-            {
-              "value": "crime_procedural",
-              "label": "Crime / procedural bedtime 🔦"
-            },
-            {
-              "value": "scifi_fantasy_tv",
-              "label": "Sci-fi / fantasy worldbuilding 🌌"
-            },
-            {
-              "value": "anime_tv",
-              "label": "Anime seasons 🇯🇵"
-            },
-            {
-              "value": "docuseries",
-              "label": "Docuseries rabbit hole 📼"
-            },
-            {
-              "value": "cooking_travel",
-              "label": "Cooking / travel cozy 🧳"
-            },
-            {
-              "value": "sports",
-              "label": "Sports — watch party religiously ⚽"
-            },
-            {
-              "value": "background_noise",
-              "label": "Background noise — barely watching 👁️"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "books_you_like",
-          "multi": true,
-          "question": "Books you're into",
-          "options": [
-            {
-              "value": "fiction",
-              "label": "Fiction novels mostly 📘"
-            },
-            {
-              "value": "nonfiction",
-              "label": "Non-fiction brain food 📗"
-            },
-            {
-              "value": "fantasy_scifi",
-              "label": "Fantasy / sci-fi stacks 🐉"
-            },
-            {
-              "value": "thriller",
-              "label": "Thriller page-turner 🔪"
-            },
-            {
-              "value": "romance",
-              "label": "Romance / spicy covers 💕"
-            },
-            {
-              "value": "self_help",
-              "label": "Self-help / productivity guilt 📋"
-            },
-            {
-              "value": "memoir_essays",
-              "label": "Memoir / essays ✍️"
-            },
-            {
-              "value": "audiobooks",
-              "label": "Audiobooks — eyes rest 🎧"
-            },
-            {
-              "value": "graphic_manga",
-              "label": "Graphic novels / manga 📚"
-            },
-            {
-              "value": "screens_won",
-              "label": "Barely read — screens won 📱"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "instrument_play",
-          "question": "Playing an instrument",
-          "options": [
-            {
-              "value": "none",
-              "label": "Don't play"
-            },
-            {
-              "value": "used_to",
-              "label": "Used to — rusty now"
-            },
-            {
-              "value": "casual",
-              "label": "Casual — for fun"
-            },
-            {
-              "value": "serious",
-              "label": "Serious — lessons / gigs"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "maker_crafts",
-          "question": "Making things with your hands",
-          "options": [
-            {
-              "value": "no",
-              "label": "Rarely"
-            },
-            {
-              "value": "sometimes",
-              "label": "Sometimes — small projects"
-            },
-            {
-              "value": "often",
-              "label": "Often — woodworking, sewing, etc."
-            },
-            {
-              "value": "primary",
-              "label": "Main hobby"
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "collecting_hobby",
-          "question": "Collecting",
-          "options": [
-            {
-              "value": "no",
-              "label": "Not really"
-            },
-            {
-              "value": "casual",
-              "label": "Casual — a shelf or two"
-            },
-            {
-              "value": "serious",
-              "label": "Serious — time and money go here"
-            },
-            {
-              "value": "digital",
-              "label": "Mostly digital — games, NFT phase, etc."
-            },
-            {
-              "value": "prefer_not",
-              "label": "Prefer not to say"
-            }
-          ]
-        },
-        {
-          "id": "weekend_projects",
-          "question": "Weekend projects",
-          "options": [
-            {
-              "value": "rest",
-              "label": "Rest — minimal plans"
-            },
-            {
-              "value": "social",
-              "label": "Social — people first"
-            },
-            {
-              "value": "home",
-              "label": "House / errands / fixing things"
-            },
-            {
-              "value": "creative",
-              "label": "Creative — deep sessions"
-            },
-            {
-              "value": "outdoor",
-              "label": "Outdoors — sports or nature"
             },
             {
               "value": "prefer_not",
