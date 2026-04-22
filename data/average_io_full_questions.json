@@ -5,23 +5,23 @@
       "questions": [
         {
           "id": "age",
-          "question": "Age",
+          "question": "What is your age group?",
           "options": [
             {
               "value": "<18",
-              "label": "<18 🧃"
+              "label": "<18"
             },
             {
               "value": "18-24",
-              "label": "18–24 🎓"
+              "label": "18–24"
             },
             {
               "value": "25-34",
-              "label": "25–34 💼"
+              "label": "25–34"
             },
             {
               "value": "35-44",
-              "label": "35–44 🏡"
+              "label": "35–44"
             },
             {
               "value": "45-54",
@@ -39,23 +39,23 @@
         },
         {
           "id": "gender",
-          "question": "Gender",
+          "question": "How do you describe your gender?",
           "options": [
             {
               "value": "male",
-              "label": "Male ♂️"
+              "label": "Male"
             },
             {
               "value": "female",
-              "label": "Female ♀️"
+              "label": "Female"
             },
             {
               "value": "non_binary",
-              "label": "Non-binary ⚧️"
+              "label": "Non-binary"
             },
             {
               "value": "prefer_not",
-              "label": "Prefer not to say 🤐"
+              "label": "Prefer not to say"
             },
             {
               "value": "other",
@@ -65,61 +65,61 @@
         },
         {
           "id": "region",
-          "question": "Region",
+          "question": "Which part of the world do you live in?",
           "options": [
             {
               "value": "europe",
-              "label": "Europe 🇪🇺"
+              "label": "Europe"
             },
             {
               "value": "north_america",
-              "label": "North America 🌎"
+              "label": "North America"
             },
             {
               "value": "south_america",
-              "label": "South America 🌴"
+              "label": "South America"
             },
             {
               "value": "asia",
-              "label": "Asia 🌏"
+              "label": "Asia"
             },
             {
               "value": "africa",
-              "label": "Africa 🌍"
+              "label": "Africa"
             },
             {
               "value": "oceania",
-              "label": "Oceania 🐨"
+              "label": "Oceania"
             },
             {
               "value": "middle_east",
-              "label": "Middle East 🕌"
+              "label": "Middle East"
             },
             {
               "value": "caribbean",
-              "label": "Caribbean 🏝️"
+              "label": "Caribbean"
             },
             {
               "value": "split_life",
-              "label": "Split between regions 🧳"
+              "label": "Split between regions"
             }
           ]
         },
         {
           "id": "roots",
-          "question": "Background / where you're from",
+          "question": "Where did you grow up, or where do you feel most “from”?",
           "options": [
             {
               "value": "born_here",
-              "label": "Born & raised here 🏠"
+              "label": "Born & raised here"
             },
             {
               "value": "moved_young",
-              "label": "Moved young ✈️"
+              "label": "Moved young"
             },
             {
               "value": "immigrant",
-              "label": "Immigrant chapter 🧳"
+              "label": "Immigrant chapter"
             },
             {
               "value": "third_culture",
@@ -127,7 +127,7 @@
             },
             {
               "value": "refugee_displaced",
-              "label": "Refugee / displaced chapter — heavy 🕊️"
+              "label": "Refugee / displaced chapter — heavy"
             },
             {
               "value": "rural_to_city",
@@ -135,7 +135,7 @@
             },
             {
               "value": "city_to_rural",
-              "label": "Escaped the city for trees 🌲"
+              "label": "Escaped the city for trees"
             },
             {
               "value": "prefer_not",
@@ -145,11 +145,11 @@
         },
         {
           "id": "skin_tone",
-          "question": "Skin tone (how you see you)",
+          "question": "How would you describe your skin tone?",
           "options": [
             {
               "value": "very_fair",
-              "label": "Very fair 🌨️"
+              "label": "Very fair"
             },
             {
               "value": "light",
@@ -161,29 +161,29 @@
             },
             {
               "value": "tan",
-              "label": "Tan / olive ☀️"
+              "label": "Tan / olive"
             },
             {
               "value": "deep",
-              "label": "Deep brown / black ✨"
+              "label": "Deep brown / black"
             },
             {
               "value": "changes_season",
-              "label": "Seasonal shapeshifter 🦎"
+              "label": "Seasonal shapeshifter"
             },
             {
               "value": "prefer_not",
-              "label": "Prefer not to say 🤐"
+              "label": "Prefer not to say"
             }
           ]
         },
         {
           "id": "city_size",
-          "question": "Your Size of place you live",
+          "question": "What size is the place where you live?",
           "options": [
             {
               "value": "megacity",
-              "label": "Megacity 🏙️"
+              "label": "Megacity"
             },
             {
               "value": "mid",
@@ -191,15 +191,15 @@
             },
             {
               "value": "town",
-              "label": "Town / suburb 🏘️"
+              "label": "Town / suburb"
             },
             {
               "value": "rural",
-              "label": "Countryside 🌾"
+              "label": "Countryside"
             },
             {
               "value": "nomad",
-              "label": "Nomad / always moving 🎒"
+              "label": "Nomad / always moving"
             },
             {
               "value": "split",
@@ -209,19 +209,19 @@
         },
         {
           "id": "living",
-          "question": "Living situation",
+          "question": "Who lives in your household?",
           "options": [
             {
               "value": "alone",
-              "label": "Alone 🧍"
+              "label": "Alone"
             },
             {
               "value": "parents",
-              "label": "With parents 🏠"
+              "label": "With parents"
             },
             {
               "value": "partner",
-              "label": "With partner ❤️"
+              "label": "With partner"
             },
             {
               "value": "partner_kids",
@@ -229,15 +229,15 @@
             },
             {
               "value": "solo_parent",
-              "label": "Solo parent mode 💪"
+              "label": "Solo parent mode"
             },
             {
               "value": "roommates",
-              "label": "With roommates 🏘️"
+              "label": "With roommates"
             },
             {
               "value": "multigen",
-              "label": "Multigenerational household 🏚️"
+              "label": "Multigenerational household"
             },
             {
               "value": "other",
@@ -247,11 +247,11 @@
         },
         {
           "id": "siblings",
-          "question": "Siblings",
+          "question": "How many siblings do you have?",
           "options": [
             {
               "value": "0",
-              "label": "Only child 👑"
+              "label": "Only child"
             },
             {
               "value": "1",
@@ -267,7 +267,7 @@
             },
             {
               "value": "4plus",
-              "label": "4+ full house 👯"
+              "label": "4+ full house"
             },
             {
               "value": "step_half",
@@ -277,15 +277,15 @@
         },
         {
           "id": "family_vibe",
-          "question": "Family setup growing up",
+          "question": "What was your family like when you were growing up?",
           "options": [
             {
               "value": "nuclear",
-              "label": "Classic nuclear 📷"
+              "label": "Classic nuclear"
             },
             {
               "value": "single_parent",
-              "label": "Single parent strength 💪"
+              "label": "Single parent strength"
             },
             {
               "value": "blended",
@@ -293,7 +293,7 @@
             },
             {
               "value": "extended",
-              "label": "Extended in one roof 🏚️"
+              "label": "Extended in one roof"
             },
             {
               "value": "foster_care",
@@ -315,7 +315,7 @@
         },
         {
           "id": "relationship",
-          "question": "Heart status",
+          "question": "What is your relationship status?",
           "options": [
             {
               "value": "single",
@@ -323,19 +323,19 @@
             },
             {
               "value": "dating",
-              "label": "Dating 💬"
+              "label": "Dating"
             },
             {
               "value": "partnered",
-              "label": "Partnered ❤️"
+              "label": "Partnered"
             },
             {
               "value": "married",
-              "label": "Married / locked in 💍"
+              "label": "Married / locked in"
             },
             {
               "value": "open_poly",
-              "label": "Open / poly — our rules 📜"
+              "label": "Open / poly — our rules"
             },
             {
               "value": "ldr",
@@ -351,11 +351,11 @@
             },
             {
               "value": "complicated",
-              "label": "It's complicated 🌀"
+              "label": "It's complicated"
             },
             {
               "value": "aro_ace_spec",
-              "label": "Aro / ace / spec — labels evolve 💫"
+              "label": "Aro / ace / spec — labels evolve"
             },
             {
               "value": "prefer_not",
@@ -365,7 +365,7 @@
         },
         {
           "id": "longest_relationship",
-          "question": "Longest relationship you've been in (roughly)",
+          "question": "About how long was your longest relationship?",
           "options": [
             {
               "value": "never_serious",
@@ -407,11 +407,11 @@
         },
         {
           "id": "partner_proximity",
-          "question": "Partner geography — how far is your person (if you have one)?",
+          "question": "If you have a partner, how close do you live to each other?",
           "options": [
             {
               "value": "na_single",
-              "label": "N/A — single / solo era 🧍"
+              "label": "N/A — single / solo era"
             },
             {
               "value": "na_dating_around",
@@ -419,47 +419,47 @@
             },
             {
               "value": "na_aro_ace",
-              "label": "N/A — not centered on one partner vibe 💫"
+              "label": "N/A — not centered on one partner vibe"
             },
             {
               "value": "same_home",
-              "label": "Same home — daily collisions 🏠"
+              "label": "Same home — daily collisions"
             },
             {
               "value": "same_city",
-              "label": "Same city — short commute love 🚲"
+              "label": "Same city — short commute love"
             },
             {
               "value": "nearby_towns",
-              "label": "Nearby towns — weekend loops 🚗"
+              "label": "Nearby towns — weekend loops"
             },
             {
               "value": "same_region",
-              "label": "Same region — hours apart sometimes 🗺️"
+              "label": "Same region — hours apart sometimes"
             },
             {
               "value": "same_country_far",
-              "label": "Same country — flight or long train ✈️"
+              "label": "Same country — flight or long train"
             },
             {
               "value": "ldr_domestic",
-              "label": "Long-distance — same country, far apart 📱"
+              "label": "Long-distance — same country, far apart"
             },
             {
               "value": "ldr_timezone_ok",
-              "label": "International LDR — timezone annoying but workable 🌍"
+              "label": "International LDR — timezone annoying but workable"
             },
             {
               "value": "ldr_timezone_hell",
-              "label": "International LDR — timezone hell / rare overlap ⏰💀"
+              "label": "International LDR — timezone hell / rare overlap"
             },
             {
               "value": "ldr_visa_math",
-              "label": "International LDR — visa math is the third partner 🛂"
+              "label": "International LDR — visa math is the third partner"
             },
             {
               "value": "see_sometimes",
-              "label": "Situationship / see them sometimes — calendar vague 🌀"
+              "label": "Situationship / see them sometimes — calendar vague"
             },
             {
               "value": "prefer_not",
@@ -469,15 +469,15 @@
         },
         {
           "id": "chaos_tolerance",
-          "question": "How much life chaos can you carry?",
+          "question": "How well do you handle a busy or stressful life?",
           "options": [
             {
               "value": "zero",
-              "label": "Zero — I flatline if plans change 🫠"
+              "label": "Zero — I flatline if plans change"
             },
             {
               "value": "low",
-              "label": "Low — I need calm 🧘"
+              "label": "Low — I need calm"
             },
             {
               "value": "medium_low",
@@ -493,11 +493,11 @@
             },
             {
               "value": "high",
-              "label": "High — noise is fuel 🔊"
+              "label": "High — noise is fuel"
             },
             {
               "value": "what_stability",
-              "label": "Stability is a myth anyway 🎲"
+              "label": "Stability is a myth anyway"
             }
           ]
         }
@@ -508,7 +508,7 @@
       "questions": [
         {
           "id": "screen_time",
-          "question": "Screen time",
+          "question": "About how many hours a day do you spend on screens (phone, TV, computer)?",
           "options": [
             {
               "value": "<2",
@@ -542,11 +542,11 @@
         },
         {
           "id": "routine",
-          "question": "Routine",
+          "question": "How regular is your daily routine?",
           "options": [
             {
               "value": "chaotic",
-              "label": "Chaos 🎲"
+              "label": "Chaos"
             },
             {
               "value": "loose",
@@ -558,7 +558,7 @@
             },
             {
               "value": "strict",
-              "label": "Strict 📅"
+              "label": "Strict"
             },
             {
               "value": "aspire_fails",
@@ -572,11 +572,11 @@
         },
         {
           "id": "coffee_habit",
-          "question": "Coffee habit",
+          "question": "How much coffee or other caffeine do you drink?",
           "options": [
             {
               "value": "none",
-              "label": "Zero caffeine — wizard 🧙"
+              "label": "Zero caffeine — wizard"
             },
             {
               "value": "tea",
@@ -592,7 +592,7 @@
             },
             {
               "value": "4plus",
-              "label": "4+ IV drip ☕"
+              "label": "4+ IV drip"
             },
             {
               "value": "energy_drinks",
@@ -607,11 +607,11 @@
         {
           "id": "entertainment",
           "multi": true,
-          "question": "Main entertainment diet",
+          "question": "What do you usually do for fun or to relax? (Pick all that apply)",
           "options": [
             {
               "value": "film_tv",
-              "label": "Films & series 🎬"
+              "label": "Films & series"
             },
             {
               "value": "youtube",
@@ -619,7 +619,7 @@
             },
             {
               "value": "tiktok_shorts",
-              "label": "Short-form short-form video 📲"
+              "label": "Short-form short-form video"
             },
             {
               "value": "podcasts",
@@ -627,19 +627,19 @@
             },
             {
               "value": "sports_watch",
-              "label": "Sports watch party 📺"
+              "label": "Sports watch party"
             },
             {
               "value": "live",
-              "label": "Live music / gigs 🎤"
+              "label": "Live music / gigs"
             },
             {
               "value": "museums",
-              "label": "Museums / galleries 🖼️"
+              "label": "Museums / galleries"
             },
             {
               "value": "reading",
-              "label": "Reading — paper or e-ink 📖"
+              "label": "Reading — paper or e-ink"
             },
             {
               "value": "gaming",
@@ -647,17 +647,17 @@
             },
             {
               "value": "outdoors",
-              "label": "get outside activities 🌲"
+              "label": "get outside activities"
             },
             {
               "value": "mixed",
-              "label": "Rotating obsessions 🌀"
+              "label": "Rotating obsessions"
             }
           ]
         },
         {
           "id": "gaming_intensity",
-          "question": "Gaming intensity",
+          "question": "Do you play video games or games on your phone? How often?",
           "options": [
             {
               "value": "none",
@@ -665,11 +665,11 @@
             },
             {
               "value": "casual",
-              "label": "Casual mobile 🐣"
+              "label": "Casual mobile"
             },
             {
               "value": "party",
-              "label": "Party / couch co-op 🎉"
+              "label": "Party / couch co-op"
             },
             {
               "value": "regular",
@@ -677,15 +677,15 @@
             },
             {
               "value": "competitive",
-              "label": "Ranked sweat 🔥"
+              "label": "Ranked sweat"
             },
             {
               "value": "speedrun",
-              "label": "Speedrun / mastery degenerate ⏱️"
+              "label": "Speedrun / mastery degenerate"
             },
             {
               "value": "retro",
-              "label": "Retro / emulation collector 👾"
+              "label": "Retro / emulation collector"
             },
             {
               "value": "prefer_not",
@@ -695,7 +695,7 @@
         },
         {
           "id": "pets_home",
-          "question": "Pets under your roof",
+          "question": "Do you have pets at home?",
           "options": [
             {
               "value": "none",
@@ -703,27 +703,27 @@
             },
             {
               "value": "dog",
-              "label": "Dog(s) — sworn bestie(s) 🐕"
+              "label": "Dog(s) — sworn bestie(s)"
             },
             {
               "value": "cat",
-              "label": "Cat(s) — household royalty 🐈"
+              "label": "Cat(s) — household royalty"
             },
             {
               "value": "dog_cat",
-              "label": "Dog + cat diplomacy zone 🐕‍🦺🐈"
+              "label": "Dog + cat diplomacy zone"
             },
             {
               "value": "small_critters",
-              "label": "Small mammals / rodents / hopping chaos 🐹"
+              "label": "Small mammals / rodents / hopping chaos"
             },
             {
               "value": "birds_reptiles_fish",
-              "label": "Bird / reptile / aquarium cabinet 🐠🦎"
+              "label": "Bird / reptile / aquarium cabinet"
             },
             {
               "value": "multi_zoo",
-              "label": "Full zoo energy — multiple species 📦"
+              "label": "Full zoo energy — multiple species"
             },
             {
               "value": "shared_not_mine",
@@ -745,11 +745,11 @@
         },
         {
           "id": "pet_energy",
-          "question": "Pet parenting style (if you have pets — otherwise pick closest)",
+          "question": "How would you describe the way you care for your pets?",
           "options": [
             {
               "value": "na_none",
-              "label": "N/A — no pets / plants only 🌿"
+              "label": "N/A — no pets / plants only"
             },
             {
               "value": "low_key",
@@ -757,31 +757,31 @@
             },
             {
               "value": "spoiled_soft",
-              "label": "Rotten spoiled — treats budget exists 🧺"
+              "label": "Rotten spoiled — treats budget exists"
             },
             {
               "value": "structured",
-              "label": "Structured walks / routines — spreadsheet brain 📋"
+              "label": "Structured walks / routines — spreadsheet brain"
             },
             {
               "value": "chaos_pack",
-              "label": "Chaos pack — zoomies at 3am 🌀"
+              "label": "Chaos pack — zoomies at 3am"
             },
             {
               "value": "outdoor_partner",
-              "label": "Outdoor partner — hikes & mud 🥾"
+              "label": "Outdoor partner — hikes & mud"
             },
             {
               "value": "senior_care",
-              "label": "Senior pet — medications / comfort care 💊"
+              "label": "Senior pet — medications / comfort care"
             },
             {
               "value": "foster_rotation",
-              "label": "Foster / rotate — heart always breaking 💔"
+              "label": "Foster / rotate — heart always breaking"
             },
             {
               "value": "want_so_bad",
-              "label": "Petless but mentally at the dog park 🫠"
+              "label": "Petless but mentally at the dog park"
             },
             {
               "value": "prefer_not",
@@ -791,7 +791,7 @@
         },
         {
           "id": "self_care_frequency",
-          "question": "Self-care cadence (intentional you-time)",
+          "question": "How often do you take time just for yourself?",
           "options": [
             {
               "value": "what_self_care",
@@ -799,7 +799,7 @@
             },
             {
               "value": "rare_guilt",
-              "label": "Rare bursts — guilt spiral after 📉"
+              "label": "Rare bursts — guilt spiral after"
             },
             {
               "value": "weekly_slot",
@@ -807,7 +807,7 @@
             },
             {
               "value": "few_week",
-              "label": "Few times a week micro rituals ✨"
+              "label": "Few times a week micro rituals"
             },
             {
               "value": "daily_small",
@@ -815,11 +815,11 @@
             },
             {
               "value": "main_character",
-              "label": "Priority maintenance — non-negotiable 👑"
+              "label": "Priority maintenance — non-negotiable"
             },
             {
               "value": "cyclical",
-              "label": "Cyclical — great month then offline month 🌙"
+              "label": "Cyclical — great month then offline month"
             },
             {
               "value": "prefer_not",
@@ -830,19 +830,19 @@
         {
           "id": "self_care_lane",
           "multi": true,
-          "question": "Self-care lane that hits hardest",
+          "question": "What kind of self-care helps you most? (Pick all that apply)",
           "options": [
             {
               "value": "skin_body",
-              "label": "Skin / bath / body rituals 🛁"
+              "label": "Skin / bath / body rituals"
             },
             {
               "value": "therapy_mind",
-              "label": "Therapy / journaling / inner work 🛋️"
+              "label": "Therapy / journaling / inner work"
             },
             {
               "value": "movement",
-              "label": "Movement — gym walk stretch dance 🏃"
+              "label": "Movement — gym walk stretch dance"
             },
             {
               "value": "sleep_nest",
@@ -850,15 +850,15 @@
             },
             {
               "value": "social_refuel",
-              "label": "People time — extrovert refill ☕"
+              "label": "People time — extrovert refill"
             },
             {
               "value": "solo_silence",
-              "label": "Alone silence — battery sacred 🔌"
+              "label": "Alone silence — battery sacred"
             },
             {
               "value": "creative_play",
-              "label": "Creative play — art music games 🎨"
+              "label": "Creative play — art music games"
             },
             {
               "value": "nature_reset",
@@ -866,7 +866,7 @@
             },
             {
               "value": "food_treat",
-              "label": "Food treat — chef brain or nice takeout 🍜"
+              "label": "Food treat — chef brain or nice takeout"
             },
             {
               "value": "no_sparkle",
@@ -880,7 +880,7 @@
         },
         {
           "id": "cooking_at_home",
-          "question": "Cooking at home",
+          "question": "How often do you cook meals at home?",
           "options": [
             {
               "value": "rare",
@@ -915,11 +915,11 @@
       "questions": [
         {
           "id": "hobby_count",
-          "question": "How many hobbies",
+          "question": "How many hobbies or regular pastimes do you have?",
           "options": [
             {
               "value": "0",
-              "label": "None 😶"
+              "label": "None"
             },
             {
               "value": "1",
@@ -939,51 +939,51 @@
             },
             {
               "value": "serial",
-              "label": "Serial hobbyist — rotate quarterly 🔁"
+              "label": "Serial hobbyist — rotate quarterly"
             }
           ]
         },
         {
           "id": "hobby_type",
-          "question": "Main hobby type",
+          "question": "Which best describes your main hobby?",
           "options": [
             {
               "value": "passive",
-              "label": "Chill consume 🎮"
+              "label": "Chill consume"
             },
             {
               "value": "creative",
-              "label": "Creative 🎨"
+              "label": "Creative"
             },
             {
               "value": "maker",
-              "label": "Maker / build physical stuff 🛠️"
+              "label": "Maker / build physical stuff"
             },
             {
               "value": "intellectual",
-              "label": "Brainy 🧠"
+              "label": "Brainy"
             },
             {
               "value": "active",
-              "label": "Active 🏃"
+              "label": "Active"
             },
             {
               "value": "social",
-              "label": "Social 🎉"
+              "label": "Social"
             },
             {
               "value": "volunteer",
-              "label": "Volunteer / community heart 🤝"
+              "label": "Volunteer / community heart"
             },
             {
               "value": "collector",
-              "label": "Collecting — vinyl, sneakers, regrets 📦"
+              "label": "Collecting — vinyl, sneakers, regrets"
             }
           ]
         },
         {
           "id": "sport_kind",
-          "question": "Sport energy (if any)",
+          "question": "Do you play sports or exercise? What kind fits best?",
           "options": [
             {
               "value": "none",
@@ -991,66 +991,66 @@
             },
             {
               "value": "walk_yoga",
-              "label": "Walk / yoga / gentle movement 🧘"
+              "label": "Walk / yoga / gentle movement"
             },
             {
               "value": "gym",
-              "label": "Gym / weights 🏋️"
+              "label": "Gym / weights"
             },
             {
               "value": "ball",
-              "label": "Ball sports ⚽"
+              "label": "Ball sports"
             },
             {
               "value": "racket",
-              "label": "Racket sports 🎾"
+              "label": "Racket sports"
             },
             {
               "value": "water",
-              "label": "Water / swim 🏊"
+              "label": "Water / swim"
             },
             {
               "value": "snow",
-              "label": "Snow / board sports 🏂"
+              "label": "Snow / board sports"
             },
             {
               "value": "combat",
-              "label": "Combat / martial 🥊"
+              "label": "Combat / martial"
             },
             {
               "value": "endurance",
-              "label": "Run / bike endurance 🚴"
+              "label": "Run / bike endurance"
             },
             {
               "value": "climb",
-              "label": "Climb / boulder 🧗"
+              "label": "Climb / boulder"
             },
             {
               "value": "dance",
-              "label": "Dance counts — cardio with rhythm 💃"
+              "label": "Dance counts — cardio with rhythm"
             }
           ]
         },
         {
           "id": "movies_you_like",
           "multi": true,
-          "question": "Movies you're into",
+          "question": "What kinds of movies do you enjoy? (Pick all that apply)",
           "options": [
             {
               "value": "action_blockbuster",
-              "label": "Action / blockbuster adrenaline 🎬"
+              "label": "Action / blockbuster adrenaline"
             },
             {
               "value": "indie_art",
-              "label": "Indie / arthouse patience 🎞️"
+              "label": "Indie / arthouse patience"
             },
             {
               "value": "horror",
-              "label": "Horror — midnight brain 🩸"
+              "label": "Horror — midnight brain"
             },
             {
               "value": "romcom",
-              "label": "Rom-com soft hours 💘"
+              "label": "Rom-com soft hours"
             },
             {
               "value": "scifi_fantasy",
@@ -1058,27 +1058,27 @@
             },
             {
               "value": "comedy",
-              "label": "Comedy — laugh track soul 😂"
+              "label": "Comedy — laugh track soul"
             },
             {
               "value": "docs_true_crime",
-              "label": "Docs / true crime spiral 🔎"
+              "label": "Docs / true crime spiral"
             },
             {
               "value": "animation_anime",
-              "label": "Animation / anime counts ✨"
+              "label": "Animation / anime counts"
             },
             {
               "value": "classics_rewatch",
-              "label": "Classics — comfort rewatches only 🎥"
+              "label": "Classics — comfort rewatches only"
             },
             {
               "value": "trending_chaos",
-              "label": "Whatever's trending — chaotic picks 🌀"
+              "label": "Whatever's trending — chaotic picks"
             },
             {
               "value": "rarely_films",
-              "label": "Rarely films — I'm a series person 📺"
+              "label": "Rarely films — I'm a series person"
             },
             {
               "value": "prefer_not",
@@ -1089,47 +1089,47 @@
         {
           "id": "tv_you_like",
           "multi": true,
-          "question": "TV you're into",
+          "question": "What kinds of TV programmes do you enjoy? (Pick all that apply)",
           "options": [
             {
               "value": "comedy_comfort",
-              "label": "Comedy comfort 📺"
+              "label": "Comedy comfort"
             },
             {
               "value": "prestige_drama",
-              "label": "Prestige drama suffering 🏆"
+              "label": "Prestige drama suffering"
             },
             {
               "value": "reality",
-              "label": "Reality chaos 🍿"
+              "label": "Reality chaos"
             },
             {
               "value": "crime_procedural",
-              "label": "Crime / procedural bedtime 🔦"
+              "label": "Crime / procedural bedtime"
             },
             {
               "value": "scifi_fantasy_tv",
-              "label": "Sci-fi / fantasy worldbuilding 🌌"
+              "label": "Sci-fi / fantasy worldbuilding"
             },
             {
               "value": "anime_tv",
-              "label": "Anime seasons 🇯🇵"
+              "label": "Anime seasons"
             },
             {
               "value": "docuseries",
-              "label": "Docuseries rabbit hole 📼"
+              "label": "Docuseries rabbit hole"
             },
             {
               "value": "cooking_travel",
-              "label": "Cooking / travel cozy 🧳"
+              "label": "Cooking / travel cozy"
             },
             {
               "value": "sports",
-              "label": "Sports — watch party religiously ⚽"
+              "label": "Sports — watch party religiously"
             },
             {
               "value": "background_noise",
-              "label": "Background noise — barely watching 👁️"
+              "label": "Background noise — barely watching"
             },
             {
               "value": "prefer_not",
@@ -1140,47 +1140,47 @@
         {
           "id": "books_you_like",
           "multi": true,
-          "question": "Books you're into",
+          "question": "What kinds of books do you enjoy? (Pick all that apply)",
           "options": [
             {
               "value": "fiction",
-              "label": "Fiction novels mostly 📘"
+              "label": "Fiction novels mostly"
             },
             {
               "value": "nonfiction",
-              "label": "Non-fiction brain food 📗"
+              "label": "Non-fiction brain food"
             },
             {
               "value": "fantasy_scifi",
-              "label": "Fantasy / sci-fi stacks 🐉"
+              "label": "Fantasy / sci-fi stacks"
             },
             {
               "value": "thriller",
-              "label": "Thriller page-turner 🔪"
+              "label": "Thriller page-turner"
             },
             {
               "value": "romance",
-              "label": "Romance / spicy covers 💕"
+              "label": "Romance / spicy covers"
             },
             {
               "value": "self_help",
-              "label": "Self-help / productivity guilt 📋"
+              "label": "Self-help / productivity guilt"
             },
             {
               "value": "memoir_essays",
-              "label": "Memoir / essays ✍️"
+              "label": "Memoir / essays"
             },
             {
               "value": "audiobooks",
-              "label": "Audiobooks — eyes rest 🎧"
+              "label": "Audiobooks — eyes rest"
             },
             {
               "value": "graphic_manga",
-              "label": "Graphic novels / manga 📚"
+              "label": "Graphic novels / manga"
             },
             {
               "value": "screens_won",
-              "label": "Barely read — screens won 📱"
+              "label": "Barely read — screens won"
             },
             {
               "value": "prefer_not",
@@ -1190,7 +1190,7 @@
         },
         {
           "id": "instrument_play",
-          "question": "Playing an instrument",
+          "question": "Do you play a musical instrument?",
           "options": [
             {
               "value": "none",
@@ -1216,7 +1216,7 @@
         },
         {
           "id": "maker_crafts",
-          "question": "Making things with your hands",
+          "question": "Do you make or fix things with your hands (woodwork, sewing, crafts, repairs)?",
           "options": [
             {
               "value": "no",
@@ -1242,7 +1242,7 @@
         },
         {
           "id": "collecting_hobby",
-          "question": "Collecting",
+          "question": "Do you collect anything as a serious hobby?",
           "options": [
             {
               "value": "no",
@@ -1268,7 +1268,7 @@
         },
         {
           "id": "weekend_projects",
-          "question": "Weekend projects",
+          "question": "How do you usually spend your weekends?",
           "options": [
             {
               "value": "rest",
@@ -1303,75 +1303,75 @@
       "questions": [
         {
           "id": "personality_type",
-          "question": "You are",
+          "question": "Would you say you lean more toward introvert or extrovert?",
           "options": [
             {
               "value": "introvert",
-              "label": "Introvert 🐢"
+              "label": "Introvert"
             },
             {
               "value": "ambivert",
-              "label": "Ambivert ⚖️"
+              "label": "Ambivert"
             },
             {
               "value": "extrovert",
-              "label": "Extrovert 🦜"
+              "label": "Extrovert"
             },
             {
               "value": "omnivert",
-              "label": "Omnivert — coin flip hourly 🪙"
+              "label": "Omnivert — coin flip hourly"
             },
             {
               "value": "socially_selective",
-              "label": "Introvert who performs extrovert for work 🎭"
+              "label": "Introvert who performs extrovert for work"
             },
             {
               "value": "depends_context",
-              "label": "Depends on the room — stop asking 😤"
+              "label": "Depends on the room — stop asking"
             }
           ]
         },
         {
           "id": "decision_style",
-          "question": "Decision style",
+          "question": "How do you usually make big decisions?",
           "options": [
             {
               "value": "impulsive",
-              "label": "Impulsive 🎲"
+              "label": "Impulsive"
             },
             {
               "value": "emotional",
-              "label": "Emotional ❤️"
+              "label": "Emotional"
             },
             {
               "value": "intuitive",
-              "label": "Gut-first intuitive 🔮"
+              "label": "Gut-first intuitive"
             },
             {
               "value": "balanced",
-              "label": "Balanced ⚖️"
+              "label": "Balanced"
             },
             {
               "value": "logical",
-              "label": "Logical spreadsheet brain 🧠"
+              "label": "Logical spreadsheet brain"
             },
             {
               "value": "analysis_paralysis",
-              "label": "Analysis paralysis — decide tomorrow 📊"
+              "label": "Analysis paralysis — decide tomorrow"
             },
             {
               "value": "delegator",
-              "label": "I outsource decisions — committee era 👥"
+              "label": "I outsource decisions — committee era"
             },
             {
               "value": "panic_deadline",
-              "label": "Panic decides at deadline ⏰"
+              "label": "Panic decides at deadline"
             }
           ]
         },
         {
           "id": "social_battery",
-          "question": "Social battery",
+          "question": "How long can you be with people before you need quiet time?",
           "options": [
             {
               "value": "dies_fast",
@@ -1379,7 +1379,7 @@
             },
             {
               "value": "one_event",
-              "label": "One event / weekend max — then cave 🏚️"
+              "label": "One event / weekend max — then cave"
             },
             {
               "value": "medium",
@@ -1387,7 +1387,7 @@
             },
             {
               "value": "recharge_alone",
-              "label": "Fine at parties — must recharge solo after 🔌"
+              "label": "Fine at parties — must recharge solo after"
             },
             {
               "value": "endless",
@@ -1399,21 +1399,21 @@
             },
             {
               "value": "online_ok",
-              "label": "Online social counts — IRL drains faster 💬"
+              "label": "Online social counts — IRL drains faster"
             }
           ]
         },
         {
           "id": "risk_tolerance",
-          "question": "Risk appetite",
+          "question": "How comfortable are you taking risks?",
           "options": [
             {
               "value": "risk_averse",
-              "label": "Risk-averse — backup of the backup 📁"
+              "label": "Risk-averse — backup of the backup"
             },
             {
               "value": "low",
-              "label": "Low — I like plans 📋"
+              "label": "Low — I like plans"
             },
             {
               "value": "medium",
@@ -1429,57 +1429,57 @@
             },
             {
               "value": "financial_diff",
-              "label": "Financial risk ≠ physical — stocks yes, skydiving no 📈"
+              "label": "Financial risk ≠ physical — stocks yes, skydiving no"
             }
           ]
         },
         {
           "id": "favorite_colour",
-          "question": "Favorite colour",
+          "question": "What is your favourite colour?",
           "options": [
             {
               "value": "black_mono",
-              "label": "Black / monochrome ⬛"
+              "label": "Black / monochrome"
             },
             {
               "value": "white_cream",
-              "label": "White / cream minimal ⬜"
+              "label": "White / cream minimal"
             },
             {
               "value": "blue",
-              "label": "Navy / blue calm 💙"
+              "label": "Navy / blue calm"
             },
             {
               "value": "green",
-              "label": "Green — nature coded 💚"
+              "label": "Green — nature coded"
             },
             {
               "value": "red_coral",
-              "label": "Red / coral bold ❤️"
+              "label": "Red / coral bold"
             },
             {
               "value": "yellow_orange",
-              "label": "Yellow / orange warm 🧡"
+              "label": "Yellow / orange warm"
             },
             {
               "value": "purple_lilac",
-              "label": "Purple / lilac dream 💜"
+              "label": "Purple / lilac dream"
             },
             {
               "value": "pink",
-              "label": "Pink blush 💗"
+              "label": "Pink blush"
             },
             {
               "value": "earth",
-              "label": "Earth tones 🟤"
+              "label": "Earth tones"
             },
             {
               "value": "neon",
-              "label": "Neon chaos ⚡"
+              "label": "Neon chaos"
             },
             {
               "value": "rainbow_mood",
-              "label": "Can't pick — rainbow mood 🌈"
+              "label": "Can't pick — rainbow mood"
             },
             {
               "value": "prefer_not",
@@ -1490,35 +1490,35 @@
         {
           "id": "love_language",
           "multi": true,
-          "question": "Love language (how you feel loved)",
+          "question": "What makes you feel cared for in a relationship? (Pick all that apply)",
           "options": [
             {
               "value": "words",
-              "label": "Words of affirmation 💬"
+              "label": "Words of affirmation"
             },
             {
               "value": "time",
-              "label": "Quality time ⏱️"
+              "label": "Quality time"
             },
             {
               "value": "touch",
-              "label": "Physical touch 🤝"
+              "label": "Physical touch"
             },
             {
               "value": "acts",
-              "label": "Acts of service 🧹"
+              "label": "Acts of service"
             },
             {
               "value": "gifts",
-              "label": "Receiving gifts 🎁"
+              "label": "Receiving gifts"
             },
             {
               "value": "all_five",
-              "label": "All five — balanced chaos ⚖️"
+              "label": "All five — balanced chaos"
             },
             {
               "value": "depends",
-              "label": "Depends who — not one box 📦"
+              "label": "Depends who — not one box"
             },
             {
               "value": "skeptic",
@@ -1533,11 +1533,11 @@
         {
           "id": "dating_types",
           "multi": true,
-          "question": "Types you're drawn to (dating)",
+          "question": "What kinds of people are you drawn to when dating? (Pick all that apply)",
           "options": [
             {
               "value": "funny_chaotic",
-              "label": "Funny / chaotic (we'll fix it later) 🎲"
+              "label": "Funny / chaotic (we'll fix it later)"
             },
             {
               "value": "soft_gentle",
@@ -1545,43 +1545,43 @@
             },
             {
               "value": "ambitious",
-              "label": "Ambitious / career laser 📈"
+              "label": "Ambitious / career laser"
             },
             {
               "value": "creative",
-              "label": "Creative / artist brain 🎨"
+              "label": "Creative / artist brain"
             },
             {
               "value": "gym_health",
-              "label": "Gym / health obsessed (respectfully) 🏋️"
+              "label": "Gym / health obsessed (respectfully)"
             },
             {
               "value": "intellectual",
-              "label": "Intellectual — debate me 🧠"
+              "label": "Intellectual — debate me"
             },
             {
               "value": "mysterious",
-              "label": "Mysterious / low posting 🌑"
+              "label": "Mysterious / low posting"
             },
             {
               "value": "outdoors",
-              "label": "Outdoors — outdoorsy couple 🌲"
+              "label": "Outdoors — outdoorsy couple"
             },
             {
               "value": "domestic_cozy",
-              "label": "Domestic — cozy home dates 🏠"
+              "label": "Domestic — cozy home dates"
             },
             {
               "value": "party_social",
-              "label": "Party — social battery match 🎉"
+              "label": "Party — social battery match"
             },
             {
               "value": "hot_mess_match",
-              "label": "Hot mess matching my mess 🔥"
+              "label": "Hot mess matching my mess"
             },
             {
               "value": "no_types",
-              "label": "Don't do types — person over box 💫"
+              "label": "Don't do types — person over box"
             },
             {
               "value": "prefer_not",
@@ -1591,51 +1591,51 @@
         },
         {
           "id": "the_ick",
-          "question": "What gives you the instant turnoff fastest",
+          "question": "What puts you off someone quickly when you are dating?",
           "options": [
             {
               "value": "mouth_sounds",
-              "label": "Mouth sounds / chewing wrong 🫠"
+              "label": "Mouth sounds / chewing wrong"
             },
             {
               "value": "clingy_texts",
-              "label": "Clingy texts in the first 48h 📱"
+              "label": "Clingy texts in the first 48h"
             },
             {
               "value": "rude_staff",
-              "label": "Rude to wait staff 🍽️"
+              "label": "Rude to wait staff"
             },
             {
               "value": "baby_voice",
-              "label": "Baby voice unprovoked 👶"
+              "label": "Baby voice unprovoked"
             },
             {
               "value": "crypto_hustle",
-              "label": "Crypto / hustle lecture date 💸"
+              "label": "Crypto / hustle lecture date"
             },
             {
               "value": "public_fighting",
-              "label": "Fighting publicly for content 📹"
+              "label": "Fighting publicly for content"
             },
             {
               "value": "socks_mystery",
-              "label": "Sock situation unexplained 🧦"
+              "label": "Sock situation unexplained"
             },
             {
               "value": "hygiene",
-              "label": "Hygiene mystery / dirty nails 🤢"
+              "label": "Hygiene mystery / dirty nails"
             },
             {
               "value": "mirroring",
-              "label": "Too much mirroring — uncanny valley 🪞"
+              "label": "Too much mirroring — uncanny valley"
             },
             {
               "value": "chronic_ick",
-              "label": "Everything eventually — easily turned off 😵"
+              "label": "Everything eventually — easily turned off"
             },
             {
               "value": "nothing",
-              "label": "Nothing — brave or optimistic ✨"
+              "label": "Nothing — brave or optimistic"
             },
             {
               "value": "prefer_not",
@@ -1645,7 +1645,7 @@
         },
         {
           "id": "conflict_style",
-          "question": "In conflict you tend to",
+          "question": "When you disagree with someone, what do you usually do?",
           "options": [
             {
               "value": "address",
@@ -1679,7 +1679,7 @@
         },
         {
           "id": "punctuality",
-          "question": "Arriving on time",
+          "question": "Are you usually on time for plans?",
           "options": [
             {
               "value": "early",
@@ -1714,7 +1714,7 @@
       "questions": [
         {
           "id": "education_level",
-          "question": "Highest level",
+          "question": "What is the highest level of education you completed?",
           "options": [
             {
               "value": "none",
@@ -1730,62 +1730,62 @@
             },
             {
               "value": "trade",
-              "label": "Trade school 🔧"
+              "label": "Trade school"
             },
             {
               "value": "associate",
-              "label": "Associate / foundation 🪜"
+              "label": "Associate / foundation"
             },
             {
               "value": "bachelor",
-              "label": "Bachelor 🎓"
+              "label": "Bachelor"
             },
             {
               "value": "master",
-              "label": "Master 🧠"
+              "label": "Master"
             },
             {
               "value": "professional",
-              "label": "JD / MD / MBA-type professional degree ⚖️"
+              "label": "JD / MD / MBA-type professional degree"
             },
             {
               "value": "phd",
-              "label": "PhD / doctorate 🧬"
+              "label": "PhD / doctorate"
             },
             {
               "value": "self_taught",
-              "label": "Mostly self-taught — school of life 📚"
+              "label": "Mostly self-taught — school of life"
             }
           ]
         },
         {
           "id": "education_field",
           "multi": true,
-          "question": "Field",
+          "question": "What subject or field did you mainly study or work in? (Pick all that apply)",
           "options": [
             {
               "value": "stem",
-              "label": "STEM 🤖"
+              "label": "STEM"
             },
             {
               "value": "business",
-              "label": "Business 💼"
+              "label": "Business"
             },
             {
               "value": "arts",
-              "label": "Arts / design 🎨"
+              "label": "Arts / design"
             },
             {
               "value": "social",
-              "label": "Humanities / social 📚"
+              "label": "Humanities / social"
             },
             {
               "value": "health",
-              "label": "Health / care 🏥"
+              "label": "Health / care"
             },
             {
               "value": "education",
-              "label": "Education / teaching 🍎"
+              "label": "Education / teaching"
             },
             {
               "value": "law_policy",
@@ -1793,11 +1793,11 @@
             },
             {
               "value": "trades_applied",
-              "label": "Trades / applied hands-on 🔧"
+              "label": "Trades / applied hands-on"
             },
             {
               "value": "mixed",
-              "label": "Mixed / changed fields 🌀"
+              "label": "Mixed / changed fields"
             },
             {
               "value": "other",
@@ -1807,11 +1807,11 @@
         },
         {
           "id": "school_vibe",
-          "question": "School era mood",
+          "question": "How did you feel about school when you were a student?",
           "options": [
             {
               "value": "hated",
-              "label": "Hated it 💀"
+              "label": "Hated it"
             },
             {
               "value": "survived",
@@ -1819,7 +1819,7 @@
             },
             {
               "value": "ok",
-              "label": "Actually fine 🤷"
+              "label": "Actually fine"
             },
             {
               "value": "gleamed",
@@ -1845,7 +1845,7 @@
         },
         {
           "id": "still_learning",
-          "question": "Still learning for fun?",
+          "question": "Do you still take classes or study for pleasure?",
           "options": [
             {
               "value": "never",
@@ -1857,7 +1857,7 @@
             },
             {
               "value": "often",
-              "label": "Always something new 🧪"
+              "label": "Always something new"
             },
             {
               "value": "cert_hunter",
@@ -1865,7 +1865,7 @@
             },
             {
               "value": "language",
-              "label": "Languages on the side 🌍"
+              "label": "Languages on the side"
             },
             {
               "value": "obsessed",
@@ -1875,7 +1875,7 @@
         },
         {
           "id": "edu_student_debt",
-          "question": "Student loans or education-related debt",
+          "question": "Do you have student loans or other education-related debt?",
           "options": [
             {
               "value": "none",
@@ -1909,7 +1909,7 @@
         },
         {
           "id": "languages_count",
-          "question": "Languages you speak comfortably",
+          "question": "How many languages do you speak comfortably?",
           "options": [
             {
               "value": "1",
@@ -1935,7 +1935,7 @@
         },
         {
           "id": "study_abroad",
-          "question": "Ever study or live abroad for school",
+          "question": "Did you ever study or live abroad for school or university?",
           "options": [
             {
               "value": "never",
@@ -1961,7 +1961,7 @@
         },
         {
           "id": "mentor_or_teach",
-          "question": "Do you formally mentor, coach, or teach others",
+          "question": "Do you formally mentor, coach, or teach others?",
           "options": [
             {
               "value": "no",
@@ -1987,7 +1987,7 @@
         },
         {
           "id": "edu_privilege",
-          "question": "Access to education growing up",
+          "question": "Growing up, how easy was it for you to get a good education?",
           "options": [
             {
               "value": "strong",
@@ -2013,7 +2013,7 @@
         },
         {
           "id": "professional_license",
-          "question": "Licensed profession (if any)",
+          "question": "Do you work in a field that requires a professional license?",
           "options": [
             {
               "value": "na",
@@ -2044,7 +2044,7 @@
       "questions": [
         {
           "id": "employment",
-          "question": "Status",
+          "question": "What best describes your work situation right now?",
           "options": [
             {
               "value": "unemployed",
@@ -2052,7 +2052,7 @@
             },
             {
               "value": "student",
-              "label": "Student 🎓"
+              "label": "Student"
             },
             {
               "value": "part_time",
@@ -2060,11 +2060,11 @@
             },
             {
               "value": "employed",
-              "label": "Full-time employed 💼"
+              "label": "Full-time employed"
             },
             {
               "value": "self_employed",
-              "label": "Self-employed 🚀"
+              "label": "Self-employed"
             },
             {
               "value": "freelance",
@@ -2072,11 +2072,11 @@
             },
             {
               "value": "parent_leave",
-              "label": "Parental / care leave 🍼"
+              "label": "Parental / care leave"
             },
             {
               "value": "disabled",
-              "label": "Not working — health / disability 🫶"
+              "label": "Not working — health / disability"
             },
             {
               "value": "retired",
@@ -2090,7 +2090,7 @@
         },
         {
           "id": "income",
-          "question": "Income vibe",
+          "question": "How would you describe your household income lately?",
           "options": [
             {
               "value": "negative",
@@ -2114,11 +2114,11 @@
             },
             {
               "value": "upper_mid",
-              "label": "Upper-mid — breathing room 😮‍💨"
+              "label": "Upper-mid — breathing room"
             },
             {
               "value": "comfortable",
-              "label": "Comfortable 😌"
+              "label": "Comfortable"
             },
             {
               "value": "high",
@@ -2136,7 +2136,7 @@
         },
         {
           "id": "boss_energy",
-          "question": "Work mode",
+          "question": "Which best describes your role at work?",
           "options": [
             {
               "value": "ic",
@@ -2160,7 +2160,7 @@
             },
             {
               "value": "student_worker",
-              "label": "Study + grind part-time 📚"
+              "label": "Study + grind part-time"
             },
             {
               "value": "between",
@@ -2170,7 +2170,7 @@
         },
         {
           "id": "commute_soul",
-          "question": "Commute damage",
+          "question": "How do you get to work—or do you mostly work from home?",
           "options": [
             {
               "value": "remote",
@@ -2196,7 +2196,7 @@
         },
         {
           "id": "work_years_band",
-          "question": "Years in paid work (total)",
+          "question": "How many years in total have you worked for pay?",
           "options": [
             {
               "value": "0",
@@ -2226,7 +2226,7 @@
         },
         {
           "id": "work_industry",
-          "question": "Industry (closest fit)",
+          "question": "What industry do you work in?",
           "options": [
             {
               "value": "tech",
@@ -2272,7 +2272,7 @@
         },
         {
           "id": "job_stress",
-          "question": "Stress level on a typical workweek",
+          "question": "How stressful is a typical work week for you?",
           "options": [
             {
               "value": "low",
@@ -2302,7 +2302,7 @@
         },
         {
           "id": "work_hours_band",
-          "question": "Hours worked most weeks",
+          "question": "How many hours do you usually work in a week?",
           "options": [
             {
               "value": "lt25",
@@ -2336,7 +2336,7 @@
         },
         {
           "id": "career_change",
-          "question": "Ever switch careers (major change)",
+          "question": "Have you ever changed careers in a major way?",
           "options": [
             {
               "value": "no",
@@ -2362,7 +2362,7 @@
         },
         {
           "id": "job_security_feeling",
-          "question": "Job security — how it feels lately",
+          "question": "How secure does your job feel right now?",
           "options": [
             {
               "value": "solid",
@@ -2397,7 +2397,7 @@
       "questions": [
         {
           "id": "height",
-          "question": "Height",
+          "question": "How tall are you?",
           "options": [
             {
               "value": "<155",
@@ -2421,7 +2421,7 @@
             },
             {
               "value": "195+",
-              "label": "195+ cm 📏"
+              "label": "195+ cm"
             },
             {
               "value": "prefer_not",
@@ -2431,7 +2431,7 @@
         },
         {
           "id": "weight",
-          "question": "Weight (ballpark)",
+          "question": "Roughly what is your weight?",
           "options": [
             {
               "value": "<50",
@@ -2459,11 +2459,11 @@
             },
             {
               "value": "100+",
-              "label": "100+ kg 💪"
+              "label": "100+ kg"
             },
             {
               "value": "fluctuates",
-              "label": "Yo-yos hard — pick a lane 😮‍💨"
+              "label": "Yo-yos hard — pick a lane"
             },
             {
               "value": "prefer_not",
@@ -2473,27 +2473,27 @@
         },
         {
           "id": "build",
-          "question": "Build",
+          "question": "How would you describe your build?",
           "options": [
             {
               "value": "slim",
-              "label": "Slim 🪶"
+              "label": "Slim"
             },
             {
               "value": "average",
-              "label": "Average ⚖️"
+              "label": "Average"
             },
             {
               "value": "athletic",
-              "label": "Athletic 🏃"
+              "label": "Athletic"
             },
             {
               "value": "muscular",
-              "label": "Muscular 💪"
+              "label": "Muscular"
             },
             {
               "value": "stocky",
-              "label": "Stocky / compact 🧱"
+              "label": "Stocky / compact"
             },
             {
               "value": "curvy",
@@ -2501,21 +2501,21 @@
             },
             {
               "value": "chubby",
-              "label": "Soft / chubby 🍞"
+              "label": "Soft / chubby"
             },
             {
               "value": "plus",
-              "label": "Plus-size — loud & proud ✨"
+              "label": "Plus-size — loud & proud"
             },
             {
               "value": "in_between",
-              "label": "Between every label 🤷"
+              "label": "Between every label"
             }
           ]
         },
         {
           "id": "eye_color",
-          "question": "Eye color",
+          "question": "What is your eye colour?",
           "options": [
             {
               "value": "brown",
@@ -2539,29 +2539,29 @@
             },
             {
               "value": "amber",
-              "label": "Amber / honey 🍯"
+              "label": "Amber / honey"
             },
             {
               "value": "hetero",
-              "label": "Two different — main character ✨"
+              "label": "Two different — main character"
             },
             {
               "value": "contacts",
-              "label": "Mostly contacts / lenses 👁️"
+              "label": "Mostly contacts / lenses"
             },
             {
               "value": "changes_light",
-              "label": "Changes in the light — pick one 😵‍💫"
+              "label": "Changes in the light — pick one"
             }
           ]
         },
         {
           "id": "face_shape",
-          "question": "Face shape (roughly)",
+          "question": "What is the rough shape of your face?",
           "options": [
             {
               "value": "round",
-              "label": "Round 🌕"
+              "label": "Round"
             },
             {
               "value": "oval",
@@ -2569,11 +2569,11 @@
             },
             {
               "value": "square",
-              "label": "Square jaw 🧊"
+              "label": "Square jaw"
             },
             {
               "value": "heart",
-              "label": "Heart / pointy chin 💗"
+              "label": "Heart / pointy chin"
             },
             {
               "value": "long",
@@ -2581,17 +2581,17 @@
             },
             {
               "value": "diamond",
-              "label": "Diamond cheekbone era 💎"
+              "label": "Diamond cheekbone era"
             },
             {
               "value": "unique",
-              "label": "None of the boxes fit 😤"
+              "label": "None of the boxes fit"
             }
           ]
         },
         {
           "id": "hair",
-          "question": "Hair situation",
+          "question": "How would you describe your hair?",
           "options": [
             {
               "value": "buzzed",
@@ -2607,11 +2607,11 @@
             },
             {
               "value": "long",
-              "label": "Long 🌊"
+              "label": "Long"
             },
             {
               "value": "bald",
-              "label": "Bald & proud 🥚"
+              "label": "Bald & proud"
             },
             {
               "value": "thinning",
@@ -2619,25 +2619,25 @@
             },
             {
               "value": "wig_extensions",
-              "label": "Wig / extensions sometimes ✨"
+              "label": "Wig / extensions sometimes"
             },
             {
               "value": "dyed",
-              "label": "Dyed chaos 🌈"
+              "label": "Dyed chaos"
             }
           ]
         },
         {
           "id": "hairdresser_interval",
-          "question": "Salon / barber rhythm (cuts & pro trims)",
+          "question": "How often do you get a haircut or professional trim?",
           "options": [
             {
               "value": "diy_only",
-              "label": "DIY / clippers only — pros never 👀"
+              "label": "DIY / clippers only — pros never"
             },
             {
               "value": "under_3wk",
-              "label": "Every few weeks — fresh fade religion ✂️"
+              "label": "Every few weeks — fresh fade religion"
             },
             {
               "value": "4-6wk",
@@ -2649,7 +2649,7 @@
             },
             {
               "value": "few_times_year",
-              "label": "A few times a year — grows out seasons 🌿"
+              "label": "A few times a year — grows out seasons"
             },
             {
               "value": "yearish",
@@ -2657,11 +2657,11 @@
             },
             {
               "value": "when_shamed",
-              "label": "When partner / mum / mirror negotiates 📣"
+              "label": "When partner / mum / mirror negotiates"
             },
             {
               "value": "buzz_none",
-              "label": "Buzzed/bald/none needed — zero salon drama 🥚"
+              "label": "Buzzed/bald/none needed — zero salon drama"
             },
             {
               "value": "prefer_not",
@@ -2671,11 +2671,11 @@
         },
         {
           "id": "activity",
-          "question": "Daily movement",
+          "question": "How much do you move around on a typical day?",
           "options": [
             {
               "value": "bed",
-              "label": "Bed ↔ desk ↔ fridge only 🛋️"
+              "label": "Bed desk fridge only"
             },
             {
               "value": "sedentary",
@@ -2683,33 +2683,33 @@
             },
             {
               "value": "light",
-              "label": "Some walking 🚶"
+              "label": "Some walking"
             },
             {
               "value": "moderate",
-              "label": "Regular activity 🏃"
+              "label": "Regular activity"
             },
             {
               "value": "high",
-              "label": "Gym rat 🏋️"
+              "label": "Gym rat"
             },
             {
               "value": "manual_job",
-              "label": "Physical job — paid to move 💼"
+              "label": "Physical job — paid to move"
             }
           ]
         },
         {
           "id": "sleep",
-          "question": "Sleep hours (typical)",
+          "question": "How many hours do you usually sleep at night?",
           "options": [
             {
               "value": "<5",
-              "label": "<5h 😵"
+              "label": "<5h"
             },
             {
               "value": "5-6",
-              "label": "5–6h 😴"
+              "label": "5–6h"
             },
             {
               "value": "6-7",
@@ -2717,7 +2717,7 @@
             },
             {
               "value": "7-8",
-              "label": "7–8h 😌"
+              "label": "7–8h"
             },
             {
               "value": "8-9",
@@ -2725,21 +2725,21 @@
             },
             {
               "value": "9+",
-              "label": "9h+ bear mode 🐻"
+              "label": "9h+ bear mode"
             },
             {
               "value": "chaos",
-              "label": "So irregular I can't average it 🌀"
+              "label": "So irregular I can't average it"
             }
           ]
         },
         {
           "id": "sleep_pattern",
-          "question": "Sleep pattern honesty",
+          "question": "How would you describe your sleep pattern?",
           "options": [
             {
               "value": "early_bird",
-              "label": "Early bird (suspicious) 🌅"
+              "label": "Early bird (suspicious)"
             },
             {
               "value": "regular",
@@ -2751,11 +2751,11 @@
             },
             {
               "value": "night_owl",
-              "label": "Night owl 🦉"
+              "label": "Night owl"
             },
             {
               "value": "insomnia",
-              "label": "Insomnia goblin 🌙"
+              "label": "Insomnia goblin"
             },
             {
               "value": "shift",
@@ -2763,13 +2763,13 @@
             },
             {
               "value": "baby_pet",
-              "label": "Baby / pet wakes me — send help 🐕"
+              "label": "Baby / pet wakes me — send help"
             }
           ]
         },
         {
           "id": "chronotype",
-          "question": "When are you actually alive?",
+          "question": "Are you more of a morning person or a night person?",
           "options": [
             {
               "value": "morning",
@@ -2777,7 +2777,7 @@
             },
             {
               "value": "late_morning",
-              "label": "Late morning — coffee first ☕"
+              "label": "Late morning — coffee first"
             },
             {
               "value": "mid",
@@ -2789,15 +2789,15 @@
             },
             {
               "value": "evening",
-              "label": "Evening peak 🌆"
+              "label": "Evening peak"
             },
             {
               "value": "late_night",
-              "label": "11pm–2am is my workshop 🛠️"
+              "label": "11pm–2am is my workshop"
             },
             {
               "value": "3am",
-              "label": "3am is my golden hour 🕯️"
+              "label": "3am is my golden hour"
             },
             {
               "value": "depends",
@@ -2807,11 +2807,11 @@
         },
         {
           "id": "penis_length",
-          "question": "Below the belt (rough, for guys)",
+          "question": "Men only: approximate size (optional)",
           "options": [
             {
               "value": "skip",
-              "label": "Skip / not applicable ⏭️"
+              "label": "Skip / not applicable"
             },
             {
               "value": "prefer_not",
@@ -2819,7 +2819,7 @@
             },
             {
               "value": "below_avg",
-              "label": "Shy range 📉"
+              "label": "Shy range"
             },
             {
               "value": "low_avg",
@@ -2827,11 +2827,11 @@
             },
             {
               "value": "average",
-              "label": "Solid average 📏"
+              "label": "Solid average"
             },
             {
               "value": "above_avg",
-              "label": "Above average 📈"
+              "label": "Above average"
             },
             {
               "value": "high",
@@ -2839,22 +2839,22 @@
             },
             {
               "value": "legend",
-              "label": "Legend tier (sure, king) 👑"
+              "label": "Legend tier (sure, king)"
             },
             {
               "value": "grower_not_shower",
-              "label": "Grower not shower — chart lies 📊"
+              "label": "Grower not shower — chart lies"
             }
           ],
           "sensitive": true
         },
         {
           "id": "bra_cup",
-          "question": "Cup size (rough, for gals)",
+          "question": "Women only: approximate bra cup size (optional)",
           "options": [
             {
               "value": "skip",
-              "label": "Skip / not applicable ⏭️"
+              "label": "Skip / not applicable"
             },
             {
               "value": "prefer_not",
@@ -2894,14 +2894,14 @@
             },
             {
               "value": "post_surgery",
-              "label": "Surgery-adjusted ✨"
+              "label": "Surgery-adjusted"
             }
           ],
           "sensitive": true
         },
         {
           "id": "plastic_surgery",
-          "question": "Cosmetic / plastic surgery ever?",
+          "question": "Have you ever had cosmetic or plastic surgery?",
           "options": [
             {
               "value": "never",
@@ -2909,7 +2909,7 @@
             },
             {
               "value": "maybe",
-              "label": "Maybe someday 🤔"
+              "label": "Maybe someday"
             },
             {
               "value": "injectables",
@@ -2940,7 +2940,7 @@
         },
         {
           "id": "plastic_detail",
-          "question": "If tweaks — what zone?",
+          "question": "If yes, which area was treated?",
           "options": [
             {
               "value": "face",
@@ -2992,23 +2992,23 @@
       "questions": [
         {
           "id": "alcohol",
-          "question": "Alcohol",
+          "question": "How often do you drink alcohol?",
           "options": [
             {
               "value": "never",
-              "label": "Never — sober hero 🏅"
+              "label": "Never — sober hero"
             },
             {
               "value": "sober_recovery",
-              "label": "Sober — recovery / choice 🫶"
+              "label": "Sober — recovery / choice"
             },
             {
               "value": "rare",
-              "label": "Rare 🍷"
+              "label": "Rare"
             },
             {
               "value": "social",
-              "label": "Social 🍻"
+              "label": "Social"
             },
             {
               "value": "weekly",
@@ -3034,7 +3034,7 @@
         },
         {
           "id": "smoking",
-          "question": "Smoking / vaping",
+          "question": "Do you smoke cigarettes or use a vape?",
           "options": [
             {
               "value": "never",
@@ -3046,7 +3046,7 @@
             },
             {
               "value": "social_only",
-              "label": "Social-only smoker — rare nights 🚬"
+              "label": "Social-only smoker — rare nights"
             },
             {
               "value": "occasional",
@@ -3054,15 +3054,15 @@
             },
             {
               "value": "regular",
-              "label": "Regular cigarettes 🚬"
+              "label": "Regular cigarettes"
             },
             {
               "value": "vape_only",
-              "label": "Vape only 💨"
+              "label": "Vape only"
             },
             {
               "value": "quit_recent",
-              "label": "Quit recently — mint gum era 🍬"
+              "label": "Quit recently — mint gum era"
             },
             {
               "value": "quit_long",
@@ -3070,7 +3070,7 @@
             },
             {
               "value": "cigar_pipe",
-              "label": "Cigar / pipe hobby — fancy villain 🎩"
+              "label": "Cigar / pipe hobby — fancy villain"
             },
             {
               "value": "prefer_not",
@@ -3080,23 +3080,23 @@
         },
         {
           "id": "substances_other",
-          "question": "Beyond booze — other stuff?",
+          "question": "Aside from alcohol, do you use recreational drugs or non-prescribed medicines?",
           "options": [
             {
               "value": "sober",
-              "label": "Sober squad — nothing else ✋"
+              "label": "Sober squad — nothing else"
             },
             {
               "value": "sober_curious",
-              "label": "Sober curious / mostly abstain 🌱"
+              "label": "Sober curious / mostly abstain"
             },
             {
               "value": "cbd_only",
-              "label": "CBD / chill legal only 🌿"
+              "label": "CBD / chill legal only"
             },
             {
               "value": "weed_rare",
-              "label": "Weed rarely 🌿"
+              "label": "Weed rarely"
             },
             {
               "value": "weed_regular",
@@ -3104,11 +3104,11 @@
             },
             {
               "value": "edibles",
-              "label": "Edibles > smoking — lung soft 🍫"
+              "label": "Edibles > smoking — lung soft"
             },
             {
               "value": "psychedelic_rare",
-              "label": "Psychedelics — rare / ceremonial 🍄"
+              "label": "Psychedelics — rare / ceremonial"
             },
             {
               "value": "party_stack",
@@ -3116,15 +3116,15 @@
             },
             {
               "value": "stim_focus",
-              "label": "Stim / focus stuff — productivity rabbit hole 💊"
+              "label": "Stim / focus stuff — productivity rabbit hole"
             },
             {
               "value": "rx_only",
-              "label": "Only as prescribed 💊"
+              "label": "Only as prescribed"
             },
             {
               "value": "recovery",
-              "label": "Recovery / former heavy — proud path 🫶"
+              "label": "Recovery / former heavy — proud path"
             },
             {
               "value": "nicotine_else",
@@ -3139,7 +3139,7 @@
         },
         {
           "id": "caffeine_daily",
-          "question": "Caffeinated drinks on a typical day",
+          "question": "How many caffeinated drinks do you have on a typical day?",
           "options": [
             {
               "value": "0",
@@ -3165,7 +3165,7 @@
         },
         {
           "id": "sleep_quality_recent",
-          "question": "Sleep quality lately",
+          "question": "How has your sleep quality been lately?",
           "options": [
             {
               "value": "good",
@@ -3195,7 +3195,7 @@
         },
         {
           "id": "news_consumption",
-          "question": "News intake",
+          "question": "How much news do you follow?",
           "options": [
             {
               "value": "minimal",
@@ -3221,7 +3221,7 @@
         },
         {
           "id": "gambling_skin",
-          "question": "Gambling / betting (including lottery)",
+          "question": "Do you gamble or buy lottery tickets?",
           "options": [
             {
               "value": "never",
@@ -3251,7 +3251,7 @@
         },
         {
           "id": "sugar_drinks",
-          "question": "Sugary drinks / soda",
+          "question": "How often do you drink sugary soft drinks?",
           "options": [
             {
               "value": "never",
@@ -3277,7 +3277,7 @@
         },
         {
           "id": "meal_timing",
-          "question": "Meal rhythm",
+          "question": "How regular are your mealtimes?",
           "options": [
             {
               "value": "regular",
@@ -3307,7 +3307,7 @@
         },
         {
           "id": "substance_peer_pressure",
-          "question": "Pressure around drinking or drugs (your social circle)",
+          "question": "Do people in your social circle pressure you about drinking or drugs?",
           "options": [
             {
               "value": "low",
@@ -3338,11 +3338,11 @@
       "questions": [
         {
           "id": "poop_frequency",
-          "question": "Bowel movements per day (roughly)",
+          "question": "Bowel habits: about how often do you have a bowel movement?",
           "options": [
             {
               "value": "mystery",
-              "label": "Mystery / irregular 🤫"
+              "label": "Mystery / irregular"
             },
             {
               "value": "few_week",
@@ -3376,11 +3376,11 @@
         },
         {
           "id": "pee_frequency",
-          "question": "Bathroom trips (number one) per day",
+          "question": "About how many times a day do you pass urine?",
           "options": [
             {
               "value": "few",
-              "label": "Few — camel 🐪"
+              "label": "Few — camel"
             },
             {
               "value": "normal",
@@ -3388,11 +3388,11 @@
             },
             {
               "value": "frequent",
-              "label": "Frequent — hydration flex 💧"
+              "label": "Frequent — hydration flex"
             },
             {
               "value": "hydrated",
-              "label": "Hydrated — always peeing 💧"
+              "label": "Hydrated — always peeing"
             },
             {
               "value": "constant",
@@ -3400,7 +3400,7 @@
             },
             {
               "value": "night_pee",
-              "label": "Night trips — sleep hates me 🌙"
+              "label": "Night trips — sleep hates me"
             },
             {
               "value": "prefer_not",
@@ -3410,7 +3410,7 @@
         },
         {
           "id": "sick_per_year",
-          "question": "How sick are you per year?",
+          "question": "In a typical year, how often do you get sick?",
           "options": [
             {
               "value": "never",
@@ -3434,7 +3434,7 @@
             },
             {
               "value": "often",
-              "label": "Often ill 🤒"
+              "label": "Often ill"
             },
             {
               "value": "chronic",
@@ -3448,11 +3448,11 @@
         },
         {
           "id": "broken_bone",
-          "question": "Ever broken a bone?",
+          "question": "Have you ever broken a bone?",
           "options": [
             {
               "value": "never",
-              "label": "Never — touch wood 🪵"
+              "label": "Never — touch wood"
             },
             {
               "value": "hairline",
@@ -3472,7 +3472,7 @@
             },
             {
               "value": "face_jaw",
-              "label": "Face / jaw — orthodontic war zone 🦷"
+              "label": "Face / jaw — orthodontic war zone"
             },
             {
               "value": "prefer_not",
@@ -3482,11 +3482,11 @@
         },
         {
           "id": "accident",
-          "question": "Bad accident / ER visit ever?",
+          "question": "Have you ever had a serious accident or had to go to hospital for an emergency?",
           "options": [
             {
               "value": "nope",
-              "label": "Nope — boring luck ✅"
+              "label": "Nope — boring luck"
             },
             {
               "value": "minor_er",
@@ -3502,7 +3502,7 @@
             },
             {
               "value": "major",
-              "label": "Major — ICU / long recovery 🚑"
+              "label": "Major — ICU / long recovery"
             },
             {
               "value": "chronic_pain",
@@ -3520,7 +3520,7 @@
         },
         {
           "id": "dental_visit",
-          "question": "Dental checkups",
+          "question": "How often do you see a dentist for a check-up?",
           "options": [
             {
               "value": "regular",
@@ -3546,7 +3546,7 @@
         },
         {
           "id": "vision_correction",
-          "question": "Vision",
+          "question": "Do you need glasses or contact lenses?",
           "options": [
             {
               "value": "natural",
@@ -3576,7 +3576,7 @@
         },
         {
           "id": "allergies_level",
-          "question": "Allergies (seasonal or otherwise)",
+          "question": "Do you have allergies? How severe are they?",
           "options": [
             {
               "value": "none",
@@ -3602,7 +3602,7 @@
         },
         {
           "id": "blood_donation",
-          "question": "Blood donation",
+          "question": "Have you donated blood?",
           "options": [
             {
               "value": "never",
@@ -3628,7 +3628,7 @@
         },
         {
           "id": "physical_checkup",
-          "question": "Routine physical / checkup (non-urgent)",
+          "question": "When did you last have a routine check-up with a doctor?",
           "options": [
             {
               "value": "annual",
@@ -3659,7 +3659,7 @@
       "questions": [
         {
           "id": "holidays_per_year",
-          "question": "Trips / holidays per year",
+          "question": "How many holidays or trips do you take in a typical year?",
           "options": [
             {
               "value": "hermit",
@@ -3687,13 +3687,13 @@
             },
             {
               "value": "work_travel",
-              "label": "Work flies me — vacation is accidental 🧳"
+              "label": "Work flies me — vacation is accidental"
             }
           ]
         },
         {
           "id": "countries_visited",
-          "question": "Countries visited (rough count)",
+          "question": "About how many countries have you visited in your life?",
           "options": [
             {
               "value": "0",
@@ -3731,7 +3731,7 @@
         },
         {
           "id": "passport_status",
-          "question": "Passport",
+          "question": "Do you have a passport?",
           "options": [
             {
               "value": "none",
@@ -3757,7 +3757,7 @@
         },
         {
           "id": "travel_style",
-          "question": "Travel style that fits you",
+          "question": "What kind of traveller are you?",
           "options": [
             {
               "value": "planner",
@@ -3791,7 +3791,7 @@
         },
         {
           "id": "solo_travel",
-          "question": "Solo vs group travel",
+          "question": "Do you prefer to travel alone or with other people?",
           "options": [
             {
               "value": "solo_ok",
@@ -3821,7 +3821,7 @@
         },
         {
           "id": "flight_anxiety",
-          "question": "Flying",
+          "question": "How do you feel about flying?",
           "options": [
             {
               "value": "fine",
@@ -3851,7 +3851,7 @@
         },
         {
           "id": "travel_budget",
-          "question": "Travel spending comfort",
+          "question": "How comfortable is your budget for travel?",
           "options": [
             {
               "value": "tight",
@@ -3877,7 +3877,7 @@
         },
         {
           "id": "international_last_year",
-          "question": "International trips last 12 months",
+          "question": "How many international trips have you taken in the last 12 months?",
           "options": [
             {
               "value": "0",
@@ -3903,7 +3903,7 @@
         },
         {
           "id": "dream_destination_type",
-          "question": "Dream trip right now",
+          "question": "If you could take one dream trip, what would it look like?",
           "options": [
             {
               "value": "beach",
@@ -3941,7 +3941,7 @@
         },
         {
           "id": "travel_barrier",
-          "question": "Biggest barrier to traveling more",
+          "question": "What mainly stops you from travelling more?",
           "options": [
             {
               "value": "money",
@@ -3981,15 +3981,15 @@
       "questions": [
         {
           "id": "mental_health_landscape",
-          "question": "Mental health — where things stand (honest buckets)",
+          "question": "Mental health: which statement fits you best?",
           "options": [
             {
               "value": "none_dx",
-              "label": "No diagnosis — brain mostly behaves ✅"
+              "label": "No diagnosis — brain mostly behaves"
             },
             {
               "value": "suspect_not_dx",
-              "label": "Strongly suspect something — not formally dx yet 🤔"
+              "label": "Strongly suspect something — not formally diagnosis yet"
             },
             {
               "value": "assessment_pending",
@@ -3997,7 +3997,7 @@
             },
             {
               "value": "depression_anxiety",
-              "label": "Depression / anxiety axis (GAD, panic, etc.) 🌧️"
+              "label": "Depression / anxiety axis (general anxiety, panic, etc.)"
             },
             {
               "value": "adhd",
@@ -4005,7 +4005,7 @@
             },
             {
               "value": "autism",
-              "label": "Autism spectrum — self or dx 🧩"
+              "label": "Autism spectrum — self or diagnosis"
             },
             {
               "value": "adhd_asd_combo",
@@ -4013,31 +4013,31 @@
             },
             {
               "value": "bipolar_spectrum",
-              "label": "Bipolar spectrum / mood cycles 🎢"
+              "label": "Bipolar spectrum / mood cycles"
             },
             {
               "value": "ptsd_trauma",
-              "label": "PTSD / trauma-related stuff 🕯️"
+              "label": "PTSD / trauma-related stuff"
             },
             {
               "value": "ocd",
-              "label": "OCD / intrusive thought loops 🔁"
+              "label": "OCD / intrusive thought loops"
             },
             {
               "value": "eating_disorder",
-              "label": "Eating disorder history — any type 🍽️"
+              "label": "Eating disorder history — any type"
             },
             {
               "value": "bpd_traits",
-              "label": "BPD traits / emotionally intense pattern 💔"
+              "label": "BPD traits / emotionally intense pattern"
             },
             {
               "value": "psychosis_spectrum",
-              "label": "Psychosis-spectrum — treated / managed 🫶"
+              "label": "Psychosis-spectrum — treated / managed"
             },
             {
               "value": "substance_mh",
-              "label": "Substance use + mental health overlap — recovery included 🔄"
+              "label": "Substance use + mental health overlap — recovery included"
             },
             {
               "value": "multiple_dx",
@@ -4045,7 +4045,7 @@
             },
             {
               "value": "therapy_no_label",
-              "label": "Therapy regular — still no neat label 🛋️"
+              "label": "Therapy regular — still no neat label"
             },
             {
               "value": "rather_not_say",
@@ -4059,23 +4059,23 @@
         },
         {
           "id": "mental_health_day_to_day",
-          "question": "Day-to-day — how much does it shape life right now?",
+          "question": "How much does mental health affect your daily life right now?",
           "options": [
             {
               "value": "minimal",
-              "label": "Minimal — background radio volume 🔈"
+              "label": "Minimal — background radio volume"
             },
             {
               "value": "manageable",
-              "label": "Manageable — routines / meds / therapy help ✔️"
+              "label": "Manageable — routines / meds / therapy help"
             },
             {
               "value": "waves",
-              "label": "Comes in waves — good weeks / bad weeks 🌊"
+              "label": "Comes in waves — good weeks / bad weeks"
             },
             {
               "value": "often_hard",
-              "label": "Often hard — still functioning-ish 💪"
+              "label": "Often hard — still functioning-ish"
             },
             {
               "value": "disability_level",
@@ -4083,11 +4083,11 @@
             },
             {
               "value": "good_patch",
-              "label": "In a rare good patch — knock wood 🪵"
+              "label": "In a rare good patch — knock wood"
             },
             {
               "value": "crisis_adjacent",
-              "label": "Crisis-adjacent lately — holding on 🆘"
+              "label": "Crisis-adjacent lately — holding on"
             },
             {
               "value": "prefer_not",
@@ -4097,7 +4097,7 @@
         },
         {
           "id": "therapy_status",
-          "question": "Therapy / counseling — what's the vibe?",
+          "question": "Have you ever had therapy or counselling?",
           "options": [
             {
               "value": "never",
@@ -4105,7 +4105,7 @@
             },
             {
               "value": "tried_stopped",
-              "label": "Tried — stopped / wrong fit / timing 🚪"
+              "label": "Tried — stopped / wrong fit / timing"
             },
             {
               "value": "as_needed",
@@ -4113,7 +4113,7 @@
             },
             {
               "value": "monthly",
-              "label": "Monthly-ish maintenance 🗓️"
+              "label": "Monthly-ish maintenance"
             },
             {
               "value": "weekly",
@@ -4121,19 +4121,19 @@
             },
             {
               "value": "intensive",
-              "label": "Intensive program (IOP / DBT / group)"
+              "label": "Intensive program (IOP, DBT skills group, or group therapy)"
             },
             {
               "value": "online_apps",
-              "label": "Mostly apps / online text therapy 📲"
+              "label": "Mostly apps / online text therapy"
             },
             {
               "value": "faith_based",
-              "label": "Faith-based counseling / pastoral 🕊️"
+              "label": "Faith-based counseling / pastoral"
             },
             {
               "value": "cant_access",
-              "label": "Want it — access / money / waitlist blocked 💸"
+              "label": "Want it — access / money / waitlist blocked"
             },
             {
               "value": "prefer_not",
@@ -4143,47 +4143,47 @@
         },
         {
           "id": "psychiatric_meds",
-          "question": "Psychiatric meds — ever / now? (zero judgment)",
+          "question": "Are you taking prescribed medication for mental health?",
           "options": [
             {
               "value": "never",
-              "label": "Never — pills not part of story 💊❌"
+              "label": "Never — pills not part of story"
             },
             {
               "value": "past_only",
-              "label": "Past — tapered off successfully / trial era ⏪"
+              "label": "Past — tapered off successfully / trial era"
             },
             {
               "value": "ssri_snri",
-              "label": "SSRI / SNRI lane 🌈"
+              "label": "SSRI or SNRI antidepressants"
             },
             {
               "value": "mood_stabilizer",
-              "label": "Mood stabilizer (e.g. lamotrigine) ⚡"
+              "label": "Mood stabilizer (e.g. lamotrigine)"
             },
             {
               "value": "adhd_meds",
-              "label": "ADHD stimulant / non-stim 🎯"
+              "label": "ADHD stimulant / non-stim"
             },
             {
               "value": "anti_anxiety_prn",
-              "label": "Anti-anxiety PRN — as-needed chill pill 🆘"
+              "label": "Anti-anxiety as needed — as-needed chill pill"
             },
             {
               "value": "antipsychotic_mood",
-              "label": "Antipsychotic / mood combo — higher stakes meds 🧠"
+              "label": "Antipsychotic / mood combo — higher stakes meds"
             },
             {
               "value": "sleep_meds",
-              "label": "Sleep meds overlap — ambien rabbit hole adjacent 🌙"
+              "label": "Sleep meds overlap — ambien rabbit hole adjacent"
             },
             {
               "value": "cocktail",
-              "label": "Cocktail — more than one prescribed mixologist 🧪"
+              "label": "Cocktail — more than one prescribed mixologist"
             },
             {
               "value": "supplements_only",
-              "label": "OTC supplements only — jury out on science 🌿"
+              "label": "OTC supplements only — jury out on science"
             },
             {
               "value": "prefer_not",
@@ -4193,23 +4193,23 @@
         },
         {
           "id": "neuro_self_id",
-          "question": "Neurotype self-ID (optional)",
+          "question": "Do you identify as neurodivergent (for example ADHD or autism)? This is optional.",
           "options": [
             {
               "value": "allistic",
-              "label": "Allistic — neurotypical-ish 📗"
+              "label": "Allistic — neurotypical-ish"
             },
             {
               "value": "adhd",
-              "label": "ADHD 🌀"
+              "label": "ADHD"
             },
             {
               "value": "autistic",
-              "label": "Autistic 🧩"
+              "label": "Autistic"
             },
             {
               "value": "dyslexic",
-              "label": "Dyslexic / learning difference 📖"
+              "label": "Dyslexic / learning difference"
             },
             {
               "value": "dyspraxia",
@@ -4217,15 +4217,15 @@
             },
             {
               "value": "combo",
-              "label": "Combo ND platter 🍱"
+              "label": "Combo neurodivergent platter"
             },
             {
               "value": "questioning",
-              "label": "Questioning / researching 🕵️"
+              "label": "Questioning / researching"
             },
             {
               "value": "na",
-              "label": "Prefer not to use this frame — skip 🚫"
+              "label": "Prefer not to use this frame — skip"
             },
             {
               "value": "prefer_not",
@@ -4235,11 +4235,11 @@
         },
         {
           "id": "meditation_practice",
-          "question": "Meditation or breathwork practice",
+          "question": "Do you meditate or do breathing exercises?",
           "options": [
             {
               "value": "never",
-              "label": "Never stuck"
+              "label": "Never really tried it"
             },
             {
               "value": "occasional",
@@ -4261,7 +4261,7 @@
         },
         {
           "id": "journaling_habit",
-          "question": "Journaling / notes to yourself",
+          "question": "Do you keep a diary or write notes to yourself?",
           "options": [
             {
               "value": "no",
@@ -4287,7 +4287,7 @@
         },
         {
           "id": "stress_first_coping",
-          "question": "First thing you reach for under stress",
+          "question": "When you feel stressed, what do you usually do first?",
           "options": [
             {
               "value": "talk",
@@ -4321,7 +4321,7 @@
         },
         {
           "id": "social_media_mood_effect",
-          "question": "Social media effect on your mood",
+          "question": "Does social media affect your mood?",
           "options": [
             {
               "value": "fine",
@@ -4347,7 +4347,7 @@
         },
         {
           "id": "sleep_mental_link",
-          "question": "Sleep and mental health — how linked for you",
+          "question": "For you, are sleep problems and mood problems connected?",
           "options": [
             {
               "value": "tight",
@@ -4379,91 +4379,91 @@
       "questions": [
         {
           "id": "kink_fetish_radar",
-          "question": "Fantasy / kink spectrum (consenting adults)",
+          "question": "Sexual interests and fantasies (private; adults only)",
           "options": [
             {
               "value": "skip_vanilla",
-              "label": "Vanilla royalty — sprinkles optional 🍦"
+              "label": "Vanilla royalty — sprinkles optional"
             },
             {
               "value": "mild_spice",
-              "label": "Mild spice — toys / outfits sometimes 🎁"
+              "label": "Mild spice — toys / outfits sometimes"
             },
             {
               "value": "romantic_only",
-              "label": "Romantic-only horny — candles not chains 🕯️"
+              "label": "Romantic-only horny — candles not chains"
             },
             {
               "value": "roleplay_light",
-              "label": "Light roleplay — plot optional 🎭"
+              "label": "Light roleplay — plot optional"
             },
             {
               "value": "power_exchange_curious",
-              "label": "Power exchange curious — still reading manuals ⛓️"
+              "label": "Power exchange curious — still reading manuals"
             },
             {
               "value": "sub_lean",
-              "label": "Sub-lean — likes direction 🫡"
+              "label": "Sub-lean — likes direction"
             },
             {
               "value": "dom_lean",
-              "label": "Dom-lean — likes steering 🦁"
+              "label": "Dom-lean — likes steering"
             },
             {
               "value": "switch",
-              "label": "Switch — coin flip per Tuesday 🔄"
+              "label": "Switch — coin flip per Tuesday"
             },
             {
               "value": "brat_energy",
-              "label": "Brat energy — consenting chaos 😈"
+              "label": "Brat energy — consenting chaos"
             },
             {
               "value": "rope_restraint",
-              "label": "Rope / restraint aesthetic — safety first 🪢"
+              "label": "Rope / restraint aesthetic — safety first"
             },
             {
               "value": "impact_play",
-              "label": "Impact play curious — negotiate first ✋"
+              "label": "Impact play curious — negotiate first"
             },
             {
               "value": "praise_degrade_words",
-              "label": "Praise / degradation wordplay only — theatre brain 🎙️"
+              "label": "Praise / degradation wordplay only — theatre brain"
             },
             {
               "value": "exhibition_voyeur",
-              "label": "Exhibition / voyeur fantasy — mostly in theory 👀"
+              "label": "Exhibition / voyeur fantasy — mostly in theory"
             },
             {
               "value": "group_fantasy",
-              "label": "Group fantasy — theory > logistics 👥"
+              "label": "Group fantasy — theory > logistics"
             },
             {
               "value": "feet_respectfully",
-              "label": "Feet respectfully 🦶"
+              "label": "Feet respectfully"
             },
             {
               "value": "body_worship",
-              "label": "Body worship / praise kink 🙏"
+              "label": "Body worship / praise kink"
             },
             {
               "value": "latex_leather_aesthetic",
-              "label": "Latex / leather / uniform aesthetic 🖤"
+              "label": "Latex / leather / uniform aesthetic"
             },
             {
               "value": "pet_play_light",
-              "label": "Pet play — light / adults-only cosplay zone 🐾"
+              "label": "Pet play — light / adults-only cosplay zone"
             },
             {
               "value": "ageplay_adults_only",
-              "label": "Age-play themes — strictly consenting adults only 🔞"
+              "label": "Age-play themes — strictly consenting adults only"
             },
             {
               "value": "edge_play",
-              "label": "Edgier bucket — only with trust + safewords 🧯"
+              "label": "Edgier bucket — only with trust + safewords"
             },
             {
               "value": "fantasy_only",
-              "label": "Mostly fantasy / fiction — real life is PG-13 📚"
+              "label": "Mostly fantasy / fiction — real life is PG-13"
             },
             {
               "value": "ace_aego",
@@ -4482,35 +4482,35 @@
         },
         {
           "id": "sex_episodes_last_year",
-          "question": "Partnered intimacy — last ~12 months (your definition)",
+          "question": "In the last year, about how often were you sexually intimate with a partner?",
           "options": [
             {
               "value": "0_none",
-              "label": "0 — dry spell / choice / not priority 🏜️"
+              "label": "0 — dry spell / choice / not priority"
             },
             {
               "value": "0_ace",
-              "label": "0 — on the ace spectrum / low interest 💜"
+              "label": "0 — on the ace spectrum / low interest"
             },
             {
               "value": "1-3",
-              "label": "1–3 — rare eclipse events 🌑"
+              "label": "1–3 — rare eclipse events"
             },
             {
               "value": "4-12",
-              "label": "4–12 — monthly-ish rhythm 📅"
+              "label": "4–12 — monthly-ish rhythm"
             },
             {
               "value": "13-24",
-              "label": "13–24 — bi-weekly-ish energy 📆"
+              "label": "13–24 — bi-weekly-ish energy"
             },
             {
               "value": "25-52",
-              "label": "25–52 — weekly-ish 🐇"
+              "label": "25–52 — weekly-ish"
             },
             {
               "value": "53-104",
-              "label": "53–104 — multiple times a week 🔥"
+              "label": "53–104 — multiple times a week"
             },
             {
               "value": "105+",
@@ -4518,7 +4518,7 @@
             },
             {
               "value": "solo_primary",
-              "label": "Solo counts more than partnered — honest 📳"
+              "label": "Solo counts more than partnered — honest"
             },
             {
               "value": "open_poly_math",
@@ -4526,7 +4526,7 @@
             },
             {
               "value": "lost_count",
-              "label": "Lost count — ballpark impossible 🌀"
+              "label": "Lost count — ballpark impossible"
             },
             {
               "value": "prefer_not",
@@ -4537,19 +4537,19 @@
         },
         {
           "id": "sex_ideal_frequency",
-          "question": "Ideal world — how often you'd want partnered play (per month)",
+          "question": "Ideally, how often would you want intimacy with a partner per month?",
           "options": [
             {
               "value": "0",
-              "label": "0 — celibate peace / not interested 🧘"
+              "label": "0 — celibate peace / not interested"
             },
             {
               "value": "lt1",
-              "label": "<1 — rare special occasions 🎂"
+              "label": "<1 — rare special occasions"
             },
             {
               "value": "1-2",
-              "label": "1–2 — quality over quantity 🍷"
+              "label": "1–2 — quality over quantity"
             },
             {
               "value": "3-4",
@@ -4557,27 +4557,27 @@
             },
             {
               "value": "5-8",
-              "label": "5–8 — healthy appetite 🍽️"
+              "label": "5–8 — healthy appetite"
             },
             {
               "value": "9-15",
-              "label": "9–15 — frequent fuel stops ⛽"
+              "label": "9–15 — frequent fuel stops"
             },
             {
               "value": "16-25",
-              "label": "16–25 — rabbit chapter 🐇"
+              "label": "16–25 — rabbit chapter"
             },
             {
               "value": "26+",
-              "label": "26+ — theoretical horny — logistics TBD 🚀"
+              "label": "26+ — theoretical horny — logistics TBD"
             },
             {
               "value": "depends_partner",
-              "label": "Depends entirely on partner's bandwidth 🤝"
+              "label": "Depends entirely on partner's bandwidth"
             },
             {
               "value": "mood_cycle",
-              "label": "Mood / cycle dependent — ask me weekly 📉"
+              "label": "Mood / cycle dependent — ask me weekly"
             },
             {
               "value": "prefer_not",
@@ -4588,47 +4588,47 @@
         },
         {
           "id": "lifetime_partners_band",
-          "question": "Lifetime sexual partners — rough band (however you count)",
+          "question": "Over your lifetime, roughly how many sexual partners have you had?",
           "options": [
             {
               "value": "0",
-              "label": "0 — none yet / waiting / ace path 🌱"
+              "label": "0 — none yet / waiting / ace path"
             },
             {
               "value": "1",
-              "label": "1 — one storyline 💍"
+              "label": "1 — one storyline"
             },
             {
               "value": "2-4",
-              "label": "2–4 — small anthology 📗"
+              "label": "2–4 — small anthology"
             },
             {
               "value": "5-9",
-              "label": "5–9 — chapter book 📘"
+              "label": "5–9 — chapter book"
             },
             {
               "value": "10-19",
-              "label": "10–19 — busy seasons 📙"
+              "label": "10–19 — busy seasons"
             },
             {
               "value": "20-39",
-              "label": "20–39 — library card active 📚"
+              "label": "20–39 — library card active"
             },
             {
               "value": "40-79",
-              "label": "40–79 — statistic outlier energy 📊"
+              "label": "40–79 — statistic outlier energy"
             },
             {
               "value": "80+",
-              "label": "80+ — spreadsheet retired 🏆"
+              "label": "80+ — spreadsheet retired"
             },
             {
               "value": "lost_count",
-              "label": "Lost count — memories fuzzy 🌀"
+              "label": "Lost count — memories fuzzy"
             },
             {
               "value": "open_poly_blur",
-              "label": "Open / poly — counting is philosophical 🤔"
+              "label": "Open / poly — counting is philosophical"
             },
             {
               "value": "prefer_not",
@@ -4639,7 +4639,7 @@
         },
         {
           "id": "talking_desires_comfort",
-          "question": "Comfort naming what you want intimately",
+          "question": "How easy is it for you to say what you want when you are intimate?",
           "options": [
             {
               "value": "easy",
@@ -4666,7 +4666,7 @@
         },
         {
           "id": "body_image_intimacy",
-          "question": "Body image in intimate moments",
+          "question": "During intimacy, how do you feel about your body?",
           "options": [
             {
               "value": "fine",
@@ -4693,7 +4693,7 @@
         },
         {
           "id": "initiation_balance",
-          "question": "Who tends to initiate",
+          "question": "Who usually initiates intimacy?",
           "options": [
             {
               "value": "balanced",
@@ -4724,7 +4724,7 @@
         },
         {
           "id": "aftercare_importance",
-          "question": "Aftercare / cuddling / debrief importance",
+          "question": "How important is cuddling or talking afterward?",
           "options": [
             {
               "value": "essential",
@@ -4751,7 +4751,7 @@
         },
         {
           "id": "libido_vs_life_stress",
-          "question": "Libido vs life stress lately",
+          "question": "Has stress affected your sex drive lately?",
           "options": [
             {
               "value": "aligned",
@@ -4782,7 +4782,7 @@
         },
         {
           "id": "comfort_with_toys",
-          "question": "Comfort with toys / extras",
+          "question": "How do you feel about sexual aids or toys?",
           "options": [
             {
               "value": "yes",
@@ -4815,11 +4815,11 @@
       "questions": [
         {
           "id": "criminal_record",
-          "question": "Criminal record",
+          "question": "Have you ever had legal trouble or a criminal record?",
           "options": [
             {
               "value": "clean",
-              "label": "Clean ✅"
+              "label": "Clean"
             },
             {
               "value": "parking_traffic",
@@ -4827,23 +4827,23 @@
             },
             {
               "value": "traffic",
-              "label": "Traffic / speeding — points on license 🚗"
+              "label": "Traffic / speeding — points on license"
             },
             {
               "value": "admin_fines",
-              "label": "Administrative / dumb fines only"
+              "label": "Administrative or minor fines only"
             },
             {
               "value": "youth_sealed",
-              "label": "Youth stuff — sealed / ancient history 🔒"
+              "label": "Youth stuff — sealed / ancient history"
             },
             {
               "value": "weed_past",
-              "label": "Pot-era charges — past / different laws 🌿"
+              "label": "Marijuana-related charges (past) — past / different laws"
             },
             {
               "value": "disorderly",
-              "label": "Disorderly / drunk night (past) 🍺"
+              "label": "Disorderly / drunk night (past)"
             },
             {
               "value": "property",
@@ -4859,11 +4859,11 @@
             },
             {
               "value": "immigration",
-              "label": "Immigration paperwork stuff — not 'crime' but scary 📄"
+              "label": "Immigration paperwork stuff — not 'crime' but scary"
             },
             {
               "value": "active_case",
-              "label": "Active case — lawyer on speed dial ⚖️"
+              "label": "Active case — lawyer on speed dial"
             },
             {
               "value": "prefer_not",
@@ -4874,7 +4874,7 @@
         },
         {
           "id": "cheated_partner",
-          "question": "Ever cheated on someone?",
+          "question": "Have you ever been unfaithful in a relationship?",
           "options": [
             {
               "value": "never",
@@ -4886,7 +4886,7 @@
             },
             {
               "value": "micro_gray",
-              "label": "Grey zone — flirty texts / secret apps 🌫️"
+              "label": "Grey zone — flirty texts / secret apps"
             },
             {
               "value": "emotional",
@@ -4902,7 +4902,7 @@
             },
             {
               "value": "open_ok",
-              "label": "Not cheating — we had explicit rules 📜"
+              "label": "Not cheating — we had explicit rules"
             },
             {
               "value": "poly_misunderstood",
@@ -4917,19 +4917,19 @@
         },
         {
           "id": "been_cheated",
-          "question": "Ever been cheated on?",
+          "question": "Have you ever been cheated on?",
           "options": [
             {
               "value": "no",
-              "label": "Nope — lucky or oblivious 😅"
+              "label": "Nope — lucky or oblivious"
             },
             {
               "value": "emotional",
-              "label": "Emotional cheating — found the thread 💬"
+              "label": "Emotional cheating — found the thread"
             },
             {
               "value": "physical",
-              "label": "Physical — confirmed 💔"
+              "label": "Physical — confirmed"
             },
             {
               "value": "yes",
@@ -4937,11 +4937,11 @@
             },
             {
               "value": "poly_confusion",
-              "label": "Boundary crossed in open/poly — hurt anyway 🌀"
+              "label": "Boundary crossed in open/poly — hurt anyway"
             },
             {
               "value": "unsure",
-              "label": "Sus but unproven 🕵️"
+              "label": "Sus but unproven"
             },
             {
               "value": "rather_not_know",
@@ -4956,7 +4956,7 @@
         },
         {
           "id": "major_money_trouble",
-          "question": "Ever bankruptcy, foreclosure, or serious debt crisis",
+          "question": "Have you ever been bankrupt or in serious debt?",
           "options": [
             {
               "value": "never",
@@ -4983,7 +4983,7 @@
         },
         {
           "id": "fired_or_laid_off",
-          "question": "Ever fired or laid off",
+          "question": "Have you ever been fired or laid off from a job?",
           "options": [
             {
               "value": "never",
@@ -5014,7 +5014,7 @@
         },
         {
           "id": "estrangement_family",
-          "question": "Estrangement from close family",
+          "question": "Are you estranged from anyone in your close family?",
           "options": [
             {
               "value": "no",
@@ -5045,7 +5045,7 @@
         },
         {
           "id": "substance_family_history",
-          "question": "Substance issues in immediate family growing up",
+          "question": "When you were growing up, did anyone in your home have alcohol or drug problems?",
           "options": [
             {
               "value": "no",
@@ -5076,7 +5076,7 @@
         },
         {
           "id": "therapy_family_of_origin",
-          "question": "Therapy partly for family-of-origin patterns",
+          "question": "Has therapy ever focused on your childhood or family?",
           "options": [
             {
               "value": "yes_major",
@@ -5103,7 +5103,7 @@
         },
         {
           "id": "biggest_regret_category",
-          "question": "If you had to pick — biggest regret bucket",
+          "question": "If you had to pick one kind of regret, what would it be?",
           "options": [
             {
               "value": "relationships",
@@ -5142,7 +5142,7 @@
         },
         {
           "id": "truth_over_easy_lie",
-          "question": "Honesty — hurt someone's feelings with truth lately",
+          "question": "Recently, have you told a difficult truth that upset someone?",
           "options": [
             {
               "value": "yes_needed",

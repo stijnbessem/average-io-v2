@@ -11,7 +11,7 @@ import questionnaireRaw from "./data/average_io_full_questions.json";
 /* Bump APP_VERSION whenever anything user-visible changes — semver-ish,
    nothing formal. Shown in the footer so you can verify you're on the
    latest build. APP_BUILD is the approximate ship date. */
-const APP_VERSION = "0.15.5";
+const APP_VERSION = "0.15.6";
 const APP_BUILD = "2026-04-22";
 
 /* ---------- Design tokens (minimalist-ui: warm monochrome + spot pastels) --- */
@@ -3428,7 +3428,7 @@ function useAppState() {
 const ADMIN_PASSWORD = "stijnbessem";
 
 const SESSION_PREFIX = "session:";
-const QUESTIONNAIRE_VERSION = 1;
+const QUESTIONNAIRE_VERSION = 2;
 
 /* ---------------------------------------------------------------------------
    Webhook — sends each session snapshot to a Google Apps Script deployment.
