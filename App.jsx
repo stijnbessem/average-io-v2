@@ -11,7 +11,7 @@ import questionnaireRaw from "./data/average_io_full_questions.json";
 /* Bump APP_VERSION whenever anything user-visible changes — semver-ish,
    nothing formal. Shown in the footer so you can verify you're on the
    latest build. APP_BUILD is the approximate ship date. */
-const APP_VERSION = "0.15.6";
+const APP_VERSION = "0.15.7";
 const APP_BUILD = "2026-04-22";
 
 /* ---------- Design tokens (minimalist-ui: warm monochrome + spot pastels) --- */
@@ -218,8 +218,8 @@ const CATEGORY_UI_META = {
 
 const QUESTION_DEPENDENCIES = {
   tattoo_count: { dependsOn: "tattoos", showIf: ["Yes"] },
-  penis_length: { dependsOn: "gender", showIf: ["Male ♂️"] },
-  bra_cup: { dependsOn: "gender", showIf: ["Female ♀️"] },
+  penis_length: { dependsOn: "gender", showIf: ["Male"] },
+  bra_cup: { dependsOn: "gender", showIf: ["Female"] },
   plastic_detail: {
     dependsOn: "plastic_surgery",
     showIf: [

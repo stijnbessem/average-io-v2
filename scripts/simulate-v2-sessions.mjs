@@ -32,8 +32,8 @@ function slugCategoryId(name) {
 
 /** Mirrors App.jsx QUESTION_DEPENDENCIES for V2 (only questions that exist in JSON). */
 const DEPENDENCIES = {
-  penis_length: { dependsOn: "gender", showIf: ["Male ♂️"] },
-  bra_cup: { dependsOn: "gender", showIf: ["Female ♀️"] },
+  penis_length: { dependsOn: "gender", showIf: ["Male"] },
+  bra_cup: { dependsOn: "gender", showIf: ["Female"] },
   plastic_detail: {
     dependsOn: "plastic_surgery",
     showIf: [
@@ -213,7 +213,7 @@ function buildSnapshot(i, flatQuestions) {
     created_at: now,
     finished: true,
     finished_at: now,
-    version: 1,
+    version: 2,
     segment_filter: "all",
     total_answered: answeredQids.length,
     total_questions: flatQuestions.length,

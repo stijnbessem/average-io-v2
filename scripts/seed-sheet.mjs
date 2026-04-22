@@ -274,7 +274,7 @@ function buildSnapshot(i) {
     created_at: now,
     finished: true,
     finished_at: now,
-    version: 1,
+    version: 2,
     segment_filter: "all",
     total_answered: answeredQids.length,
     total_questions: answeredQids.length,
