@@ -37,6 +37,15 @@ const STYLE = `
     --pale-yellow-bg: #FBF3DB;--pale-yellow-ink: #956400;
     --pale-violet-bg: #EFEAFB;--pale-violet-ink: #5A3E9F;
 
+    --metal-mesh-a: rgba(122,124,128,0.42);
+    --metal-mesh-b: rgba(108,110,115,0.36);
+    --metal-mesh-c: rgba(196,197,201,0.24);
+    --metal-orb-core: rgba(214,216,220,0.58);
+    --metal-orb-mid: rgba(174,177,184,0.28);
+    --metal-sheen-core: rgba(236,237,240,0.54);
+    --metal-pointer-core: rgba(238,239,244,0.68);
+    --metal-pointer-mid: rgba(198,201,209,0.22);
+
     --radius-s: 6px;
     --radius-m: 10px;
     --radius-l: 14px;
@@ -1493,9 +1502,9 @@ function GlobalMetalBackdrop() {
       <div style={{
         position: "absolute", inset: "-10%",
         background: `
-          radial-gradient(ellipse 58% 46% at 15% 18%, rgba(122,124,128,0.42) 0%, rgba(122,124,128,0) 64%),
-          radial-gradient(ellipse 62% 52% at 84% 76%, rgba(108,110,115,0.36) 0%, rgba(108,110,115,0) 68%),
-          radial-gradient(ellipse 72% 62% at 52% 48%, rgba(196,197,201,0.24) 0%, rgba(196,197,201,0) 74%)
+          radial-gradient(ellipse 58% 46% at 15% 18%, var(--metal-mesh-a) 0%, rgba(122,124,128,0) 64%),
+          radial-gradient(ellipse 62% 52% at 84% 76%, var(--metal-mesh-b) 0%, rgba(108,110,115,0) 68%),
+          radial-gradient(ellipse 72% 62% at 52% 48%, var(--metal-mesh-c) 0%, rgba(196,197,201,0) 74%)
         `,
         filter: "blur(0.6px)",
         opacity: 1,
@@ -1525,7 +1534,7 @@ function GlobalMetalBackdrop() {
             height: orb.size,
             borderRadius: "50%",
             opacity: orb.opacity + 0.12,
-            background: "radial-gradient(circle, rgba(214,216,220,0.58) 0%, rgba(174,177,184,0.28) 44%, rgba(154,156,162,0) 75%)",
+            background: "radial-gradient(circle, var(--metal-orb-core) 0%, var(--metal-orb-mid) 44%, rgba(154,156,162,0) 75%)",
             filter: "blur(1.6px)",
             mixBlendMode: "normal",
             willChange: "transform",
@@ -1552,7 +1561,7 @@ function GlobalMetalBackdrop() {
             position: "absolute",
             top: "-20%", left: "-20%",
             width: "80%", height: "80%",
-            background: "radial-gradient(circle, rgba(236,237,240,0.54) 0%, rgba(236,237,240,0) 60%)",
+            background: "radial-gradient(circle, var(--metal-sheen-core) 0%, rgba(236,237,240,0) 60%)",
             opacity: 0.72,
             filter: "blur(1px)",
           }}
@@ -1568,7 +1577,7 @@ function GlobalMetalBackdrop() {
             width: 930, height: 930,
             x: x, y: y,
             translateX: "-50%", translateY: "-50%",
-            background: "radial-gradient(circle, rgba(238,239,244,0.68) 0%, rgba(198,201,209,0.22) 34%, rgba(188,191,198,0) 72%)",
+            background: "radial-gradient(circle, var(--metal-pointer-core) 0%, var(--metal-pointer-mid) 34%, rgba(188,191,198,0) 72%)",
             pointerEvents: "none",
             mixBlendMode: "normal",
             filter: "blur(0.8px)",
