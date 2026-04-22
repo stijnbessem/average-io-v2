@@ -2127,12 +2127,33 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
               >
                 <div style={{ display: "grid", gap: 14 }}>
                   <div className="label">Demo paywall</div>
-                  <div className="serif" style={{ color: "#111", fontSize: 32, lineHeight: 1.1 }}>
-                    Unlock full overview for €1
+                  <div className="serif" style={{ color: "#111", fontSize: 26, lineHeight: 1.1 }}>
+                    Unlock full overview
                   </div>
                   <div style={{ color: "var(--ink-3)", fontSize: 14, maxWidth: 640 }}>
-                    Stripe remains intentionally open as a demo stub. Bypass unlocks this visit only;
-                    reopening Overview will show this paywall again.
+                    Get the complete picture for <strong style={{ color: "#111" }}>just €1</strong> and help keep average.io independent.
+                    Your support funds new questions, cleaner comparisons, and better weekly updates.
+                  </div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: 8,
+                      color: "var(--ink-2)",
+                      fontSize: 13,
+                      background: "#F7F6F3",
+                      border: "1px solid var(--line)",
+                      borderRadius: "var(--radius-m)",
+                      padding: "12px 14px",
+                      maxWidth: 640,
+                    }}
+                  >
+                    <div><strong style={{ color: "#111" }}>What you unlock:</strong></div>
+                    <div>• Full category breakdowns and deeper reality-check signals</div>
+                    <div>• Stronger uniqueness insights as your answers grow</div>
+                    <div>• A smoother, evolving product supported by the community</div>
+                  </div>
+                  <div style={{ color: "var(--ink-4)", fontSize: 12, maxWidth: 640 }}>
+                    Demo mode: Stripe remains a stub for now. Bypass unlocks this visit only; reopening Overview shows this paywall again.
                   </div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
                     <Button onClick={startStripeDemo} disabled={isStripeLoading}>
