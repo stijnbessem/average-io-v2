@@ -657,6 +657,72 @@ function comparisonPhrase(kind, peerStat) {
   return "";
 }
 
+function buildRealityCheckItems(peers, answers) {
+  const items = [];
+  Object.keys(answers).forEach((qid) => {
+    const q = QUESTIONS_BY_ID[qid];
+    const value = answers[qid];
+    if (!q || value == null || value === "" || !isQuestionVisible(q, answers)) return;
+
+    if (["number", "slider"].includes(q.type)) {
+      const stat = computeNumericStats(peers, qid, value);
+      if (!stat) return;
+      const pctLower = roundPct(stat.percentile);
+      const pctHigher = roundPct(100 - stat.percentile);
+      let agreementPct = 50;
+      let sentence = "You're close to the middle on this question.";
+      if (stat.percentile >= 55) {
+        agreementPct = pctLower;
+        sentence = `${pctLower}% of users answered lower than you.`;
+      } else if (stat.percentile <= 45) {
+        agreementPct = pctHigher;
+        sentence = `${pctHigher}% of users answered higher than you.`;
+      }
+      const distance = Math.abs(agreementPct - 50);
+      const tone = agreementPct >= 60 ? "positive" : agreementPct <= 30 ? "rare" : "neutral";
+      items.push({
+        qid,
+        label: q.label,
+        agreementPct,
+        sentence,
+        responses: stat.n,
+        tone,
+        strength: distance,
+      });
+      return;
+    }
+
+    if (q.type === "single" || q.type === "country" || q.type === "text") {
+      const stat = computeCategoricalStats(peers, qid, value);
+      if (!stat) return;
+      const samePct = roundPct(stat.userPct);
+      const uncommonPct = roundPct(100 - stat.userPct);
+      const agreementPct = samePct;
+      const sentence = `${samePct}% gave the same answer as you.`;
+      const tone = samePct >= 55 ? "positive" : samePct <= 20 ? "rare" : "neutral";
+      items.push({
+        qid,
+        label: q.label,
+        agreementPct,
+        sentence,
+        responses: stat.n,
+        tone,
+        strength: Math.max(Math.abs(samePct - 50), Math.abs(uncommonPct - 50)),
+      });
+    }
+  });
+
+  return items
+    .sort((a, b) => b.strength - a.strength)
+    .slice(0, 10);
+}
+
+function realityToneColor(tone) {
+  if (tone === "positive") return "#6AAE90";
+  if (tone === "rare") return "#C66E67";
+  return "#8A867A";
+}
+
 /* ============================================================================
    CHART PRIMITIVES — custom SVG, mobile-first, paired with text summaries
    ============================================================================ */
@@ -1803,6 +1869,18 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
 
   // Unlock stages per spec
   const stage = totalAnswered < 5 ? 0 : totalAnswered < 10 ? 1 : totalAnswered < 20 ? 2 : 3;
+  const realityItems = useMemo(
+    () => buildRealityCheckItems(segmentedPeers, answers),
+    [segmentedPeers, answers]
+  );
+  const jumpToQuestion = useCallback((qid) => {
+    const q = QUESTIONS_BY_ID[qid];
+    if (!q) return;
+    const visible = QUESTIONS_BY_CAT[q.cat].filter((candidate) => isQuestionVisible(candidate, answers));
+    const idx = Math.max(0, visible.findIndex((candidate) => candidate.id === qid));
+    dispatch({ type: "setCat", catId: q.cat, idx: idx >= 0 ? idx : 0 });
+    dispatch({ type: "go", screen: "question" });
+  }, [answers, dispatch]);
 
   return (
     <PageShell>
@@ -1875,6 +1953,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: i * 0.035, ease: EASE_OUT }}
+              style={{ height: "100%" }}
             >
               <CategoryCard
                 cat={c} answers={answers} peers={segmentedPeers}
@@ -1883,6 +1962,73 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
             </motion.div>
           ))}
         </div>
+      </div>
+
+      {/* Reality check feed */}
+      <div style={{ marginTop: 38 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 18 }}>
+          <h3 className="serif" style={{ fontSize: 26, color: "#111", margin: 0 }}>Reality check</h3>
+          <span className="label">strongest signals first</span>
+        </div>
+        {realityItems.length === 0 ? (
+          <Card padding={18}>
+            <div style={{ fontSize: 14, color: "var(--ink-3)" }}>
+              Answer a few more questions to unlock quick comparison highlights.
+            </div>
+          </Card>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {realityItems.map((item) => (
+              <div
+                key={item.qid}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 86px 40px",
+                  gap: 18,
+                  alignItems: "center",
+                  padding: "14px 16px",
+                  border: "1px solid var(--line)",
+                  borderRadius: "var(--radius-m)",
+                  background: "#FAFAF8",
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ color: "#111", fontSize: 20, lineHeight: 1.2 }}>
+                    <span style={{ color: realityToneColor(item.tone) }}>{item.agreementPct}%</span>
+                    <span style={{ marginLeft: 6 }}>{item.sentence.replace(/^\d+%/, "").trimStart()}</span>
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 12, color: "var(--ink-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {item.label}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div className="label">Responses</div>
+                  <div className="mono" style={{ color: "#111", marginTop: 3 }}>{item.responses}</div>
+                </div>
+                <button
+                  type="button"
+                  aria-label={`Go to question ${item.qid}`}
+                  onClick={() => jumpToQuestion(item.qid)}
+                  style={{
+                    border: "1px solid var(--line)",
+                    background: "#fff",
+                    width: 32,
+                    height: 32,
+                    borderRadius: "var(--radius-s)",
+                    cursor: "pointer",
+                    color: "#111",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: 22,
+                    lineHeight: 1,
+                  }}
+                >
+                  ›
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </PageShell>
   );
@@ -2011,7 +2157,7 @@ function CategoryCard({ cat, answers, peers, onOpen }) {
   }
 
   return (
-    <Card interactive onClick={onOpen} padding={22}>
+    <Card interactive onClick={onOpen} padding={22} style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
         <Tag tone={cat.accent}>{cat.title}</Tag>
         {uniq && <UniquenessMeter score={uniq.score} size={76} />}
@@ -2019,10 +2165,18 @@ function CategoryCard({ cat, answers, peers, onOpen }) {
       <div className="serif" style={{ fontSize: 22, color: "#111", margin: "14px 0 6px" }}>
         {cat.title}
       </div>
-      <div style={{ fontSize: 13, color: "var(--ink-3)", minHeight: 38 }}>
+      <div style={{
+        fontSize: 13,
+        color: "var(--ink-3)",
+        minHeight: 42,
+        display: "-webkit-box",
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: "vertical",
+        overflow: "hidden",
+      }}>
         {answered.length === 0 ? "Not answered yet — start to unlock comparisons." : previewText || "Tap to see detailed comparisons."}
       </div>
-      <div style={{ marginTop: 18 }}>
+      <div style={{ marginTop: "auto", paddingTop: 18 }}>
         <ProgressBar value={answered.length} max={vis.length} />
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: "var(--ink-3)" }}>
           <span><span className="mono" style={{ color: "#111" }}>{answered.length}</span>/{vis.length}</span>
