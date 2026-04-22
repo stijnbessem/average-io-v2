@@ -1321,10 +1321,9 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic" }) 
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "flex-start", justifyContent: "center",
       padding: "clamp(56px, 10vh, 120px) 24px 80px",
-      background: "var(--bg)",
+      background: "transparent",
       position: "relative", overflow: "hidden",
     }}>
-      <WelcomeBackdrop />
       <div style={{ maxWidth: 640, width: "100%", position: "relative", zIndex: 1 }}>
         <motion.div {...FADE_UP} transition={{ duration: 0.5, ease: EASE_OUT }}>
           <Logo size={44} />
@@ -1446,12 +1445,26 @@ function WelcomeBenefits() {
   );
 }
 
-/* Atmospheric backdrop for Welcome: static radial blobs + cursor-following glow.
-   Pale grey → off-white. Very low opacity. Respects reduced-motion and touch. */
-function WelcomeBackdrop() {
+/* Global atmospheric backdrop: subtle steel/iron mesh, slow drifting gradients,
+   and one brighter cursor-following highlight. Mounted once at app root. */
+function GlobalMetalBackdrop() {
   const isTouch = useMediaQuery("(hover: none), (pointer: coarse)");
   const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const enableCursor = !isTouch && !prefersReducedMotion;
+  const orbs = useMemo(() => {
+    const count = 5;
+    return Array.from({ length: count }, (_, i) => {
+      const size = 320 + Math.round(Math.random() * 260);
+      const left = 8 + Math.random() * 84;
+      const top = 8 + Math.random() * 84;
+      const driftX = -70 + Math.random() * 140;
+      const driftY = -55 + Math.random() * 110;
+      const duration = 36 + Math.random() * 28;
+      const delay = Math.random() * 6;
+      const opacity = 0.16 + Math.random() * 0.08;
+      return { id: `orb-${i}`, size, left, top, driftX, driftY, duration, delay, opacity };
+    });
+  }, []);
 
   // Cursor position, smoothed with a soft spring so the glow eases into place
   const rawX = useMotionValue(0);
@@ -1471,60 +1484,94 @@ function WelcomeBackdrop() {
 
   return (
     <div aria-hidden="true" style={{
-      position: "absolute", inset: 0,
+      position: "fixed", inset: 0,
       pointerEvents: "none",
       overflow: "hidden",
-      zIndex: 0,
+      zIndex: 1,
     }}>
-      {/* Layer 1: subtle metallic mesh — two large static radial gradients */}
+      {/* Layer 1: base steel mesh */}
       <div style={{
         position: "absolute", inset: "-10%",
         background: `
-          radial-gradient(ellipse 55% 45% at 18% 20%, rgba(140,140,145,0.18) 0%, rgba(140,140,145,0) 60%),
-          radial-gradient(ellipse 60% 50% at 82% 78%, rgba(120,125,135,0.16) 0%, rgba(120,125,135,0) 65%),
-          radial-gradient(ellipse 70% 60% at 50% 50%, rgba(200,200,205,0.10) 0%, rgba(200,200,205,0) 70%)
+          radial-gradient(ellipse 58% 46% at 15% 18%, rgba(112,120,134,0.44) 0%, rgba(112,120,134,0) 64%),
+          radial-gradient(ellipse 62% 52% at 84% 76%, rgba(96,104,120,0.38) 0%, rgba(96,104,120,0) 68%),
+          radial-gradient(ellipse 72% 62% at 52% 48%, rgba(188,194,208,0.26) 0%, rgba(188,194,208,0) 74%)
         `,
-        filter: "blur(0.5px)",
+        filter: "blur(0.6px)",
+        opacity: 1,
       }} />
 
-      {/* Layer 2: very faint film grain for metal texture */}
+      {/* Layer 2: moving metal glow orbs */}
+      {!prefersReducedMotion && orbs.map((orb) => (
+        <motion.div
+          key={orb.id}
+          initial={{ x: 0, y: 0, scale: 1 }}
+          animate={{
+            x: [0, orb.driftX, 0, orb.driftX * -0.42, 0],
+            y: [0, orb.driftY, 0, orb.driftY * -0.36, 0],
+            scale: [1, 1.06, 0.98, 1.04, 1],
+          }}
+          transition={{
+            duration: orb.duration,
+            ease: "easeInOut",
+            repeat: Infinity,
+            delay: orb.delay,
+          }}
+          style={{
+            position: "absolute",
+            left: `${orb.left}%`,
+            top: `${orb.top}%`,
+            width: orb.size,
+            height: orb.size,
+            borderRadius: "50%",
+            opacity: orb.opacity + 0.12,
+            background: "radial-gradient(circle, rgba(210,218,234,0.62) 0%, rgba(166,176,194,0.30) 44%, rgba(150,158,174,0) 75%)",
+            filter: "blur(1.6px)",
+            mixBlendMode: "normal",
+            willChange: "transform",
+          }}
+        />
+      ))}
+
+      {/* Layer 3: very faint film grain for metal texture */}
       <div style={{
         position: "absolute", inset: 0,
-        opacity: 0.035,
+        opacity: 0.055,
         mixBlendMode: "multiply",
         backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.9 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")`,
         backgroundSize: "200px 200px",
       }} />
 
-      {/* Layer 3: slow-drifting highlight — subtle animated sheen */}
+      {/* Layer 4: slow sheened sweep */}
       {!prefersReducedMotion && (
         <motion.div
           initial={{ x: "-20%", y: "-10%" }}
-          animate={{ x: ["-20%", "15%", "-20%"], y: ["-10%", "20%", "-10%"] }}
-          transition={{ duration: 28, ease: "easeInOut", repeat: Infinity }}
+          animate={{ x: ["-20%", "20%", "-20%"], y: ["-10%", "22%", "-10%"] }}
+          transition={{ duration: 42, ease: "easeInOut", repeat: Infinity }}
           style={{
             position: "absolute",
             top: "-20%", left: "-20%",
             width: "80%", height: "80%",
-            background: "radial-gradient(circle, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 55%)",
-            opacity: 0.55,
+            background: "radial-gradient(circle, rgba(232,238,250,0.56) 0%, rgba(232,238,250,0) 60%)",
+            opacity: 0.72,
             filter: "blur(1px)",
           }}
         />
       )}
 
-      {/* Layer 4: cursor-following glow (desktop + pointer only) */}
+      {/* Layer 5: brightest orb follows cursor (desktop only) */}
       {enableCursor && (
         <motion.div
           style={{
             position: "absolute",
             left: 0, top: 0,
-            width: 560, height: 560,
+            width: 930, height: 930,
             x: x, y: y,
             translateX: "-50%", translateY: "-50%",
-            background: "radial-gradient(circle, rgba(235,235,240,0.55) 0%, rgba(200,200,210,0.12) 35%, rgba(200,200,210,0) 70%)",
+            background: "radial-gradient(circle, rgba(236,242,255,0.72) 0%, rgba(194,204,222,0.24) 34%, rgba(186,196,212,0) 72%)",
             pointerEvents: "none",
-            mixBlendMode: "screen",
+            mixBlendMode: "normal",
+            filter: "blur(0.8px)",
           }}
         />
       )}
@@ -4467,20 +4514,15 @@ export default function App() {
 
   // Screen routing
   let screenNode = null;
+  const isWelcome = hydrated && (!state.hasSeenWelcome || state.screen === "welcome");
   if (!hydrated) {
     screenNode = (
       <div style={{ minHeight: "50vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="label">loading</div>
       </div>
     );
-  } else if (!state.hasSeenWelcome || state.screen === "welcome") {
-    return (
-      <>
-        <style>{STYLE}</style>
-        <WelcomeScreen dispatch={dispatch} peerCount={peers.length} peerSource={peerSource} />
-        <AdminModal {...admin} sessions={state.sessions} dispatch={dispatch} />
-      </>
-    );
+  } else if (isWelcome) {
+    screenNode = <WelcomeScreen dispatch={dispatch} peerCount={peers.length} peerSource={peerSource} />;
   } else if (state.screen === "hub") {
     screenNode = <CategoryHub state={state} dispatch={dispatch} />;
   } else if (state.screen === "question") {
@@ -4506,16 +4548,19 @@ export default function App() {
   return (
     <>
       <style>{STYLE}</style>
-      <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-        <TopBar
-          state={state}
-          dispatch={dispatch}
-          totalAnswered={totalAnswered}
-          onOpenAdmin={() => admin.setPrompting(true)}
-          peerSource={peerSource}
-          peerCount={peers.length}
-          onOpenSheetData={() => setSheetModalOpen(true)}
-        />
+      <GlobalMetalBackdrop />
+      <div style={{ minHeight: "100vh", background: "transparent", position: "relative", zIndex: 2 }}>
+        {!isWelcome && (
+          <TopBar
+            state={state}
+            dispatch={dispatch}
+            totalAnswered={totalAnswered}
+            onOpenAdmin={() => admin.setPrompting(true)}
+            peerSource={peerSource}
+            peerCount={peers.length}
+            onOpenSheetData={() => setSheetModalOpen(true)}
+          />
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={state.screen + (state.currentCatId || "")}
@@ -4528,41 +4573,42 @@ export default function App() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Footer */}
-        <div style={{
-          maxWidth: 1120, margin: "0 auto", padding: "40px 24px",
-          borderTop: "1px solid var(--line)",
-          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16,
-          flexWrap: "wrap",
-        }}>
-          <button
-            onClick={() => dispatch({ type: "go", screen: "welcome" })}
-            aria-label="Go to start page"
-            style={{
-              display: "flex", alignItems: "center", gap: 14,
-              color: "var(--ink-4)", fontSize: 12,
-              background: "none", border: "none", padding: 0, cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            <Logo size={14} muted />
-            <span>
-              {peerSource === "live"
-                ? `Live community comparisons · ${peers.length} peers`
-                : "Prototype fallback · synthetic peer pool"}
-            </span>
-          </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "var(--ink-4)" }}>
-            <span className="mono" title={`Build ${APP_BUILD}`}>
-              v{APP_VERSION}
-            </span>
-            <span style={{ color: "var(--line)" }}>·</span>
-            <span>{APP_BUILD}</span>
+        {!isWelcome && (
+          <div style={{
+            maxWidth: 1120, margin: "0 auto", padding: "40px 24px",
+            borderTop: "1px solid var(--line)",
+            display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16,
+            flexWrap: "wrap",
+          }}>
+            <button
+              onClick={() => dispatch({ type: "go", screen: "welcome" })}
+              aria-label="Go to start page"
+              style={{
+                display: "flex", alignItems: "center", gap: 14,
+                color: "var(--ink-4)", fontSize: 12,
+                background: "none", border: "none", padding: 0, cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <Logo size={14} muted />
+              <span>
+                {peerSource === "live"
+                  ? `Live community comparisons · ${peers.length} peers`
+                  : "Prototype fallback · synthetic peer pool"}
+              </span>
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "var(--ink-4)" }}>
+              <span className="mono" title={`Build ${APP_BUILD}`}>
+                v{APP_VERSION}
+              </span>
+              <span style={{ color: "var(--line)" }}>·</span>
+              <span>{APP_BUILD}</span>
+            </div>
+            <Button size="sm" variant="ghost" onClick={onReset}>
+              Reset my answers
+            </Button>
           </div>
-          <Button size="sm" variant="ghost" onClick={onReset}>
-            Reset my answers
-          </Button>
-        </div>
+        )}
       </div>
       <AdminModal {...admin} sessions={state.sessions} dispatch={dispatch} />
       <ShareSnapshotModal
