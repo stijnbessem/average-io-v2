@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useReducer, useMemo, useCallback, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
 import canonicalQuestionSet from "./data/average_io_full_questions.json";
 
 /* ============================================================================
@@ -1856,6 +1856,47 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
   const { answers, segment } = state;
   const totalAnswered = Object.keys(answers).filter(k => answers[k] != null && answers[k] !== "").length;
   const segmentedPeers = useMemo(() => segmentPeers(peers, answers, segment), [peers, answers, segment]);
+  const prefersReducedMotion = useReducedMotion();
+  const [isUnlockedForVisit, setIsUnlockedForVisit] = useState(false);
+  const [isBlurOn, setIsBlurOn] = useState(false);
+  const [showPaywallModal, setShowPaywallModal] = useState(false);
+  const [isStripeLoading, setIsStripeLoading] = useState(false);
+
+  // Stacked intro: show overview first, then blur, then popup.
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setIsBlurOn(true);
+      setShowPaywallModal(true);
+      return undefined;
+    }
+    const blurTimer = setTimeout(() => setIsBlurOn(true), 1000);
+    const modalTimer = setTimeout(() => setShowPaywallModal(true), 1280);
+    return () => {
+      clearTimeout(blurTimer);
+      clearTimeout(modalTimer);
+    };
+  }, [prefersReducedMotion]);
+
+  const releasePaywallWithReverseStack = useCallback((unlockDelay = 0) => {
+    if (prefersReducedMotion) {
+      setShowPaywallModal(false);
+      setIsBlurOn(false);
+      setIsUnlockedForVisit(true);
+      return;
+    }
+    // Reverse sequence: popup out first, then blur out, then unlock.
+    setShowPaywallModal(false);
+    setTimeout(() => setIsBlurOn(false), 180 + unlockDelay);
+    setTimeout(() => setIsUnlockedForVisit(true), 360 + unlockDelay);
+  }, [prefersReducedMotion]);
+
+  const startStripeDemo = useCallback(() => {
+    if (isStripeLoading) return;
+    setIsStripeLoading(true);
+    // Demo-only stub. Replace with real Stripe checkout session later.
+    releasePaywallWithReverseStack(620);
+    setTimeout(() => setIsStripeLoading(false), 720);
+  }, [isStripeLoading, releasePaywallWithReverseStack]);
 
   // Snapshot metrics
   const catsStarted = CATEGORIES.filter(c =>
@@ -1889,8 +1930,20 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
     dispatch({ type: "go", screen: "question" });
   }, [answers, dispatch]);
 
+  const paywallActive = !isUnlockedForVisit;
+  const blurPx = isBlurOn && paywallActive ? 6 : 0;
+
   return (
     <PageShell>
+      <div
+        style={{
+          filter: `blur(${blurPx}px)`,
+          transition: prefersReducedMotion ? "none" : "filter 260ms cubic-bezier(0.22, 1, 0.36, 1)",
+          pointerEvents: paywallActive ? "none" : "auto",
+          userSelect: paywallActive ? "none" : "auto",
+        }}
+        aria-hidden={paywallActive}
+      >
       <motion.div {...FADE_UP}>
         <span className="label">Your mirror</span>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", gap: 20, marginTop: 10 }}>
@@ -2037,6 +2090,67 @@ function OverviewDashboard({ state, dispatch, peers, onShare }) {
           </div>
         )}
       </div>
+      </div>
+
+      {paywallActive && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 40,
+            pointerEvents: "auto",
+            background: showPaywallModal ? "rgba(17,17,17,0.16)" : "rgba(17,17,17,0)",
+            transition: prefersReducedMotion ? "none" : "background 220ms cubic-bezier(0.25, 1, 0.5, 1)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+          }}
+          aria-hidden={!showPaywallModal}
+        >
+          <AnimatePresence>
+            {showPaywallModal && (
+              <motion.div
+                key="overview-paywall-modal"
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 10, scale: 0.985 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.988 }}
+                transition={{ duration: prefersReducedMotion ? 0.05 : 0.26, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  width: "min(720px, 100%)",
+                  background: "#fff",
+                  border: "1px solid var(--line)",
+                  borderRadius: "var(--radius-l)",
+                  boxShadow: "0 16px 40px rgba(0,0,0,0.12)",
+                  padding: 24,
+                }}
+              >
+                <div style={{ display: "grid", gap: 14 }}>
+                  <div className="label">Demo paywall</div>
+                  <div className="serif" style={{ color: "#111", fontSize: 32, lineHeight: 1.1 }}>
+                    Unlock full overview for €1
+                  </div>
+                  <div style={{ color: "var(--ink-3)", fontSize: 14, maxWidth: 640 }}>
+                    Stripe remains intentionally open as a demo stub. Bypass unlocks this visit only;
+                    reopening Overview will show this paywall again.
+                  </div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
+                    <Button onClick={startStripeDemo} disabled={isStripeLoading}>
+                      {isStripeLoading ? "Opening Stripe demo..." : "Pay €1 (Stripe demo)"}
+                    </Button>
+                    <Button variant="secondary" onClick={() => releasePaywallWithReverseStack()}>
+                      Bypass paywall (demo)
+                    </Button>
+                    <Button variant="ghost" onClick={() => dispatch({ type: "go", screen: "hub" })}>
+                      Back to questions
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
     </PageShell>
   );
 }
