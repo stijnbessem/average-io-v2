@@ -1493,9 +1493,9 @@ function GlobalMetalBackdrop() {
       <div style={{
         position: "absolute", inset: "-10%",
         background: `
-          radial-gradient(ellipse 58% 46% at 15% 18%, rgba(112,120,134,0.44) 0%, rgba(112,120,134,0) 64%),
-          radial-gradient(ellipse 62% 52% at 84% 76%, rgba(96,104,120,0.38) 0%, rgba(96,104,120,0) 68%),
-          radial-gradient(ellipse 72% 62% at 52% 48%, rgba(188,194,208,0.26) 0%, rgba(188,194,208,0) 74%)
+          radial-gradient(ellipse 58% 46% at 15% 18%, rgba(122,124,128,0.42) 0%, rgba(122,124,128,0) 64%),
+          radial-gradient(ellipse 62% 52% at 84% 76%, rgba(108,110,115,0.36) 0%, rgba(108,110,115,0) 68%),
+          radial-gradient(ellipse 72% 62% at 52% 48%, rgba(196,197,201,0.24) 0%, rgba(196,197,201,0) 74%)
         `,
         filter: "blur(0.6px)",
         opacity: 1,
@@ -1525,7 +1525,7 @@ function GlobalMetalBackdrop() {
             height: orb.size,
             borderRadius: "50%",
             opacity: orb.opacity + 0.12,
-            background: "radial-gradient(circle, rgba(210,218,234,0.62) 0%, rgba(166,176,194,0.30) 44%, rgba(150,158,174,0) 75%)",
+            background: "radial-gradient(circle, rgba(214,216,220,0.58) 0%, rgba(174,177,184,0.28) 44%, rgba(154,156,162,0) 75%)",
             filter: "blur(1.6px)",
             mixBlendMode: "normal",
             willChange: "transform",
@@ -1552,7 +1552,7 @@ function GlobalMetalBackdrop() {
             position: "absolute",
             top: "-20%", left: "-20%",
             width: "80%", height: "80%",
-            background: "radial-gradient(circle, rgba(232,238,250,0.56) 0%, rgba(232,238,250,0) 60%)",
+            background: "radial-gradient(circle, rgba(236,237,240,0.54) 0%, rgba(236,237,240,0) 60%)",
             opacity: 0.72,
             filter: "blur(1px)",
           }}
@@ -1568,7 +1568,7 @@ function GlobalMetalBackdrop() {
             width: 930, height: 930,
             x: x, y: y,
             translateX: "-50%", translateY: "-50%",
-            background: "radial-gradient(circle, rgba(236,242,255,0.72) 0%, rgba(194,204,222,0.24) 34%, rgba(186,196,212,0) 72%)",
+            background: "radial-gradient(circle, rgba(238,239,244,0.68) 0%, rgba(198,201,209,0.22) 34%, rgba(188,191,198,0) 72%)",
             pointerEvents: "none",
             mixBlendMode: "normal",
             filter: "blur(0.8px)",
