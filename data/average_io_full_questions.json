@@ -107,35 +107,35 @@
         },
         {
           "id": "roots",
-          "question": "Where did you grow up, or where do you feel most “from”?",
+          "question": "Which option best describes where you spent most of your childhood?",
           "options": [
             {
               "value": "born_here",
-              "label": "Born & raised here"
+              "label": "Born and raised in one place"
             },
             {
               "value": "moved_young",
-              "label": "Moved young"
+              "label": "Moved to a new place before age 12"
             },
             {
               "value": "immigrant",
-              "label": "Immigrant chapter"
+              "label": "Moved countries during teens or adulthood"
             },
             {
               "value": "third_culture",
-              "label": "Third-culture kid / blended background"
+              "label": "Grew up across multiple cultures/countries"
             },
             {
               "value": "refugee_displaced",
-              "label": "Refugee / displaced chapter — heavy"
+              "label": "Displaced or forced to move"
             },
             {
               "value": "rural_to_city",
-              "label": "Small town → big city pipeline"
+              "label": "Mostly small town/rural, now in a city"
             },
             {
               "value": "city_to_rural",
-              "label": "Escaped the city for trees"
+              "label": "Mostly city, now in a smaller town/rural area"
             },
             {
               "value": "prefer_not",
@@ -407,55 +407,55 @@
         },
         {
           "id": "partner_proximity",
-          "question": "If you have a partner, how close do you live to each other?",
+          "question": "How far do you currently live from your partner?",
           "options": [
             {
               "value": "na_single",
-              "label": "N/A — single / solo era"
+              "label": "Not applicable (no partner)"
             },
             {
               "value": "na_dating_around",
-              "label": "N/A — dating around, no anchor label"
+              "label": "Dating, but no single partner"
             },
             {
               "value": "na_aro_ace",
-              "label": "N/A — not centered on one partner vibe"
+              "label": "Not in a partner-focused relationship"
             },
             {
               "value": "same_home",
-              "label": "Same home — daily collisions"
+              "label": "Same home"
             },
             {
               "value": "same_city",
-              "label": "Same city — short commute love"
+              "label": "Same city (under 1 hour apart)"
             },
             {
               "value": "nearby_towns",
-              "label": "Nearby towns — weekend loops"
+              "label": "Nearby towns (about 1-3 hours apart)"
             },
             {
               "value": "same_region",
-              "label": "Same region — hours apart sometimes"
+              "label": "Same region/state (3+ hours apart)"
             },
             {
               "value": "same_country_far",
-              "label": "Same country — flight or long train"
+              "label": "Same country, far apart (often need flight/train)"
             },
             {
               "value": "ldr_domestic",
-              "label": "Long-distance — same country, far apart"
+              "label": "Long-distance in the same country"
             },
             {
               "value": "ldr_timezone_ok",
-              "label": "International LDR — timezone annoying but workable"
+              "label": "International long-distance (small time-zone gap)"
             },
             {
               "value": "ldr_timezone_hell",
-              "label": "International LDR — timezone hell / rare overlap"
+              "label": "International long-distance (large time-zone gap)"
             },
             {
               "value": "ldr_visa_math",
-              "label": "International LDR — visa math is the third partner"
+              "label": "International long-distance with visa/immigration barriers"
             },
             {
               "value": "see_sometimes",

@@ -38,7 +38,7 @@
       name="keywords"
       content="average.io, comparison quiz, lifestyle data, personality insights, social comparison, interactive questionnaire"
     />
-    <link rel="canonical" href="https://average.io/" />
+    <link rel="canonical" href="/" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" href="/favicon.svg" />
@@ -52,8 +52,11 @@
       property="og:description"
       content="Compare your answers with real people across lifestyle, health, work, and more. Export a PDF overview privately on your device; share only if you want."
     />
-    <meta property="og:url" content="https://average.io/" />
-    <meta property="og:image" content="https://average.io/og-image.svg" />
+    <meta property="og:url" content="/" />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="average.io share card with brand wordmark and tagline" />
 
     <meta name="twitter:card" content="summary_large_image" />
@@ -62,7 +65,19 @@
       name="twitter:description"
       content="Discover how average or unique you are through a modern comparison questionnaire powered by community data."
     />
-    <meta name="twitter:image" content="https://average.io/og-image.svg" />
+    <meta name="twitter:image" content="/og-image.png" />
+    <meta name="twitter:image:alt" content="average.io share card with brand wordmark and tagline" />
+    <script>
+      (function () {
+        try {
+          var absolute = window.location.origin + window.location.pathname;
+          var canonical = document.querySelector('link[rel="canonical"]');
+          if (canonical) canonical.setAttribute("href", absolute);
+          var ogUrl = document.querySelector('meta[property="og:url"]');
+          if (ogUrl) ogUrl.setAttribute("content", absolute);
+        } catch (e) {}
+      })();
+    </script>
 
     <script type="application/ld+json">
       {

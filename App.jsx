@@ -11,8 +11,8 @@ import questionnaireRaw from "./data/average_io_full_questions.json";
 /* Bump APP_VERSION whenever anything user-visible changes — semver-ish,
    nothing formal. Shown in the footer so you can verify you're on the
    latest build. APP_BUILD is the approximate ship date. */
-const APP_VERSION = "0.15.8";
-const APP_BUILD = "2026-04-22";
+const APP_VERSION = "0.16.0";
+const APP_BUILD = "2026-04-23";
 
 /* ---------- Design tokens (minimalist-ui: warm monochrome + spot pastels) --- */
 const FONT_HREFS = [
@@ -1954,19 +1954,33 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
 
         <motion.div {...FADE_UP}
           transition={{ duration: 0.6, delay: 0.24, ease: EASE_OUT }}
-          style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 40 }}>
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 10,
+            marginTop: 40,
+            ...(isMobile ? { flexDirection: "column", alignItems: "stretch", width: "100%", maxWidth: 420 } : null),
+          }}>
           <Button onClick={() => {
             dispatch({ type: "seenWelcome" });
             const firstCat = CATEGORIES[0]?.id || "demographics";
             dispatch({ type: "setCat", catId: firstCat, idx: 0 });
             dispatch({ type: "go", screen: "question" });
-          }}>
+          }} style={isMobile ? { width: "100%" } : undefined}>
             Start questionnaire →
           </Button>
-          <Button variant="secondary" onClick={() => { dispatch({ type: "seenWelcome" }); dispatch({ type: "go", screen: "hub" }); }}>
+          <Button
+            variant="secondary"
+            onClick={() => { dispatch({ type: "seenWelcome" }); dispatch({ type: "go", screen: "hub" }); }}
+            style={isMobile ? { width: "100%" } : undefined}
+          >
             Browse categories
           </Button>
-          <Button variant="ghost" onClick={() => { dispatch({ type: "seenWelcome" }); dispatch({ type: "go", screen: "overview" }); }}>
+          <Button
+            variant="ghost"
+            onClick={() => { dispatch({ type: "seenWelcome" }); dispatch({ type: "go", screen: "overview" }); }}
+            style={isMobile ? { width: "100%" } : undefined}
+          >
             Open overview
           </Button>
         </motion.div>
@@ -4668,11 +4682,47 @@ async function buildOverviewPdfBlob(answers, peers, segment) {
     y += 2;
   };
 
+  const drawBar = (x, barY, width, height, ratio, tone = [17, 17, 17]) => {
+    const safeRatio = Math.max(0, Math.min(1, Number.isFinite(ratio) ? ratio : 0));
+    doc.setDrawColor(224, 224, 224);
+    doc.setFillColor(247, 247, 247);
+    doc.roundedRect(x, barY, width, height, 1.2, 1.2, "FD");
+    if (safeRatio <= 0) return;
+    doc.setFillColor(tone[0], tone[1], tone[2]);
+    doc.roundedRect(x, barY, Math.max(1.2, width * safeRatio), height, 1.2, 1.2, "F");
+  };
+
+  const writeScoreLine = (label, score, tone) => {
+    ensureRoom(8);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(47, 52, 55);
+    doc.text(pdfSafeText(label), margin, y + 3.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(17, 17, 17);
+    doc.text(`${Math.round(score * 100)}/100`, pageW - margin, y + 3.5, { align: "right" });
+    y += 5.2;
+    drawBar(margin, y, maxW, 3.2, score, tone);
+    y += 6.2;
+  };
+
+  // Branded header strip
+  ensureRoom(30);
+  doc.setFillColor(17, 17, 17);
+  doc.roundedRect(margin, y, maxW, 22, 3, 3, "F");
+  doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  ensureRoom(12);
-  doc.text("average.io", margin, y);
-  y += 11;
+  doc.setFontSize(16);
+  doc.text("average.io", margin + 6, y + 8);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text("See how you compare", margin + 6, y + 15);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("OVERVIEW REPORT", pageW - margin - 6, y + 11, { align: "right" });
+  y += 28;
+  doc.setTextColor(17, 17, 17);
+
   writeLines("Your overview report", 13, "bold");
   writeLines(
     `Generated on your device · ${new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · Nothing in this PDF was uploaded to our servers.`,
@@ -4699,6 +4749,19 @@ async function buildOverviewPdfBlob(answers, peers, segment) {
   }
   y += 3;
 
+  if (data.overallUniq != null) {
+    heading("Score visualization");
+    writeScoreLine("Overall uniqueness", data.overallUniq, [17, 17, 17]);
+    data.catUniq
+      .slice()
+      .sort((a, b) => b.u.score - a.u.score)
+      .forEach(({ cat, u }, idx) => {
+        const tone = idx < 2 ? [52, 101, 56] : idx >= data.catUniq.length - 2 ? [159, 47, 45] : [31, 108, 159];
+        writeScoreLine(cat.title, u.score, tone);
+      });
+    y += 2;
+  }
+
   if (data.catUniq.length > 0) {
     heading("Uniqueness by category");
     data.catUniq.forEach(({ cat, u }) => {
@@ -4709,14 +4772,23 @@ async function buildOverviewPdfBlob(answers, peers, segment) {
 
   const ranked = [...data.entries].sort((a, b) => b.score - a.score).slice(0, 14);
   if (ranked.length > 0) {
-    heading("Standout comparisons");
-    writeLines("Strongest signals vs the selected peer group (not a judgment—just rare vs common).", 8.5);
+    heading("Most interesting reality checks");
+    writeLines("Biggest signals vs the selected peer group (descriptive, not a judgment).", 8.5);
     y += 1;
-    ranked.forEach((e) => {
+    ranked.forEach((e, idx) => {
       const raw = formatRawAnswerForPdf(e.value, e.q);
       const phrase = e.stat
         ? phraseForEntry({ kind: e.kind, stat: e.stat, unit: e.q.unit })
         : "";
+      ensureRoom(16);
+      doc.setFillColor(247, 247, 247);
+      doc.roundedRect(margin, y - 0.5, maxW, 14, 1.8, 1.8, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(120, 119, 116);
+      doc.text(`CHECK ${String(idx + 1).padStart(2, "0")}`, margin + 2.2, y + 3.2);
+      doc.setTextColor(17, 17, 17);
+      y += 4.8;
       writeLines(`${pdfSafeText(e.q.label.replace(/\?$/, ""))}`, 10, "bold");
       writeLines(`Answer: ${pdfSafeText(raw)}`, 9.5);
       if (phrase) writeLines(`Compared with peers: ${pdfSafeText(phrase)}`, 9);
@@ -5081,6 +5153,10 @@ function buildShareText(data) {
   });
   lines.push("");
   lines.push("average.io · Compare your answers with real people.");
+  if (typeof window !== "undefined") {
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    lines.push(cleanUrl);
+  }
   return lines.join("\n");
 }
 
@@ -5146,7 +5222,11 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
   const nativeShare = async () => {
     if (!hasWebShare || !blob) return;
     const file = new File([blob], "average-io-snapshot.png", { type: "image/png" });
-    const payload = { title: "average.io snapshot", text };
+    const payload = {
+      title: "average.io snapshot",
+      text,
+      url: typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : undefined,
+    };
     // Prefer file sharing where supported
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ ...payload, files: [file] }); return; }
