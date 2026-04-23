@@ -18,6 +18,7 @@ const APP_BUILD = "2026-04-23";
 const FONT_HREFS = [
   "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&display=swap",
   "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap",
+  "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&display=swap",
   "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap",
 ];
 
@@ -3314,22 +3315,26 @@ function Logo({ size = 32, muted = false }) {
   const textColor = muted ? "var(--ink-3)" : "var(--ink)";
   return (
     <motion.div
-      style={{ display: "inline-flex", alignItems: "baseline", gap: 0, height: h, lineHeight: 1, willChange: "transform" }}
+      role="img"
+      aria-label="Comparizzon logo"
+      style={{ display: "inline-flex", alignItems: "baseline", lineHeight: 1, willChange: "transform" }}
       initial={false}
-      animate={{ y: [0, -1.2, 0] }}
-      transition={{ duration: 6.8, ease: "easeInOut", repeat: Infinity }}
+      animate={{ y: [0, -1.1, 0] }}
+      transition={{ duration: 5.8, ease: "easeInOut", repeat: Infinity }}
     >
-      <span className="serif" style={{ fontSize: h * 1.05, color: textColor, letterSpacing: "-0.025em" }}>
-        average
-      </span>
       <motion.span
-        className="serif"
-        style={{ fontSize: h * 1.05, color: textColor, letterSpacing: "-0.025em", marginLeft: h * 0.08 }}
+        style={{
+          fontFamily: "'Space Grotesk', var(--sans)",
+          fontWeight: 600,
+          fontSize: h * 0.95,
+          color: textColor,
+          letterSpacing: "-0.02em",
+        }}
         initial={false}
-        animate={{ opacity: [1, 0.78, 1] }}
-        transition={{ duration: 6.8, ease: "easeInOut", repeat: Infinity }}
+        animate={{ opacity: [0.9, 1, 0.9] }}
+        transition={{ duration: 4.2, ease: "easeInOut", repeat: Infinity }}
       >
-        .io
+        Comparizzon
       </motion.span>
     </motion.div>
   );
@@ -4982,7 +4987,7 @@ function drawLogo(ctx, x, y, size = 28) {
   ctx.fillStyle = CARD_INK;
   ctx.font = `${size}px ${CARD_SERIF}`;
   ctx.textBaseline = "alphabetic";
-  const word = "average";
+  const word = "Comparizzon";
   ctx.fillText(word, x, y);
   const wordW = ctx.measureText(word).width;
 
