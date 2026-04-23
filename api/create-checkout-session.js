@@ -19,7 +19,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
   if (!stripe || !priceId) {
-    return res.status(500).json({ error: "Stripe server is not configured." });
+    const missing = [
+      !stripeSecretKey ? "STRIPE_SECRET_KEY" : null,
+      !priceId ? "STRIPE_PRICE_ID" : null,
+    ].filter(Boolean);
+    return res.status(500).json({
+      error: `Stripe server is not configured. Missing: ${missing.join(", ")}`,
+    });
   }
 
   try {
@@ -35,6 +41,10 @@ export default async function handler(req, res) {
     });
     return res.status(200).json({ url: session.url });
   } catch (error) {
-    return res.status(500).json({ error: "Failed to create checkout session." });
+    const message =
+      error && typeof error.message === "string"
+        ? error.message
+        : "Failed to create checkout session.";
+    return res.status(500).json({ error: message });
   }
 }

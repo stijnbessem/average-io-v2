@@ -1,4 +1,4 @@
-# average.io
+# Comparizzon
 
 Immersive comparison questionnaire. Answer playful questions, see how you compare — locally, globally, uniquely.
 

@@ -4,7 +4,7 @@ import SunCalc from "suncalc";
 import questionnaireRaw from "./data/average_io_full_questions.json";
 
 /* ============================================================================
-   average.io — immersive comparison questionnaire
+   Comparizzon — immersive comparison questionnaire
    Single-file React artifact. Persistent state via window.storage.
    ============================================================================ */
 
@@ -2630,13 +2630,26 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
       });
       if (!response.ok) {
         const txt = await response.text();
-        throw new Error(txt || `Checkout failed (${response.status})`);
+        let apiMessage = "";
+        try {
+          const parsed = JSON.parse(txt);
+          apiMessage = parsed?.error || "";
+        } catch (_) {
+          apiMessage = txt || "";
+        }
+        if (response.status === 404) {
+          throw new Error("Payment endpoint not found (/api/create-checkout-session). If local, run with `vercel dev` or deploy to Vercel.");
+        }
+        throw new Error(apiMessage || `Checkout failed (${response.status})`);
       }
       const payload = await response.json();
       if (!payload?.url) throw new Error("No checkout URL returned");
       window.location.assign(payload.url);
     } catch (err) {
-      setStripeError("Could not open Stripe checkout. Please try again.");
+      const message = err && typeof err.message === "string"
+        ? err.message
+        : "Could not open Stripe checkout. Please try again.";
+      setStripeError(message);
       setIsStripeLoading(false);
     }
   }, [isStripeLoading]);
@@ -3722,7 +3735,7 @@ function phraseForEntry(entry) {
 function buildMarkdownExport(sessions) {
   const now = new Date().toISOString();
   const lines = [];
-  lines.push(`# average.io — session export`);
+  lines.push(`# Comparizzon — session export`);
   lines.push(``);
   lines.push(`> Generated ${now}`);
   lines.push(`> ${sessions.length} session${sessions.length === 1 ? "" : "s"} recorded in this browser.`);
@@ -4213,7 +4226,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
       url: window.location?.href || "",
     } : {};
     const lines = [];
-    lines.push("# average.io debug log");
+    lines.push("# Comparizzon debug log");
     lines.push(`generated: ${now}`);
     lines.push(`app_version: ${APP_VERSION} (${APP_BUILD})`);
     lines.push(`webhook_url: ${WEBHOOK_URL || "(none)"}`);
@@ -4748,7 +4761,7 @@ async function buildOverviewPdfBlob(answers, peers, segment) {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("average.io", margin + 6, y + 8);
+  doc.text("Comparizzon", margin + 6, y + 8);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text("See how you compare", margin + 6, y + 15);
@@ -4860,7 +4873,7 @@ async function buildOverviewPdfBlob(answers, peers, segment) {
   doc.setFontSize(8);
   ensureRoom(10);
   y += 4;
-  doc.text("average.io · Compare your answers with real people.", margin, y);
+  doc.text("Comparizzon · Compare your answers with real people.", margin, y);
 
   return doc.output("blob");
 }
@@ -5179,7 +5192,7 @@ function buildShareText(data) {
   const pct = data.overallUniq != null ? Math.round(data.overallUniq * 100) : null;
   const headline = uniquenessHeadline(data.overallUniq);
   const lines = [];
-  lines.push(pct != null ? `Uniqueness: ${pct}/100 — ${headline.toLowerCase()}` : "My average.io snapshot (just getting started)");
+  lines.push(pct != null ? `Uniqueness: ${pct}/100 — ${headline.toLowerCase()}` : "My Comparizzon snapshot (just getting started)");
   lines.push("");
   data.standouts.slice(0, 3).forEach(e => {
     const l = cardLineFor(e);
@@ -5187,7 +5200,7 @@ function buildShareText(data) {
     lines.push(`• ${l.label} — ${l.phrase.toLowerCase()}`);
   });
   lines.push("");
-  lines.push("average.io · Compare your answers with real people.");
+  lines.push("Comparizzon · Compare your answers with real people.");
   if (typeof window !== "undefined") {
     const cleanUrl = `${window.location.origin}${window.location.pathname}`;
     lines.push(cleanUrl);
@@ -5258,7 +5271,7 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
     if (!hasWebShare || !blob) return;
     const file = new File([blob], "average-io-snapshot.png", { type: "image/png" });
     const payload = {
-      title: "average.io snapshot",
+      title: "Comparizzon snapshot",
       text,
       url: typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : undefined,
     };
