@@ -2555,6 +2555,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
   const [isBlurOn, setIsBlurOn] = useState(false);
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [isStripeLoading, setIsStripeLoading] = useState(false);
+  const [stripeError, setStripeError] = useState("");
   const [isMobilePaywall, setIsMobilePaywall] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(max-width: 640px)").matches;
@@ -2601,13 +2602,44 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
     setTimeout(() => setIsUnlockedForVisit(true), 360 + unlockDelay);
   }, [prefersReducedMotion]);
 
-  const startStripeDemo = useCallback(() => {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const qp = new URLSearchParams(window.location.search);
+    const stripeStatus = qp.get("stripe");
+    if (!stripeStatus) return;
+    if (stripeStatus === "success") {
+      releasePaywallWithReverseStack(prefersReducedMotion ? 0 : 120);
+    } else if (stripeStatus === "canceled") {
+      setShowPaywallModal(true);
+      setIsBlurOn(true);
+    }
+    qp.delete("stripe");
+    const clean = `${window.location.pathname}${qp.toString() ? `?${qp.toString()}` : ""}${window.location.hash || ""}`;
+    window.history.replaceState({}, document.title, clean);
+  }, [prefersReducedMotion, releasePaywallWithReverseStack]);
+
+  const startStripeCheckout = useCallback(async () => {
     if (isStripeLoading) return;
+    setStripeError("");
     setIsStripeLoading(true);
-    // Demo-only stub. Replace with real Stripe checkout session later.
-    releasePaywallWithReverseStack(620);
-    setTimeout(() => setIsStripeLoading(false), 720);
-  }, [isStripeLoading, releasePaywallWithReverseStack]);
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: 100, currency: "eur" }),
+      });
+      if (!response.ok) {
+        const txt = await response.text();
+        throw new Error(txt || `Checkout failed (${response.status})`);
+      }
+      const payload = await response.json();
+      if (!payload?.url) throw new Error("No checkout URL returned");
+      window.location.assign(payload.url);
+    } catch (err) {
+      setStripeError("Could not open Stripe checkout. Please try again.");
+      setIsStripeLoading(false);
+    }
+  }, [isStripeLoading]);
 
   // Snapshot metrics
   const catsStarted = CATEGORIES.filter(c =>
@@ -2850,7 +2882,7 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
                     Unlock the full overview
                   </div>
                   <div style={{ color: "var(--ink-3)", fontSize: 14, maxWidth: 640 }}>
-                    Pay <strong style={{ color: "var(--ink)" }}>€1</strong> once (demo checkout) to remove the blur and support hosting and updates.
+                    Pay <strong style={{ color: "var(--ink)" }}>€1</strong> once to remove the blur and support hosting and updates.
                   </div>
                   <div
                     style={{
@@ -2871,8 +2903,8 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
                     <div>• Every comparison unlocked for all categories you’ve answered</div>
                   </div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
-                    <Button onClick={startStripeDemo} disabled={isStripeLoading}>
-                      {isStripeLoading ? "Opening checkout…" : "Pay €1 (demo checkout)"}
+                    <Button onClick={startStripeCheckout} disabled={isStripeLoading}>
+                      {isStripeLoading ? "Opening checkout…" : "Pay €1 securely with Stripe"}
                     </Button>
                     <Button variant="secondary" onClick={() => releasePaywallWithReverseStack()}>
                       Continue without paying (demo)
@@ -2881,6 +2913,9 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
                       Back to questionnaire
                     </Button>
                   </div>
+                  {stripeError ? (
+                    <div style={{ color: "var(--pale-red-ink)", fontSize: 12 }}>{stripeError}</div>
+                  ) : null}
                 </div>
               </motion.div>
             )}
