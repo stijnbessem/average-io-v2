@@ -2130,7 +2130,10 @@ function PageShell({ children, maxWidth = 1120 }) {
 /* ============================================================================
    PRIVATE ROOMS — invite-only comparison rooms
    Server-gated. Up to 25 anonymous participants per room (numbered #1–#25).
+   Toggle off to hide all room UI and skip session/API until the feature is ready.
    ============================================================================ */
+
+const ROOMS_FEATURE_ENABLED = false;
 
 const ROOM_STORAGE_KEY = "comparizzon:rooms";
 const ROOM_ACTIVE_KEY = "comparizzon:active-room";
@@ -2283,6 +2286,10 @@ function useRoomSession() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (!ROOMS_FEATURE_ENABLED) {
+      setHydrated(true);
+      return undefined;
+    }
     let cancelled = false;
     (async () => {
       const map = await readRoomMap();
@@ -8130,7 +8137,7 @@ export default function App() {
   const compareRoomData = useRoomCompareData({
     activeRoomId: roomSession.activeRoomId,
     token: roomSession.activeRoom?.token || "",
-    enabled: Boolean(roomSession.activeRoomId && roomSession.activeRoom?.token),
+    enabled: ROOMS_FEATURE_ENABLED && Boolean(roomSession.activeRoomId && roomSession.activeRoom?.token),
   });
   const handleOpenCreateRoom = useCallback(() => {
     setCreateRoomOpen(true);
@@ -8193,21 +8200,43 @@ export default function App() {
   /* Room id we should treat as "the URL is asking for this room right now".
      Kept in state so we can react to popstate (back/forward) and our own
      replaceState calls. */
-  const [urlRoomId, setUrlRoomId] = useState(() => getRoomIdFromUrl());
+  const [urlRoomId, setUrlRoomId] = useState(() => (
+    ROOMS_FEATURE_ENABLED ? getRoomIdFromUrl() : null
+  ));
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
-    const onPop = () => setUrlRoomId(getRoomIdFromUrl());
+    const onPop = () => {
+      if (!ROOMS_FEATURE_ENABLED) return;
+      setUrlRoomId(getRoomIdFromUrl());
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  /* When rooms are off, drop ?room= from the address bar so invite links
+     don't look like a broken feature. */
+  useEffect(() => {
+    if (ROOMS_FEATURE_ENABLED || typeof window === "undefined") return undefined;
+    try {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has("room")) return undefined;
+      url.searchParams.delete("room");
+      const qs = url.searchParams.toString();
+      const next = `${url.pathname}${qs ? `?${qs}` : ""}${url.hash || ""}`;
+      window.history.replaceState({}, "", next);
+      setUrlRoomId(null);
+    } catch (_) {}
+    return undefined;
   }, []);
 
   /* "Pending join" = the URL points at a room that isn't in our known
      rooms map yet. That's the joiner intercept signal. We block the rest
      of the app until the user either accepts or declines. */
   const pendingJoinRoomId = (
-    roomSession.hydrated &&
-    urlRoomId &&
-    !roomSession.rooms[urlRoomId]
+    ROOMS_FEATURE_ENABLED
+    && roomSession.hydrated
+    && urlRoomId
+    && !roomSession.rooms[urlRoomId]
   ) ? urlRoomId : null;
 
   const handleAcceptJoin = useCallback(async () => {
@@ -8360,6 +8389,7 @@ export default function App() {
   const lastRoomSubmitSigRef = useRef("");
   const activeRoomToken = roomSession.activeRoom?.token || "";
   useEffect(() => {
+    if (!ROOMS_FEATURE_ENABLED) return undefined;
     if (!hydrated || !roomSession.hydrated) return undefined;
     if (!roomSession.activeRoomId || !activeRoomToken) return undefined;
     if (answersSignature === "") return undefined;
@@ -8408,7 +8438,8 @@ export default function App() {
   );
   const effectivePeers = useRoomPool ? compareRoomData.roomPeers : peers;
   const showCompareBanner = (
-    !isWelcome
+    ROOMS_FEATURE_ENABLED
+    && !isWelcome
     && !showJoinScreen
     && hydrated
     && roomSession.hydrated
@@ -8450,7 +8481,7 @@ export default function App() {
         peerSource={peerSource}
         themeMode={themeMode}
         onToggleTheme={toggleTheme}
-        onCreateRoom={handleOpenCreateRoom}
+        onCreateRoom={ROOMS_FEATURE_ENABLED ? handleOpenCreateRoom : undefined}
       />
     );
   } else if (state.screen === "start") {
@@ -8473,9 +8504,9 @@ export default function App() {
         peers={effectivePeers}
         onDownloadPdf={() => downloadOverviewPdf(answers, effectivePeers, state.segment, state.timeSpentMs)}
         onShareImage={() => setShareOpen(true)}
-        onCreateRoom={handleOpenCreateRoom}
-        onOpenRoomDashboard={() => setRoomDashboardOpen(true)}
-        activeRoomId={roomSession.activeRoomId}
+        onCreateRoom={ROOMS_FEATURE_ENABLED ? handleOpenCreateRoom : undefined}
+        onOpenRoomDashboard={ROOMS_FEATURE_ENABLED ? () => setRoomDashboardOpen(true) : undefined}
+        activeRoomId={ROOMS_FEATURE_ENABLED ? roomSession.activeRoomId : null}
       />
     );
   } else if (state.screen === "category") {
@@ -8515,9 +8546,9 @@ export default function App() {
             onOpenSheetData={() => setSheetModalOpen(true)}
             themeMode={themeMode}
             onToggleTheme={toggleTheme}
-            activeRoom={roomSession.activeRoom}
-            activeRoomId={roomSession.activeRoomId}
-            onOpenRoomDashboard={() => setRoomDashboardOpen(true)}
+            activeRoom={ROOMS_FEATURE_ENABLED ? roomSession.activeRoom : null}
+            activeRoomId={ROOMS_FEATURE_ENABLED ? roomSession.activeRoomId : null}
+            onOpenRoomDashboard={ROOMS_FEATURE_ENABLED ? () => setRoomDashboardOpen(true) : undefined}
           />
         )}
         {showCompareBanner && (
@@ -8610,29 +8641,33 @@ export default function App() {
         segment={state.segment}
         timeSpentMs={state.timeSpentMs}
       />
-      <RoomDashboardModal
-        open={roomDashboardOpen && Boolean(roomSession.activeRoomId)}
-        onClose={() => { setRoomDashboardOpen(false); roomSession.clearError(); }}
-        roomId={roomSession.activeRoomId}
-        room={roomSession.activeRoom}
-        busy={roomSession.busy}
-        error={roomSession.error}
-        onLeave={handleLeaveActiveRoom}
-        onDelete={handleDeleteActiveRoom}
-        onKick={handleKickFromActiveRoom}
-        onClearError={roomSession.clearError}
-        onOpenComparison={() => {
-          setCompareMode("room");
-          dispatch({ type: "go", screen: "overview" });
-        }}
-      />
-      <CreateRoomModal
-        open={createRoomOpen}
-        onClose={() => { setCreateRoomOpen(false); roomSession.clearError(); }}
-        onSubmit={handleCreateRoom}
-        busy={roomSession.busy}
-        error={roomSession.error}
-      />
+      {ROOMS_FEATURE_ENABLED && (
+        <RoomDashboardModal
+          open={roomDashboardOpen && Boolean(roomSession.activeRoomId)}
+          onClose={() => { setRoomDashboardOpen(false); roomSession.clearError(); }}
+          roomId={roomSession.activeRoomId}
+          room={roomSession.activeRoom}
+          busy={roomSession.busy}
+          error={roomSession.error}
+          onLeave={handleLeaveActiveRoom}
+          onDelete={handleDeleteActiveRoom}
+          onKick={handleKickFromActiveRoom}
+          onClearError={roomSession.clearError}
+          onOpenComparison={() => {
+            setCompareMode("room");
+            dispatch({ type: "go", screen: "overview" });
+          }}
+        />
+      )}
+      {ROOMS_FEATURE_ENABLED && (
+        <CreateRoomModal
+          open={createRoomOpen}
+          onClose={() => { setCreateRoomOpen(false); roomSession.clearError(); }}
+          onSubmit={handleCreateRoom}
+          busy={roomSession.busy}
+          error={roomSession.error}
+        />
+      )}
     </>
   );
 }
