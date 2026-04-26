@@ -4452,7 +4452,16 @@ function AnswerInput({ q, value, onChange, onAnswered = null }) {
    OVERVIEW DASHBOARD
    ============================================================================ */
 
-function OverviewDashboard({ state, dispatch, peers, onDownloadPdf, onShareImage }) {
+function OverviewDashboard({
+  state,
+  dispatch,
+  peers,
+  onDownloadPdf,
+  onShareImage,
+  onCreateRoom = null,
+  onOpenRoomDashboard = null,
+  activeRoomId = null,
+}) {
   const { answers, segment } = state;
   const totalAnswered = Object.keys(answers).filter(k => answerIsFilled(answers[k])).length;
   const segmentedPeers = useMemo(() => segmentPeers(peers, answers, segment), [peers, answers, segment]);
@@ -4819,6 +4828,68 @@ function OverviewDashboard({ state, dispatch, peers, onDownloadPdf, onShareImage
               </motion.div>
             ))}
           </div>
+
+          {/* End-of-questionnaire CTA: surface the private rooms feature once
+              the user has reached / unlocked their overview. We only show
+              this once the user has at least started answering — otherwise
+              there's nothing meaningful to compare yet. */}
+          {(typeof onCreateRoom === "function" || (activeRoomId && typeof onOpenRoomDashboard === "function")) && totalAnswered > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.18, ease: EASE_OUT }}
+              style={{
+                marginTop: 36,
+                padding: "22px 24px",
+                background: "var(--bg-raised)",
+                border: "1px solid var(--line)",
+                borderRadius: "var(--radius-m)",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{
+                position: "absolute", top: 0, left: 0,
+                width: 56, height: 1, background: "var(--accent-solid)",
+              }} />
+              <div style={{
+                display: "flex",
+                gap: 16,
+                alignItems: "center",
+                flexWrap: "wrap",
+                justifyContent: "space-between",
+              }}>
+                <div style={{ minWidth: 0, flex: "1 1 320px" }}>
+                  <div className="label" style={{ marginBottom: 6 }}>
+                    {activeRoomId ? "Your private room" : "Compare with people you know"}
+                  </div>
+                  <div className="serif" style={{ fontSize: 22, color: "var(--ink)", lineHeight: 1.2, marginBottom: 6 }}>
+                    {activeRoomId
+                      ? "See how you compare with the people in your room."
+                      : "Invite friends, family, or your team to a private room."}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--ink-3)", lineHeight: 1.55 }}>
+                    {activeRoomId
+                      ? "Open the dashboard to see who's joined and submitted, copy your invite link, or flip the comparison toggle to compare just within this room."
+                      : `Send a link to up to ${ROOMS_MAX_PARTICIPANTS} people. Everyone answers on their own — answers stay hidden until each person submits theirs. Then compare side by side, fully anonymous (you'll see each other as #1, #2, #3…).`}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
+                  {activeRoomId && typeof onOpenRoomDashboard === "function" ? (
+                    <Button size="sm" variant="secondary" onClick={onOpenRoomDashboard}>
+                      Open room
+                    </Button>
+                  ) : (
+                    typeof onCreateRoom === "function" && (
+                      <Button size="sm" variant="secondary" onClick={onCreateRoom}>
+                        Create a private room
+                      </Button>
+                    )
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
       ) : (
         <motion.div {...FADE_UP} transition={{ duration: 0.35, delay: 0.12 }} style={{ marginTop: 40 }}>
@@ -4985,6 +5056,9 @@ function PaywallContent({
         <div>• Your uniqueness score broken down by category — where you're weird, where you're normal</div>
         <div>• Filter by gender, age, and country to find your real peer group</div>
         <div>• Downloadable PDF you can keep, share, or revisit as you answer more</div>
+        <div>
+          • <strong style={{ color: "var(--ink)", fontWeight: 600 }}>Private comparison rooms:</strong> invite up to {ROOMS_MAX_PARTICIPANTS} friends or family with one link and compare anonymously, side by side
+        </div>
       </div>
 
       {/* Primary CTA — dominant */}
@@ -8461,6 +8535,9 @@ export default function App() {
         peers={effectivePeers}
         onDownloadPdf={() => downloadOverviewPdf(answers, effectivePeers, state.segment, state.timeSpentMs)}
         onShareImage={() => setShareOpen(true)}
+        onCreateRoom={handleOpenCreateRoom}
+        onOpenRoomDashboard={() => setRoomDashboardOpen(true)}
+        activeRoomId={roomSession.activeRoomId}
       />
     );
   } else if (state.screen === "category") {
