@@ -2426,6 +2426,106 @@ function useRoomSession() {
   };
 }
 
+/* Polls /api/rooms-results for the active room and exposes its participants
+   in a peer-shaped array (one object per other member, keyed by question id).
+   Server-side gating means we only get results once the user has submitted
+   their own answers — that "submission gate" status is mirrored in
+   canViewResults. The hook is idempotent: when there's no active room or the
+   user has no token yet, it parks itself with empty data. */
+function useRoomCompareData({ activeRoomId, token, enabled }) {
+  const [state, setState] = useState({
+    loading: false,
+    canViewResults: false,
+    requiresSubmission: false,
+    roomPeers: [],
+    yourNumber: null,
+    submittedCount: 0,
+    activeCount: 0,
+    error: "",
+  });
+
+  useEffect(() => {
+    if (!enabled || !activeRoomId || !token) {
+      setState({
+        loading: false,
+        canViewResults: false,
+        requiresSubmission: false,
+        roomPeers: [],
+        yourNumber: null,
+        submittedCount: 0,
+        activeCount: 0,
+        error: "",
+      });
+      return undefined;
+    }
+
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const status = await apiRoomStatus({ roomId: activeRoomId, token });
+        if (cancelled) return;
+        const submittedCount = Number(status?.submitted_count) || 0;
+        const activeCount = Number(status?.active_count) || 0;
+        const yourNumber = typeof status?.your_number === "number" ? status.your_number : null;
+
+        if (!status?.can_view_results) {
+          setState({
+            loading: false,
+            canViewResults: false,
+            requiresSubmission: true,
+            roomPeers: [],
+            yourNumber,
+            submittedCount,
+            activeCount,
+            error: "",
+          });
+          return;
+        }
+
+        const results = await apiRoomResults({ roomId: activeRoomId, token });
+        if (cancelled) return;
+        const list = Array.isArray(results?.participants) ? results.participants : [];
+        const roomPeers = list
+          .filter((p) => !p.is_you)
+          .map((p) => (p && typeof p.answers === "object" && p.answers) || null)
+          .filter((a) => a && Object.keys(a).length > 0);
+
+        setState({
+          loading: false,
+          canViewResults: true,
+          requiresSubmission: false,
+          roomPeers,
+          yourNumber,
+          submittedCount,
+          activeCount,
+          error: "",
+        });
+      } catch (err) {
+        if (cancelled) return;
+        const msg = String((err && err.message) || err);
+        /* If we got kicked or the room died, stop pretending we're in it.
+           App-level submit effect handles the membership cleanup; here we
+           just stop showing stale data. */
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: msg,
+          ...(/not\s*found|expired|forbidden/i.test(msg)
+            ? { canViewResults: false, roomPeers: [] }
+            : null),
+        }));
+      }
+    };
+
+    setState((prev) => ({ ...prev, loading: true, error: "" }));
+    load();
+    const interval = setInterval(load, 12000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [enabled, activeRoomId, token]);
+
+  return state;
+}
+
 /* Lifted payment-status check so creating a room from the welcome screen
    can decide whether to open the modal directly or send the user through
    the paywall. Re-checks on focus so the unlock state stays fresh. */
@@ -2948,6 +3048,164 @@ function RoomDashboardModal({
         </motion.div>
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+/* ============================================================================
+   COMPARE MODE BANNER
+   ============================================================================
+   Sticky strip below the TopBar that lets users in a room toggle between
+   comparing answers with everyone (the global peer pool) and comparing
+   only with this room. While the user hasn't submitted their own answers
+   yet, the room tab is disabled and a hint nudges them to finish. */
+
+function CompareModeBanner({
+  mode,
+  onModeChange,
+  roomId,
+  yourNumber,
+  roomPeerCount,
+  globalPeerCount,
+  canViewResults,
+  requiresSubmission,
+  submittedCount,
+  activeCount,
+  loading,
+  onOpenDashboard,
+}) {
+  const isMobile = useMediaQuery("(max-width: 639px)");
+  if (!roomId) return null;
+
+  const tabBase = {
+    border: "1px solid var(--line)",
+    borderRadius: 999,
+    padding: "5px 12px",
+    fontFamily: "inherit",
+    fontSize: 12,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    lineHeight: 1.2,
+    whiteSpace: "nowrap",
+  };
+  const tabActive = {
+    background: "var(--ink)",
+    color: "var(--bg-raised)",
+    borderColor: "var(--ink)",
+  };
+  const tabInactive = {
+    background: "var(--surface-fallback)",
+    color: "var(--ink-2)",
+  };
+  const tabDisabled = {
+    cursor: "not-allowed",
+    opacity: 0.55,
+  };
+
+  const roomDisabled = !canViewResults;
+
+  return (
+    <div style={{
+      background: "var(--bg-raised)",
+      borderBottom: "1px solid var(--line)",
+    }}>
+      <div style={{
+        maxWidth: 1120, margin: "0 auto",
+        padding: isMobile ? "10px 18px" : "10px 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: 12, flexWrap: "wrap",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", minWidth: 0 }}>
+          <div className="label" style={{ color: "var(--ink-3)" }}>
+            Comparing with
+          </div>
+          <div style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => onModeChange("everyone")}
+              style={{
+                ...tabBase,
+                ...(mode === "everyone" ? tabActive : tabInactive),
+              }}
+              aria-pressed={mode === "everyone"}
+            >
+              <span>Everyone</span>
+              <span className="mono" style={{ opacity: 0.7 }}>{globalPeerCount}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { if (!roomDisabled) onModeChange("room"); }}
+              disabled={roomDisabled}
+              title={roomDisabled
+                ? "Submit your own answers to unlock comparison with this room"
+                : "Compare answers only with this room"}
+              style={{
+                ...tabBase,
+                ...(mode === "room" ? tabActive : tabInactive),
+                ...(roomDisabled ? tabDisabled : null),
+              }}
+              aria-pressed={mode === "room"}
+            >
+              <span>This room</span>
+              <span className="mono" style={{ opacity: 0.7 }}>
+                {canViewResults ? roomPeerCount : "—"}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {requiresSubmission && (
+            <span style={{ fontSize: 12, color: "var(--ink-3)" }}>
+              Submit your answers to unlock this room's comparison.
+            </span>
+          )}
+          {!requiresSubmission && mode === "room" && roomPeerCount === 0 && (
+            <span style={{ fontSize: 12, color: "var(--ink-3)" }}>
+              {submittedCount <= 1
+                ? "Waiting for others to submit…"
+                : "No answers from others yet."}
+            </span>
+          )}
+          {!requiresSubmission && mode === "room" && roomPeerCount > 0 && (
+            <span style={{ fontSize: 12, color: "var(--ink-3)" }}>
+              <span className="mono">{submittedCount}</span> of <span className="mono">{activeCount}</span> submitted
+            </span>
+          )}
+          {typeof onOpenDashboard === "function" && (
+            <button
+              type="button"
+              onClick={onOpenDashboard}
+              style={{
+                background: "transparent",
+                border: "1px solid var(--line)",
+                color: "var(--ink-2)",
+                padding: "5px 10px",
+                borderRadius: 999,
+                fontSize: 11,
+                fontFamily: "inherit",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                whiteSpace: "nowrap",
+              }}
+              title="Open the room dashboard"
+            >
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent-solid)" }} />
+              <span className="mono">{roomId}</span>
+              {yourNumber != null && (
+                <span className="mono" style={{ color: "var(--ink-3)" }}>· #{yourNumber}</span>
+              )}
+            </button>
+          )}
+          {loading && (
+            <span style={{ fontSize: 11, color: "var(--ink-4)" }}>Refreshing…</span>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -7840,6 +8098,19 @@ export default function App() {
   const roomSession = useRoomSession();
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const [roomDashboardOpen, setRoomDashboardOpen] = useState(false);
+  /* "everyone" = global peer pool, "room" = only members of the active
+     comparison room. Persisted only in memory; we reset to "everyone"
+     whenever the active room changes so users don't get stuck looking at a
+     comparison for a room they just left. */
+  const [compareMode, setCompareMode] = useState("everyone");
+  useEffect(() => {
+    setCompareMode("everyone");
+  }, [roomSession.activeRoomId]);
+  const compareRoomData = useRoomCompareData({
+    activeRoomId: roomSession.activeRoomId,
+    token: roomSession.activeRoom?.token || "",
+    enabled: Boolean(roomSession.activeRoomId && roomSession.activeRoom?.token),
+  });
   const handleOpenCreateRoom = useCallback(() => {
     if (paidStatus.paid) {
       setCreateRoomOpen(true);
@@ -8112,6 +8383,24 @@ export default function App() {
      have seen otherwise. */
   const showJoinScreen = Boolean(pendingJoinRoomId) && hydrated && roomSession.hydrated;
   const isWelcome = hydrated && !showJoinScreen && (!state.hasSeenWelcome || state.screen === "welcome");
+
+  /* Swap the peer pool when the user has flipped to "This room" mode. We
+     only override when room data is actually available — otherwise stay
+     on the global pool so the screens never go blank. The banner below
+     visualises which mode is active. */
+  const useRoomPool = (
+    compareMode === "room"
+    && Boolean(roomSession.activeRoomId)
+    && compareRoomData.canViewResults
+  );
+  const effectivePeers = useRoomPool ? compareRoomData.roomPeers : peers;
+  const showCompareBanner = (
+    !isWelcome
+    && !showJoinScreen
+    && hydrated
+    && roomSession.hydrated
+    && Boolean(roomSession.activeRoomId)
+  );
   if (!hydrated) {
     screenNode = (
       <div style={{
@@ -8161,7 +8450,7 @@ export default function App() {
       <QuestionScreen
         state={state}
         dispatch={dispatch}
-        peers={peers}
+        peers={effectivePeers}
       />
     );
   } else if (state.screen === "overview") {
@@ -8169,8 +8458,8 @@ export default function App() {
       <OverviewDashboard
         state={state}
         dispatch={dispatch}
-        peers={peers}
-        onDownloadPdf={() => downloadOverviewPdf(answers, peers, state.segment, state.timeSpentMs)}
+        peers={effectivePeers}
+        onDownloadPdf={() => downloadOverviewPdf(answers, effectivePeers, state.segment, state.timeSpentMs)}
         onShareImage={() => setShareOpen(true)}
       />
     );
@@ -8179,7 +8468,7 @@ export default function App() {
       <CategoryDetail
         state={state}
         dispatch={dispatch}
-        peers={peers}
+        peers={effectivePeers}
       />
     );
   } else {
@@ -8214,6 +8503,22 @@ export default function App() {
             activeRoom={roomSession.activeRoom}
             activeRoomId={roomSession.activeRoomId}
             onOpenRoomDashboard={() => setRoomDashboardOpen(true)}
+          />
+        )}
+        {showCompareBanner && (
+          <CompareModeBanner
+            mode={compareMode}
+            onModeChange={setCompareMode}
+            roomId={roomSession.activeRoomId}
+            yourNumber={compareRoomData.yourNumber}
+            roomPeerCount={compareRoomData.roomPeers.length}
+            globalPeerCount={peers.length}
+            canViewResults={compareRoomData.canViewResults}
+            requiresSubmission={compareRoomData.requiresSubmission}
+            submittedCount={compareRoomData.submittedCount}
+            activeCount={compareRoomData.activeCount}
+            loading={compareRoomData.loading}
+            onOpenDashboard={() => setRoomDashboardOpen(true)}
           />
         )}
         <div style={{ flex: 1 }}>
@@ -8301,6 +8606,10 @@ export default function App() {
         onDelete={handleDeleteActiveRoom}
         onKick={handleKickFromActiveRoom}
         onClearError={roomSession.clearError}
+        onOpenComparison={() => {
+          setCompareMode("room");
+          dispatch({ type: "go", screen: "overview" });
+        }}
       />
       <CreateRoomModal
         open={createRoomOpen}
