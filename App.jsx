@@ -2362,6 +2362,7 @@ function useRoomSession() {
     leaveRoom,
     deleteRoom,
     kickFromRoom,
+    removeRoom,
     clearError: () => setError(""),
   };
 }
@@ -2521,6 +2522,221 @@ function CreateRoomModal({ open, onClose, onSubmit, busy, error }) {
         </motion.form>
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+/* ============================================================================
+   JOIN ROOM SCREEN
+   ============================================================================
+   Shown when the URL has ?room=ID but the user has no membership for that
+   room yet. We fetch the room's *public* status (counts + title only — no
+   answers) so the joiner sees what they're walking into before committing,
+   then offer a single "Join" CTA. After joining we drop them at the start of
+   the questionnaire so they can start answering. */
+
+function JoinRoomScreen({
+  roomId,
+  onJoin,
+  onDecline,
+  busy,
+  joinError,
+  themeMode = "light",
+  onToggleTheme,
+}) {
+  const isMobile = useMediaQuery("(max-width: 639px)");
+  const [info, setInfo] = useState({
+    loading: true,
+    error: "",
+    title: "",
+    spotsLeft: null,
+    activeCount: null,
+    submittedCount: null,
+    expiresAt: "",
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiRoomStatus({ roomId });
+        if (cancelled) return;
+        setInfo({
+          loading: false,
+          error: "",
+          title: (res && res.room && res.room.title) || "",
+          spotsLeft: res && typeof res.spots_left === "number" ? res.spots_left : null,
+          activeCount: res && typeof res.active_count === "number" ? res.active_count : null,
+          submittedCount: res && typeof res.submitted_count === "number" ? res.submitted_count : null,
+          expiresAt: (res && res.room && res.room.expires_at) || "",
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setInfo({
+          loading: false,
+          error: (err && err.message) || "Could not load this room.",
+          title: "", spotsLeft: null, activeCount: null, submittedCount: null, expiresAt: "",
+        });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [roomId]);
+
+  const isFull = info.spotsLeft === 0;
+  const blocked = Boolean(info.error) || isFull;
+
+  return (
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "flex-start", justifyContent: "center",
+      padding: isMobile ? "40px 24px 80px" : "clamp(56px, 10vh, 120px) 24px 80px",
+      background: "transparent",
+      position: "relative", overflow: "hidden",
+    }}>
+      <div style={{ width: "min(640px, 100%)", position: "relative", zIndex: 1 }}>
+        <motion.div
+          {...FADE_UP}
+          transition={{ duration: 0.5, ease: EASE_OUT }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <Logo size={36} />
+          {typeof onToggleTheme === "function" && (
+            <ThemeToggle mode={themeMode} onToggle={onToggleTheme} />
+          )}
+        </motion.div>
+
+        <motion.div {...FADE_UP}
+          transition={{ duration: 0.5, delay: 0.06, ease: EASE_OUT }}
+          style={{ marginTop: 40, marginBottom: 8 }}
+        >
+          <div className="label">Private comparison room</div>
+        </motion.div>
+
+        <motion.h1 {...FADE_UP}
+          transition={{ duration: 0.6, delay: 0.1, ease: EASE_OUT }}
+          className="serif"
+          style={{ fontSize: "clamp(36px, 5.6vw, 60px)", margin: "8px 0 18px", color: "var(--ink)" }}>
+          You've been invited<br/>
+          <span style={{ color: "var(--ink-3)" }}>to compare answers privately.</span>
+        </motion.h1>
+
+        <motion.p {...FADE_UP}
+          transition={{ duration: 0.6, delay: 0.18, ease: EASE_OUT }}
+          style={{ fontSize: 16, color: "var(--ink-3)", lineHeight: 1.55, marginBottom: 24 }}
+        >
+          Answer the questionnaire on your own. Nobody in the room sees your
+          answers until you've submitted them — and you'll only see theirs
+          after you've submitted yours. Everyone stays anonymous; you'll show
+          up to each other as <span className="mono">#1</span>, <span className="mono">#2</span>, <span className="mono">#3</span>…
+        </motion.p>
+
+        {/* Room summary card */}
+        <motion.div {...FADE_UP}
+          transition={{ duration: 0.55, delay: 0.24, ease: EASE_OUT }}
+          style={{
+            padding: "18px 20px",
+            background: "var(--bg-raised)",
+            border: "1px solid var(--line)",
+            borderRadius: "var(--radius-m)",
+            position: "relative",
+            overflow: "hidden",
+            marginBottom: 24,
+          }}
+        >
+          <div style={{
+            position: "absolute", top: 0, left: 0,
+            width: 56, height: 1, background: "var(--accent-solid)",
+          }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ minWidth: 0, flex: "1 1 auto" }}>
+              <div className="label" style={{ marginBottom: 6 }}>Room</div>
+              <div style={{ fontSize: 16, color: "var(--ink)", marginBottom: 8, wordBreak: "break-word" }}>
+                {info.title || "Untitled comparison"}
+              </div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--ink-4)" }}>
+                {roomId}
+              </div>
+            </div>
+            <div style={{ textAlign: isMobile ? "left" : "right", flexShrink: 0 }}>
+              {info.loading ? (
+                <div className="label" style={{ color: "var(--ink-4)" }}>Loading…</div>
+              ) : info.error ? (
+                <div className="label" style={{ color: "var(--ink-4)" }}>—</div>
+              ) : (
+                <>
+                  <div className="label" style={{ marginBottom: 6 }}>Members</div>
+                  <div style={{ fontSize: 14, color: "var(--ink)" }}>
+                    <span className="mono">{info.activeCount ?? 0}</span> joined
+                    {typeof info.submittedCount === "number" && (
+                      <>
+                        <span style={{ color: "var(--ink-4)" }}> · </span>
+                        <span className="mono">{info.submittedCount}</span> submitted
+                      </>
+                    )}
+                  </div>
+                  {typeof info.spotsLeft === "number" && (
+                    <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>
+                      {info.spotsLeft > 0
+                        ? `${info.spotsLeft} ${info.spotsLeft === 1 ? "spot" : "spots"} left`
+                        : "Room is full"}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </motion.div>
+
+        {(info.error || joinError) && (
+          <div style={{
+            padding: "12px 14px",
+            border: "1px solid var(--line)",
+            borderRadius: "var(--radius-s)",
+            background: "var(--surface-fallback)",
+            color: "var(--ink-2)",
+            fontSize: 13,
+            marginBottom: 16,
+          }}>
+            {joinError || info.error}
+          </div>
+        )}
+
+        <motion.div {...FADE_UP}
+          transition={{ duration: 0.55, delay: 0.32, ease: EASE_OUT }}
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 10,
+            ...(isMobile ? { flexDirection: "column", alignItems: "stretch", width: "100%" } : null),
+          }}>
+          <Button
+            onClick={onJoin}
+            disabled={busy || blocked}
+            style={isMobile ? { width: "100%" } : undefined}
+          >
+            {busy ? "Joining…" : "Join the room →"}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={onDecline}
+            disabled={busy}
+            style={isMobile ? { width: "100%" } : undefined}
+          >
+            Continue without joining
+          </Button>
+        </motion.div>
+
+        <div style={{ marginTop: 56, fontSize: 12, color: "var(--ink-4)", lineHeight: 1.6 }}>
+          Joining is free for invitees. The person who created the room is
+          covering it. You can leave at any time, and the room owner can
+          remove participants too.
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -7219,9 +7435,57 @@ export default function App() {
       try {
         const targetPath = `/?room=${encodeURIComponent(created.room_id)}`;
         window.history.replaceState({}, "", targetPath);
+        setUrlRoomId(created.room_id);
       } catch (_) {}
       try { window.__lastRoomShareUrl = shareUrl; } catch (_) {}
     }
+  }, [roomSession]);
+
+  /* Room id we should treat as "the URL is asking for this room right now".
+     Kept in state so we can react to popstate (back/forward) and our own
+     replaceState calls. */
+  const [urlRoomId, setUrlRoomId] = useState(() => getRoomIdFromUrl());
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onPop = () => setUrlRoomId(getRoomIdFromUrl());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  /* "Pending join" = the URL points at a room that isn't in our known
+     rooms map yet. That's the joiner intercept signal. We block the rest
+     of the app until the user either accepts or declines. */
+  const pendingJoinRoomId = (
+    roomSession.hydrated &&
+    urlRoomId &&
+    !roomSession.rooms[urlRoomId]
+  ) ? urlRoomId : null;
+
+  const handleAcceptJoin = useCallback(async () => {
+    if (!pendingJoinRoomId) return;
+    try {
+      await roomSession.joinRoom(pendingJoinRoomId);
+      /* On successful join we leave the URL as-is (?room=ID) so the user
+         can refresh and stay in. The screen routing falls through to the
+         normal welcome / questionnaire flow because the room is now in
+         the known-rooms map. */
+    } catch (_) {
+      /* Error message is surfaced via roomSession.error on the join screen. */
+    }
+  }, [pendingJoinRoomId, roomSession]);
+
+  const handleDeclineJoin = useCallback(() => {
+    roomSession.clearError();
+    /* Strip ?room= from the URL and stop showing the join screen. */
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("room");
+        const next = `${url.pathname}${url.searchParams.toString() ? `?${url.searchParams.toString()}` : ""}${url.hash || ""}`;
+        window.history.replaceState({}, "", next);
+      } catch (_) {}
+    }
+    setUrlRoomId(null);
   }, [roomSession]);
 
   // Force scroll to top on every screen/category transition.
@@ -7340,9 +7604,49 @@ export default function App() {
     return () => clearTimeout(t);
   }, [answersSignature, hydrated, sessionIdHydrated, activeSessionId, dispatch]);
 
+  /* Mirror answers into the active comparison room (if any). Same idea as the
+     session snapshot above, but pointed at /api/rooms-submit and gated on
+     having a real membership. Editable: every meaningful change is pushed
+     through, so the comparison view stays in sync if the user adjusts later. */
+  const lastRoomSubmitSigRef = useRef("");
+  const activeRoomToken = roomSession.activeRoom?.token || "";
+  useEffect(() => {
+    if (!hydrated || !roomSession.hydrated) return undefined;
+    if (!roomSession.activeRoomId || !activeRoomToken) return undefined;
+    if (answersSignature === "") return undefined;
+    if (answersSignature === lastRoomSubmitSigRef.current) return undefined;
+
+    const t = setTimeout(async () => {
+      try {
+        await apiSubmitRoom({
+          roomId: roomSession.activeRoomId,
+          token: activeRoomToken,
+          answers: latestStateRef.current.answers,
+        });
+        lastRoomSubmitSigRef.current = answersSignature;
+      } catch (err) {
+        const msg = String((err && err.message) || err);
+        /* If the room is gone (deleted, expired, or we got kicked) drop the
+           stale membership so we stop pinging a dead room. The UI will fall
+           back to the normal flow on next render. */
+        if (/not\s*found|expired|removed|forbidden/i.test(msg)) {
+          try { roomSession.removeRoom?.(roomSession.activeRoomId); } catch (_) {}
+        }
+      }
+    }, 1500);
+
+    return () => clearTimeout(t);
+  }, [answersSignature, hydrated, roomSession.hydrated, roomSession.activeRoomId, activeRoomToken, roomSession]);
+
   // Screen routing
   let screenNode = null;
-  const isWelcome = hydrated && (!state.hasSeenWelcome || state.screen === "welcome");
+  /* Joiner intercept takes precedence over the normal welcome / start /
+     overview routing: if the URL is asking us to join a room we don't yet
+     belong to, show the join screen first. After accept or decline, this
+     condition flips off and the user lands on whatever screen they would
+     have seen otherwise. */
+  const showJoinScreen = Boolean(pendingJoinRoomId) && hydrated && roomSession.hydrated;
+  const isWelcome = hydrated && !showJoinScreen && (!state.hasSeenWelcome || state.screen === "welcome");
   if (!hydrated) {
     screenNode = (
       <div style={{
@@ -7358,6 +7662,18 @@ export default function App() {
         </div>
         <div className="label">Loading…</div>
       </div>
+    );
+  } else if (showJoinScreen) {
+    screenNode = (
+      <JoinRoomScreen
+        roomId={pendingJoinRoomId}
+        onJoin={handleAcceptJoin}
+        onDecline={handleDeclineJoin}
+        busy={roomSession.busy}
+        joinError={roomSession.error}
+        themeMode={themeMode}
+        onToggleTheme={toggleTheme}
+      />
     );
   } else if (isWelcome) {
     screenNode = (
@@ -7420,7 +7736,7 @@ export default function App() {
       <style>{STYLE}</style>
       <GlobalMetalBackdrop />
       <div style={{ minHeight: "100vh", background: "transparent", position: "relative", zIndex: 2, display: "flex", flexDirection: "column" }}>
-        {!isWelcome && (
+        {!isWelcome && !showJoinScreen && (
           <TopBar
             state={state}
             dispatch={dispatch}
@@ -7435,7 +7751,7 @@ export default function App() {
         <div style={{ flex: 1 }}>
           <AnimatePresence mode="wait">
             <motion.div
-              key={state.screen + (state.currentCatId || "")}
+              key={(showJoinScreen ? `join:${pendingJoinRoomId || ""}` : state.screen) + (state.currentCatId || "")}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
@@ -7446,7 +7762,7 @@ export default function App() {
           </AnimatePresence>
         </div>
 
-        {!isWelcome && (
+        {!isWelcome && !showJoinScreen && (
           <div style={{
             background: "var(--bg-raised)",
             borderTop: "1px solid var(--line)",
