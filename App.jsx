@@ -1764,6 +1764,9 @@ function TopBar({
   peerSource = "synthetic", peerCount = 0, onOpenSheetData = null,
   themeMode = "light",
   onToggleTheme,
+  activeRoom = null,
+  activeRoomId = null,
+  onOpenRoomDashboard = null,
 }) {
   const items = [
     { id: "hub", label: "Categories" },
@@ -1810,6 +1813,39 @@ function TopBar({
         </button>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Active comparison room pill — shown for any user who is in a
+              room, not just owners. Tapping opens the dashboard modal where
+              they can copy the invite, see members, leave / kick / delete. */}
+          {!isMobile && activeRoomId && typeof onOpenRoomDashboard === "function" && (
+            <button
+              onClick={onOpenRoomDashboard}
+              title="Open private comparison room"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "5px 10px",
+                borderRadius: 999,
+                border: "1px solid var(--line)",
+                background: "var(--surface-muted)",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                color: "var(--ink-2)",
+              }}
+            >
+              <span style={{
+                width: 6, height: 6, borderRadius: "50%",
+                background: "var(--accent-solid)",
+              }} />
+              <span style={{ fontSize: 11, fontWeight: 500 }}>Room</span>
+              <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>
+                {activeRoomId}
+              </span>
+              {activeRoom?.number != null && (
+                <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>
+                  · #{activeRoom.number}
+                </span>
+              )}
+            </button>
+          )}
           {typeof onToggleTheme === "function" && (
             <ThemeToggle mode={themeMode} onToggle={onToggleTheme} />
           )}
@@ -1927,6 +1963,29 @@ function TopBar({
                   }}
                 >{it.label}</button>
               ))}
+              {activeRoomId && typeof onOpenRoomDashboard === "function" && (
+                <button
+                  onClick={() => { setMenuOpen(false); onOpenRoomDashboard(); }}
+                  style={{
+                    background: "transparent",
+                    border: "none", textAlign: "left",
+                    padding: "12px 12px", borderRadius: "var(--radius-s)",
+                    fontFamily: "var(--sans)", fontSize: 15, cursor: "pointer",
+                    color: "var(--ink-2)",
+                    fontWeight: 500,
+                    display: "flex", alignItems: "center", gap: 10,
+                  }}
+                >
+                  <span style={{
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: "var(--accent-solid)",
+                  }} />
+                  <span>Private room</span>
+                  <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)", marginLeft: "auto" }}>
+                    {activeRoomId}{activeRoom?.number != null ? ` · #${activeRoom.number}` : ""}
+                  </span>
+                </button>
+              )}
               <div style={{
                 marginTop: 6, paddingTop: 12, borderTop: "1px solid var(--line)",
                 display: "flex", alignItems: "baseline", gap: 6,
@@ -2520,6 +2579,373 @@ function CreateRoomModal({ open, onClose, onSubmit, busy, error }) {
             </Button>
           </div>
         </motion.form>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/* ============================================================================
+   ROOM DASHBOARD MODAL
+   ============================================================================
+   Single place to manage an active comparison room: copy invite link, see
+   who has joined and submitted, and run owner / participant actions
+   (kick, leave, delete). All members see the dashboard; "Remove" buttons
+   only appear for the owner. */
+
+function RoomDashboardModal({
+  open,
+  onClose,
+  roomId,
+  room,
+  busy,
+  error,
+  onLeave,
+  onDelete,
+  onKick,
+  onClearError,
+  onOpenComparison,
+}) {
+  const isMobile = useMediaQuery("(max-width: 639px)");
+  const [info, setInfo] = useState({
+    loading: true,
+    error: "",
+    title: "",
+    expiresAt: "",
+    max: 25,
+    participants: [],
+    yourNumber: null,
+    canViewResults: false,
+    activeCount: 0,
+    submittedCount: 0,
+    spotsLeft: null,
+  });
+  const [copyState, setCopyState] = useState("idle"); /* idle | copied | failed */
+  const token = room?.token || "";
+  const isOwner = room?.role === "owner";
+  const shareUrl = roomId ? buildRoomShareUrl(roomId) : "";
+
+  const refresh = useCallback(async () => {
+    if (!roomId) return;
+    setInfo((prev) => ({ ...prev, loading: true, error: "" }));
+    try {
+      const res = await apiRoomStatus({ roomId, token });
+      setInfo({
+        loading: false,
+        error: "",
+        title: (res && res.room && res.room.title) || "",
+        expiresAt: (res && res.room && res.room.expires_at) || "",
+        max: (res && res.room && Number(res.room.max_participants)) || 25,
+        participants: Array.isArray(res?.participants) ? res.participants : [],
+        yourNumber: typeof res?.your_number === "number" ? res.your_number : null,
+        canViewResults: Boolean(res?.can_view_results),
+        activeCount: Number(res?.active_count) || 0,
+        submittedCount: Number(res?.submitted_count) || 0,
+        spotsLeft: typeof res?.spots_left === "number" ? res.spots_left : null,
+      });
+    } catch (err) {
+      setInfo((prev) => ({
+        ...prev,
+        loading: false,
+        error: (err && err.message) || "Could not load room",
+      }));
+    }
+  }, [roomId, token]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    refresh();
+    const interval = setInterval(refresh, 12000);
+    return () => clearInterval(interval);
+  }, [open, refresh]);
+
+  if (!open) return null;
+
+  const expiresLabel = (() => {
+    const d = info.expiresAt ? new Date(info.expiresAt) : null;
+    if (!d || Number.isNaN(d.getTime())) return "";
+    const days = Math.max(0, Math.round((d.getTime() - Date.now()) / 86400000));
+    if (days === 0) return "Expires today";
+    if (days === 1) return "Expires in 1 day";
+    return `Expires in ${days} days`;
+  })();
+
+  const handleCopy = async () => {
+    if (!shareUrl) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = shareUrl;
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopyState("copied");
+      setTimeout(() => setCopyState("idle"), 1600);
+    } catch (_) {
+      setCopyState("failed");
+      setTimeout(() => setCopyState("idle"), 2000);
+    }
+  };
+
+  const handleLeave = async () => {
+    if (busy) return;
+    const msg = isOwner
+      ? `Delete this room for everyone? This can't be undone.`
+      : `Leave this room? You'll lose access to the comparison.`;
+    if (!window.confirm(msg)) return;
+    try {
+      if (isOwner) {
+        await onDelete?.();
+      } else {
+        await onLeave?.();
+      }
+      onClose?.();
+    } catch (_) { /* surfaced via error prop */ }
+  };
+
+  const handleKick = async (number) => {
+    if (busy || !isOwner) return;
+    if (!window.confirm(`Remove participant #${number} from the room?`)) return;
+    try {
+      await onKick?.(number);
+      await refresh();
+    } catch (_) { /* surfaced via error prop */ }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease: EASE_OUT }}
+        style={{
+          position: "fixed", inset: 0, zIndex: 135,
+          background: "var(--modal-scrim)",
+          display: "flex",
+          alignItems: isMobile ? "flex-end" : "center",
+          justifyContent: "center",
+          padding: isMobile ? 0 : 24,
+          overflowY: "auto",
+        }}
+        onClick={() => { onClearError?.(); onClose?.(); }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 8, scale: 0.99 }}
+          transition={{ duration: 0.22, ease: EASE_OUT }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: isMobile ? "100%" : "min(640px, 100%)",
+            maxHeight: isMobile ? "92vh" : "86vh",
+            overflowY: "auto",
+            background: "var(--bg-raised)",
+            border: "1px solid var(--line)",
+            borderRadius: isMobile ? "16px 16px 0 0" : "var(--radius-l)",
+            boxShadow: "0 12px 48px rgba(0,0,0,0.18)",
+            padding: isMobile ? "20px 18px calc(20px + env(safe-area-inset-bottom, 0px))" : 28,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
+            <div style={{ minWidth: 0 }}>
+              <div className="label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span>Private comparison room</span>
+                <span style={{
+                  fontSize: 9, fontWeight: 600, letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  padding: "2px 7px",
+                  borderRadius: 9999,
+                  color: "var(--ink-2)",
+                  background: "var(--surface-fallback)",
+                  border: "1px solid var(--line)",
+                }}>
+                  {isOwner ? "Owner" : "Member"}
+                </span>
+              </div>
+              <div className="serif" style={{ fontSize: 26, color: "var(--ink)", marginTop: 4, lineHeight: 1.15, wordBreak: "break-word" }}>
+                {info.title || room?.title || "Untitled comparison"}
+              </div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--ink-4)", marginTop: 6 }}>
+                {roomId}
+                {info.yourNumber != null && (
+                  <>
+                    <span style={{ color: "var(--line)" }}> · </span>
+                    you are <span style={{ color: "var(--ink)" }}>#{info.yourNumber}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => { onClearError?.(); onClose?.(); }} type="button">Close</Button>
+          </div>
+
+          <div style={{
+            marginTop: 8,
+            padding: "12px 14px",
+            border: "1px solid var(--line)",
+            background: "var(--surface-fallback)",
+            borderRadius: "var(--radius-s)",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+          }}>
+            <div style={{ minWidth: 0, flex: "1 1 280px" }}>
+              <div className="label" style={{ marginBottom: 4 }}>Invite link</div>
+              <div className="mono" style={{
+                fontSize: 12,
+                color: "var(--ink-2)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }} title={shareUrl}>
+                {shareUrl}
+              </div>
+            </div>
+            <Button size="sm" variant="secondary" onClick={handleCopy} type="button">
+              {copyState === "copied" ? "Copied" : copyState === "failed" ? "Copy failed" : "Copy link"}
+            </Button>
+          </div>
+
+          <div style={{
+            marginTop: 14,
+            display: "flex", gap: 24, flexWrap: "wrap",
+            color: "var(--ink-3)", fontSize: 13,
+          }}>
+            <div>
+              <span className="mono" style={{ color: "var(--ink)" }}>
+                {info.activeCount}
+              </span>{" "}joined
+              {info.spotsLeft != null && (
+                <span style={{ color: "var(--ink-4)" }}> · {info.spotsLeft} {info.spotsLeft === 1 ? "spot" : "spots"} left</span>
+              )}
+            </div>
+            <div>
+              <span className="mono" style={{ color: "var(--ink)" }}>
+                {info.submittedCount}
+              </span>{" "}submitted
+            </div>
+            {expiresLabel && (
+              <div style={{ color: "var(--ink-4)" }}>{expiresLabel}</div>
+            )}
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <div className="label" style={{ marginBottom: 8 }}>Members</div>
+            {info.loading && info.participants.length === 0 ? (
+              <div style={{ fontSize: 13, color: "var(--ink-4)", padding: "12px 0" }}>Loading…</div>
+            ) : info.participants.length === 0 ? (
+              <div style={{ fontSize: 13, color: "var(--ink-4)", padding: "12px 0" }}>
+                No one has joined yet. Share the invite link to get started.
+              </div>
+            ) : (
+              <div style={{
+                border: "1px solid var(--line)",
+                borderRadius: "var(--radius-s)",
+                overflow: "hidden",
+              }}>
+                {info.participants
+                  .filter((p) => p.status === "active")
+                  .sort((a, b) => Number(a.number) - Number(b.number))
+                  .map((p, idx, arr) => {
+                    const isYou = info.yourNumber != null && Number(p.number) === Number(info.yourNumber);
+                    return (
+                      <div key={`p-${p.number}`} style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        gap: 12, padding: "12px 14px",
+                        borderBottom: idx < arr.length - 1 ? "1px solid var(--line)" : "none",
+                        background: isYou ? "var(--surface-muted)" : "transparent",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                          <span className="mono" style={{
+                            fontSize: 13, color: "var(--ink)",
+                            minWidth: 30, textAlign: "right",
+                          }}>
+                            #{p.number}
+                          </span>
+                          <span style={{ fontSize: 13, color: "var(--ink-2)" }}>
+                            {isYou ? "You" : `Participant ${p.number}`}
+                          </span>
+                          <span style={{
+                            fontSize: 10,
+                            letterSpacing: "0.04em",
+                            textTransform: "uppercase",
+                            padding: "2px 7px",
+                            borderRadius: 9999,
+                            color: p.has_submitted ? "var(--ink)" : "var(--ink-3)",
+                            background: p.has_submitted ? "var(--surface-live)" : "var(--surface-fallback)",
+                            border: `1px solid ${p.has_submitted ? "var(--surface-live-border)" : "var(--line)"}`,
+                          }}>
+                            {p.has_submitted ? "Submitted" : "Waiting"}
+                          </span>
+                        </div>
+                        {isOwner && !isYou && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleKick(p.number)}
+                            disabled={busy}
+                            type="button"
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
+          {(error || info.error) && (
+            <div style={{
+              marginTop: 14, padding: "10px 12px",
+              border: "1px solid #ECDCC8", background: "#FFF7EE",
+              borderRadius: "var(--radius-s)",
+              fontSize: 12, color: "#7A4B0E",
+            }}>
+              {error || info.error}
+            </div>
+          )}
+
+          <div style={{
+            marginTop: 22,
+            display: "flex", gap: 8, flexWrap: "wrap",
+            justifyContent: "space-between",
+          }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Button size="sm" variant="ghost" onClick={refresh} disabled={info.loading} type="button">
+                {info.loading ? "Refreshing…" : "Refresh"}
+              </Button>
+              {typeof onOpenComparison === "function" && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => { onClose?.(); onOpenComparison(); }}
+                  disabled={!info.canViewResults}
+                  type="button"
+                  title={info.canViewResults ? "Compare answers with this room" : "Submit your own answers first to unlock comparisons"}
+                >
+                  Compare answers
+                </Button>
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleLeave}
+              disabled={busy}
+              type="button"
+              style={{ color: "var(--ink-3)" }}
+            >
+              {isOwner ? (busy ? "Deleting…" : "Delete room") : (busy ? "Leaving…" : "Leave room")}
+            </Button>
+          </div>
+        </motion.div>
       </motion.div>
     </AnimatePresence>
   );
@@ -7413,6 +7839,7 @@ export default function App() {
   const paidStatus = usePaidStatus();
   const roomSession = useRoomSession();
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
+  const [roomDashboardOpen, setRoomDashboardOpen] = useState(false);
   const handleOpenCreateRoom = useCallback(() => {
     if (paidStatus.paid) {
       setCreateRoomOpen(true);
@@ -7428,8 +7855,8 @@ export default function App() {
     const created = await roomSession.createRoom({ title });
     setCreateRoomOpen(false);
     /* Owner lands on the room dashboard URL so they can copy the invite
-       link. The dashboard itself ships in the next step; until then this
-       gives them a stable bookmarkable URL. */
+       link. We also pop the dashboard modal open immediately — that's the
+       "share your invite" moment. */
     if (typeof window !== "undefined" && created?.room_id) {
       const shareUrl = buildRoomShareUrl(created.room_id);
       try {
@@ -7439,6 +7866,44 @@ export default function App() {
       } catch (_) {}
       try { window.__lastRoomShareUrl = shareUrl; } catch (_) {}
     }
+    /* Show the user past the welcome gate so they can see the dashboard
+       (the welcome screen hides chrome / modals look stranger there). */
+    dispatch({ type: "seenWelcome" });
+    setRoomDashboardOpen(true);
+  }, [roomSession, dispatch]);
+
+  const handleLeaveActiveRoom = useCallback(async () => {
+    if (!roomSession.activeRoomId) return;
+    await roomSession.leaveRoom(roomSession.activeRoomId);
+    /* Drop ?room= from the URL since we're no longer in it. */
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("room");
+        const next = `${url.pathname}${url.searchParams.toString() ? `?${url.searchParams.toString()}` : ""}${url.hash || ""}`;
+        window.history.replaceState({}, "", next);
+        setUrlRoomId(null);
+      } catch (_) {}
+    }
+  }, [roomSession]);
+
+  const handleDeleteActiveRoom = useCallback(async () => {
+    if (!roomSession.activeRoomId) return;
+    await roomSession.deleteRoom(roomSession.activeRoomId);
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("room");
+        const next = `${url.pathname}${url.searchParams.toString() ? `?${url.searchParams.toString()}` : ""}${url.hash || ""}`;
+        window.history.replaceState({}, "", next);
+        setUrlRoomId(null);
+      } catch (_) {}
+    }
+  }, [roomSession]);
+
+  const handleKickFromActiveRoom = useCallback(async (targetNumber) => {
+    if (!roomSession.activeRoomId) return;
+    await roomSession.kickFromRoom(roomSession.activeRoomId, targetNumber);
   }, [roomSession]);
 
   /* Room id we should treat as "the URL is asking for this room right now".
@@ -7746,6 +8211,9 @@ export default function App() {
             onOpenSheetData={() => setSheetModalOpen(true)}
             themeMode={themeMode}
             onToggleTheme={toggleTheme}
+            activeRoom={roomSession.activeRoom}
+            activeRoomId={roomSession.activeRoomId}
+            onOpenRoomDashboard={() => setRoomDashboardOpen(true)}
           />
         )}
         <div style={{ flex: 1 }}>
@@ -7821,6 +8289,18 @@ export default function App() {
         peers={peers}
         segment={state.segment}
         timeSpentMs={state.timeSpentMs}
+      />
+      <RoomDashboardModal
+        open={roomDashboardOpen && Boolean(roomSession.activeRoomId)}
+        onClose={() => { setRoomDashboardOpen(false); roomSession.clearError(); }}
+        roomId={roomSession.activeRoomId}
+        room={roomSession.activeRoom}
+        busy={roomSession.busy}
+        error={roomSession.error}
+        onLeave={handleLeaveActiveRoom}
+        onDelete={handleDeleteActiveRoom}
+        onKick={handleKickFromActiveRoom}
+        onClearError={roomSession.clearError}
       />
       <CreateRoomModal
         open={createRoomOpen}
