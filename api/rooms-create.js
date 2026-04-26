@@ -3,7 +3,6 @@ import {
   callAppsScript,
   generateToken,
   getIp,
-  hasPaidCookie,
   hashToken,
   methodNotAllowed,
   parseBody,
@@ -17,10 +16,6 @@ export default async function handler(req, res) {
   const ip = getIp(req);
   if (rateLimit({ ip, bucket: "rooms-create", windowMs: 60_000, max: 10 })) {
     return res.status(429).json({ error: "Too many requests" });
-  }
-
-  if (!hasPaidCookie(req)) {
-    return res.status(402).json({ error: "Premium required to create a room." });
   }
 
   const body = parseBody(req);

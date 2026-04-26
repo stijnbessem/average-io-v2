@@ -2526,42 +2526,6 @@ function useRoomCompareData({ activeRoomId, token, enabled }) {
   return state;
 }
 
-/* Lifted payment-status check so creating a room from the welcome screen
-   can decide whether to open the modal directly or send the user through
-   the paywall. Re-checks on focus so the unlock state stays fresh. */
-function usePaidStatus() {
-  const [paid, setPaid] = useState(false);
-  const [checked, setChecked] = useState(false);
-
-  const check = useCallback(async () => {
-    try {
-      const res = await fetch("/api/payment-status", { cache: "no-store" });
-      if (!res.ok) {
-        setChecked(true);
-        return false;
-      }
-      const json = await res.json();
-      const next = Boolean(json?.paid);
-      setPaid(next);
-      setChecked(true);
-      return next;
-    } catch (_) {
-      setChecked(true);
-      return false;
-    }
-  }, []);
-
-  useEffect(() => { check(); }, [check]);
-
-  useEffect(() => {
-    const onFocus = () => { check(); };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [check]);
-
-  return { paid, checked, refreshPaid: check, setPaidLocally: setPaid };
-}
-
 function CreateRoomModal({ open, onClose, onSubmit, busy, error }) {
   const isMobile = useMediaQuery("(max-width: 639px)");
   const [title, setTitle] = useState("");
@@ -3415,9 +3379,8 @@ function JoinRoomScreen({
         </motion.div>
 
         <div style={{ marginTop: 56, fontSize: 12, color: "var(--ink-4)", lineHeight: 1.6 }}>
-          Joining is free for invitees — the person who created the room
-          covered it. You can leave at any time, and the room owner can
-          remove participants too.
+          Creating and joining a room is free. You can leave at any time, and
+          the room owner can remove participants too.
         </div>
       </div>
     </div>
@@ -3428,7 +3391,7 @@ function JoinRoomScreen({
    WELCOME
    ============================================================================ */
 
-function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", themeMode = "light", onToggleTheme, onCreateRoom, paid = false }) {
+function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", themeMode = "light", onToggleTheme, onCreateRoom }) {
   const isMobile = useMediaQuery("(max-width: 639px)");
   return (
     <div style={{
@@ -3472,6 +3435,10 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
           the fuller your overview becomes.
         </motion.p>
 
+        {typeof onCreateRoom === "function" && (
+          <WelcomePrivateRoomCard onCreateRoom={onCreateRoom} isMobile={isMobile} />
+        )}
+
         <motion.div {...FADE_UP}
           transition={{ duration: 0.6, delay: 0.24, ease: EASE_OUT }}
           style={{
@@ -3503,10 +3470,6 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
           </Button>
         </motion.div>
 
-        {typeof onCreateRoom === "function" && (
-          <WelcomePrivateRoomCard onCreateRoom={onCreateRoom} paid={paid} isMobile={isMobile} />
-        )}
-
         {/* Benefits grid */}
         <WelcomeBenefits />
 
@@ -3529,13 +3492,13 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
   );
 }
 
-function WelcomePrivateRoomCard({ onCreateRoom, paid, isMobile }) {
+function WelcomePrivateRoomCard({ onCreateRoom, isMobile }) {
   return (
     <motion.div
       {...FADE_UP}
-      transition={{ duration: 0.55, delay: 0.32, ease: EASE_OUT }}
+      transition={{ duration: 0.55, delay: 0.22, ease: EASE_OUT }}
       style={{
-        marginTop: 32,
+        marginTop: 28,
         padding: isMobile ? "20px 18px" : "22px 24px",
         background: "var(--bg-raised)",
         border: "1px solid var(--line)",
@@ -3548,30 +3511,9 @@ function WelcomePrivateRoomCard({ onCreateRoom, paid, isMobile }) {
         position: "absolute", top: 0, left: 0,
         width: 56, height: 1, background: "var(--accent-solid)",
       }} />
-      <div style={{
-        display: "flex",
-        gap: 16,
-        alignItems: isMobile ? "flex-start" : "center",
-        flexDirection: isMobile ? "column" : "row",
-        justifyContent: "space-between",
-      }}>
-        <div style={{ maxWidth: 460 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <div className="label">Compare with people you know</div>
-            {!paid && (
-              <span style={{
-                fontSize: 9, fontWeight: 600, letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                padding: "2px 7px",
-                borderRadius: 9999,
-                color: "var(--ink-2)",
-                background: "var(--surface-fallback)",
-                border: "1px solid var(--line)",
-              }}>
-                Premium
-              </span>
-            )}
-          </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "stretch" }}>
+        <div style={{ maxWidth: 560 }}>
+          <div className="label" style={{ marginBottom: 6 }}>Compare with people you know</div>
           <div style={{ fontSize: 17, color: "var(--ink)", marginBottom: 6, lineHeight: 1.3 }}>
             Invite friends, family or colleagues to a private room.
           </div>
@@ -3582,13 +3524,13 @@ function WelcomePrivateRoomCard({ onCreateRoom, paid, isMobile }) {
             <span className="mono"> #1</span>, <span className="mono">#2</span>, <span className="mono">#3</span>…).
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexShrink: 0, width: isMobile ? "100%" : "auto" }}>
+        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
           <Button
             onClick={onCreateRoom}
             variant="secondary"
-            style={isMobile ? { width: "100%" } : undefined}
+            style={isMobile ? { width: "100%" } : { alignSelf: "flex-start" }}
           >
-            {paid ? "Create a private room" : "Create a private room →"}
+            Create a private room
           </Button>
         </div>
       </div>
@@ -5056,9 +4998,6 @@ function PaywallContent({
         <div>• Your uniqueness score broken down by category — where you're weird, where you're normal</div>
         <div>• Filter by gender, age, and country to find your real peer group</div>
         <div>• Downloadable PDF you can keep, share, or revisit as you answer more</div>
-        <div>
-          • <strong style={{ color: "var(--ink)", fontWeight: 600 }}>Private comparison rooms:</strong> invite up to {ROOMS_MAX_PARTICIPANTS} friends or family with one link and compare anonymously, side by side
-        </div>
       </div>
 
       {/* Primary CTA — dominant */}
@@ -8164,11 +8103,6 @@ export default function App() {
     shareSiteHome();
   }, []);
 
-  /* Private rooms (step 3 of feature: homepage USP + create-room modal). The
-     full lifecycle (join / dashboard / comparison / leave) is wired in
-     subsequent steps; for now we only need the create flow + a paywall
-     handoff. */
-  const paidStatus = usePaidStatus();
   const roomSession = useRoomSession();
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const [roomDashboardOpen, setRoomDashboardOpen] = useState(false);
@@ -8186,16 +8120,8 @@ export default function App() {
     enabled: Boolean(roomSession.activeRoomId && roomSession.activeRoom?.token),
   });
   const handleOpenCreateRoom = useCallback(() => {
-    if (paidStatus.paid) {
-      setCreateRoomOpen(true);
-      return;
-    }
-    /* Paywall lives on the overview screen — sending the user there
-       surfaces the paywall modal. After they unlock we re-check on
-       focus, so they can come back and create the room. */
-    dispatch({ type: "seenWelcome" });
-    dispatch({ type: "go", screen: "overview" });
-  }, [dispatch, paidStatus.paid]);
+    setCreateRoomOpen(true);
+  }, []);
   const handleCreateRoom = useCallback(async ({ title }) => {
     const created = await roomSession.createRoom({ title });
     setCreateRoomOpen(false);
@@ -8512,7 +8438,6 @@ export default function App() {
         themeMode={themeMode}
         onToggleTheme={toggleTheme}
         onCreateRoom={handleOpenCreateRoom}
-        paid={paidStatus.paid}
       />
     );
   } else if (state.screen === "start") {
