@@ -2196,10 +2196,11 @@ async function fetchJsonOrThrow(url, init) {
 }
 
 async function apiCreateRoom({ title, maxParticipants, ttlDays }) {
-  return fetchJsonOrThrow("/api/rooms-create", {
+  return fetchJsonOrThrow("/api/rooms", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      op: "create",
       title,
       questionnaire_version: String(QUESTIONNAIRE_VERSION),
       max_participants: maxParticipants,
@@ -2209,48 +2210,60 @@ async function apiCreateRoom({ title, maxParticipants, ttlDays }) {
 }
 
 async function apiJoinRoom(roomId) {
-  return fetchJsonOrThrow("/api/rooms-join", {
+  return fetchJsonOrThrow("/api/rooms", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ room_id: roomId }),
+    body: JSON.stringify({ op: "join", room_id: roomId }),
   });
 }
 
 async function apiSubmitRoom({ roomId, token, answers }) {
-  return fetchJsonOrThrow("/api/rooms-submit", {
+  return fetchJsonOrThrow("/api/rooms", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ room_id: roomId, participant_token: token, answers }),
+    body: JSON.stringify({
+      op: "submit",
+      room_id: roomId,
+      participant_token: token,
+      answers,
+    }),
   });
 }
 
 async function apiRoomStatus({ roomId, token }) {
   const params = new URLSearchParams();
+  params.set("op", "status");
   params.set("room_id", roomId);
   if (token) params.set("token", token);
-  return fetchJsonOrThrow(`/api/rooms-status?${params.toString()}`);
+  return fetchJsonOrThrow(`/api/rooms?${params.toString()}`);
 }
 
 async function apiRoomResults({ roomId, token }) {
   const params = new URLSearchParams();
+  params.set("op", "results");
   params.set("room_id", roomId);
   params.set("token", token);
-  return fetchJsonOrThrow(`/api/rooms-results?${params.toString()}`);
+  return fetchJsonOrThrow(`/api/rooms?${params.toString()}`);
 }
 
 async function apiLeaveRoom({ roomId, token }) {
-  return fetchJsonOrThrow("/api/rooms-leave", {
+  return fetchJsonOrThrow("/api/rooms", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ room_id: roomId, participant_token: token }),
+    body: JSON.stringify({
+      op: "leave",
+      room_id: roomId,
+      participant_token: token,
+    }),
   });
 }
 
 async function apiManageRoom({ roomId, ownerToken, action, targetNumber }) {
-  return fetchJsonOrThrow("/api/rooms-manage", {
+  return fetchJsonOrThrow("/api/rooms", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      op: "manage",
       room_id: roomId,
       owner_token: ownerToken,
       action,
