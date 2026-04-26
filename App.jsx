@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useReducer, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
-import SunCalc from "suncalc";
 import questionnaireRaw from "./data/average_io_full_questions.json";
 
 /* ============================================================================
@@ -33,7 +32,9 @@ const STYLE = `
     --ink-4: #8F8B84;
     --line: #EAEAEA;
     --line-soft: rgba(0,0,0,0.06);
+    --faq-line: rgba(17, 17, 17, 0.24);
     --comparison-preview-border: rgba(17, 17, 17, 0.24);
+    --share-btn-border: rgba(17, 17, 17, 0.24);
 
     --accent-solid: #111111;
     --btn-solid-bg: #111111;
@@ -92,7 +93,9 @@ const STYLE = `
     --ink-4: #7A776F;
     --line: #2E2E2C;
     --line-soft: rgba(255,255,255,0.08);
+    --faq-line: rgba(255, 255, 255, 0.24);
     --comparison-preview-border: rgba(255, 255, 255, 0.24);
+    --share-btn-border: rgba(255, 255, 255, 0.24);
 
     --accent-solid: #E8E7E3;
     --btn-solid-bg: #ECEBE7;
@@ -167,6 +170,30 @@ const STYLE = `
     .seg-scroll::-webkit-scrollbar { display: none; }
   }
 
+  /* Snapshot grid on Overview:
+     - ≥640px: auto-fit so cards sit on one row when space allows
+     - ≤639px: force exactly 2 columns so the 4 tiles are always 2×2 (393px friendly) */
+  .overview-snapshot-grid {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  }
+  @media (max-width: 639px) {
+    .overview-snapshot-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* FAQ accordion — native <details> with rotating + icon. */
+  .faq-item > summary::-webkit-details-marker { display: none; }
+  .faq-item > summary::marker { content: ""; }
+  .faq-item > summary:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  .faq-item[open] .faq-chevron {
+    transform: rotate(45deg);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.001ms !important;
@@ -192,10 +219,27 @@ const FADE_UP = {
    ============================================================================ */
 
 const CATEGORY_UI_META = {
+  basics: { title: "The Basics", blurb: "Background, place, relationships, and life satisfaction.", accent: "blue" },
+  looks_identity: { title: "Looks & Identity", blurb: "Appearance and how you describe yourself.", accent: "green" },
+  personality: { title: "Personality", blurb: "Energy, decisions, conflict, and social style.", accent: "violet" },
+  lifestyle: { title: "Lifestyle", blurb: "Daily rhythm, pets, entertainment, and movement.", accent: "yellow" },
+  hobbies: { title: "Hobbies", blurb: "Interests, collections, and how you spend free time.", accent: "blue" },
+  dating_scene: { title: "Dating Scene", blurb: "Dating habits, intentions, and modern romance.", accent: "red" },
+  education: { title: "Education", blurb: "Schooling, learning, and growth.", accent: "green" },
+  work: { title: "Work", blurb: "Role, pace, workplace culture, and ambition.", accent: "violet" },
+  money: { title: "Money", blurb: "Income habits, investing, stress, and side hustles.", accent: "yellow" },
+  habits_vices: { title: "Habits & Vices", blurb: "Substances, impulses, and routines.", accent: "red" },
+  food_biohacking: { title: "Food & Biohacking", blurb: "Nutrition, supplements, and body experiments.", accent: "green" },
+  health_body: { title: "Health & Body", blurb: "Fitness, symptoms, sleep, and medical history.", accent: "blue" },
+  mind_mood: { title: "Mind & Mood", blurb: "Mental health and emotional patterns.", accent: "violet" },
+  intimate_history: { title: "Intimate History", blurb: "Private topics — skip anything you want.", accent: "red" },
+  anatomy: { title: "Anatomy (Optional)", blurb: "Optional body questions.", accent: "red" },
+  ai_digital: { title: "AI & Digital Life", blurb: "AI tools, online identity, and privacy.", accent: "violet" },
+  travel_world: { title: "Travel & World", blurb: "Trips, languages, and global outlook.", accent: "yellow" },
+  real_talk: { title: "Real Talk", blurb: "Harder topics — fully optional.", accent: "red" },
   demographics: { title: "Demographics", blurb: "Identity, location, and background.", accent: "blue" },
   body: { title: "Body", blurb: "Physical traits and characteristics.", accent: "green" },
   digital: { title: "Digital", blurb: "Phone and app usage patterns.", accent: "violet" },
-  lifestyle: { title: "Lifestyle", blurb: "Sleep, hydration, coffee, movement.", accent: "yellow" },
   micro: { title: "Micro Habits", blurb: "Tiny habits and day-to-day signals.", accent: "blue" },
   sexual: { title: "Sexual", blurb: "Private and sensitive answers.", accent: "red" },
   fitness: { title: "Fitness", blurb: "Exercise and training.", accent: "green" },
@@ -205,32 +249,16 @@ const CATEGORY_UI_META = {
   intimate: { title: "Intimate", blurb: "Private. Fully optional.", accent: "red" },
   basic_info: { title: "Basic Info", blurb: "Age, background, household — the basics.", accent: "blue" },
   body_stats: { title: "Body & Stats", blurb: "Measurements, appearance, sleep.", accent: "green" },
-  education: { title: "Education", blurb: "Schooling, field, ongoing learning.", accent: "violet" },
-  work: { title: "Work", blurb: "Job, stress, hours, industry.", accent: "yellow" },
   habits: { title: "Habits", blurb: "Alcohol, smoking, substances.", accent: "red" },
   health_mishaps: { title: "Health & Mishaps", blurb: "Bodies, checkups, injuries.", accent: "green" },
-  travel_world: { title: "Travel & World", blurb: "Trips, passports, travel style.", accent: "blue" },
-  personality: { title: "Personality", blurb: "Decisions, energy, conflict style.", accent: "violet" },
-  hobbies: { title: "Hobbies", blurb: "Free time, media, sports.", accent: "yellow" },
-  real_talk: { title: "Real Talk", blurb: "Harder topics — skip anything you want.", accent: "red" },
-  mind_mood: { title: "Mind & Mood", blurb: "Mental health — only what feels safe.", accent: "violet" },
   private_sparks: { title: "Private sparks", blurb: "Very personal — all optional.", accent: "red" },
 };
 
-const QUESTION_DEPENDENCIES = {
-  tattoo_count: { dependsOn: "tattoos", showIf: ["Yes"] },
-  penis_length: { dependsOn: "gender", showIf: ["Male"] },
-  bra_cup: { dependsOn: "gender", showIf: ["Female"] },
-  plastic_detail: {
-    dependsOn: "plastic_surgery",
-    showIf: [
-      "Minor tweaks only",
-      "Injectables / fillers",
-      "Revision / follow-up surgery",
-      "Major surgical work",
-    ],
-  },
-};
+const CATEGORY_ORDER_OVERRIDES = {};
+
+const CATEGORY_ACCENT_FALLBACK = ["blue", "green", "violet", "yellow", "red"];
+
+const QUESTION_DEPENDENCIES = {};
 
 function slugCategoryId(name) {
   const s = String(name || "category")
@@ -248,14 +276,20 @@ function normalizeQuestionnaireV2(raw) {
     categories: (raw.questionnaire || []).map((block) => ({
       id: slugCategoryId(block.category),
       sensitive: Boolean(block.sensitive),
-      questions: (block.questions || []).map((q) => ({
-        id: q.id,
-        label: q.question,
-        type: q.multi ? "multi" : "select",
-        options: (q.options || []).map((o) => (typeof o === "string" ? o : o.label)),
-        sensitive: Boolean(q.sensitive),
-        global: typeof q.global === "string" ? q.global : "",
-      })),
+      questions: (block.questions || []).map((q) => {
+        const question = {
+          id: q.id,
+          label: q.question,
+          type: q.multi ? "multi" : "select",
+          options: (q.options || []).map((o) => (typeof o === "string" ? o : o.label)),
+          sensitive: Boolean(q.sensitive),
+          global: typeof q.global === "string" ? q.global : "",
+        };
+        if (q.dependsOn) question.dependsOn = q.dependsOn;
+        if (Array.isArray(q.showIf)) question.showIf = q.showIf;
+        if (Array.isArray(q.hideIf)) question.hideIf = q.hideIf;
+        return question;
+      }),
     })),
   };
 }
@@ -372,12 +406,13 @@ function mapQuestionType(question) {
 
 const canonicalCategories = canonicalQuestionSet.categories.map((category, idx) => {
   const meta = CATEGORY_UI_META[category.id] || {};
+  const fallbackAccent = CATEGORY_ACCENT_FALLBACK[idx % CATEGORY_ACCENT_FALLBACK.length];
   return {
     id: category.id,
     title: meta.title || titleCase(category.id),
     blurb: meta.blurb || "Answer and compare with peers.",
-    accent: meta.accent || "blue",
-    order: idx + 1,
+    accent: meta.accent || fallbackAccent,
+    order: CATEGORY_ORDER_OVERRIDES[category.id] || idx + 1,
     optional: Boolean(category.sensitive),
   };
 });
@@ -391,7 +426,15 @@ const legacyOnlyCategories = IS_V2_QUESTIONNAIRE
     order: canonicalCategories.length + idx + 1,
   }));
 
-const CATEGORIES = [...canonicalCategories, ...legacyOnlyCategories];
+const CATEGORIES = [...canonicalCategories, ...legacyOnlyCategories]
+  .sort((a, b) => {
+    if (a.order !== b.order) return a.order - b.order;
+    return a.title.localeCompare(b.title);
+  })
+  .map((category, idx) => ({
+    ...category,
+    order: idx + 1,
+  }));
 
 const COUNTRIES = [
   "United States", "United Kingdom", "Germany", "France", "Netherlands", "Spain", "Italy",
@@ -573,7 +616,13 @@ function normalizeAnswerForQuestion(raw, question) {
 const canonicalQuestions = canonicalQuestionSet.categories.flatMap((category) =>
   (category.questions || []).map((question) => {
     const mappedType = mapQuestionType(question);
-    const dependency = QUESTION_DEPENDENCIES[question.id] || {};
+    const fromFileDeps = {};
+    if (question.dependsOn) {
+      fromFileDeps.dependsOn = question.dependsOn;
+      if (Array.isArray(question.showIf)) fromFileDeps.showIf = question.showIf;
+      if (Array.isArray(question.hideIf)) fromFileDeps.hideIf = question.hideIf;
+    }
+    const dependency = { ...(QUESTION_DEPENDENCIES[question.id] || {}), ...fromFileDeps };
     const fromCategorySensitive = Boolean(category.sensitive);
     const fromQuestionSensitive = Boolean(question.sensitive);
     const options = question.type === "toggle"
@@ -616,9 +665,54 @@ const QUESTIONS_BY_CAT = CATEGORIES.reduce((acc, c) => {
 }, {});
 const CATEGORY_BY_ID = Object.fromEntries(CATEGORIES.map(c => [c.id, c]));
 
+async function shareSiteHome() {
+  const url = "https://comparizzon.com/";
+  const payload = { title: "Comparizzon", text: "Check out Comparizzon", url };
+  const hasNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  if (hasNativeShare) {
+    try {
+      await navigator.share(payload);
+      return "shared";
+    } catch (err) {
+      if (err && err.name === "AbortError") return "cancelled";
+    }
+  }
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+      return "copied";
+    }
+  } catch (_) {
+    // Fall through to textarea copy fallback.
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    return "copied";
+  } catch (_) {
+    return "failed";
+  }
+}
+
 function answerIsFilled(val) {
   if (val == null || val === "") return false;
   if (Array.isArray(val)) return val.length > 0;
+  return true;
+}
+
+/* Parent answer satisfies conditional visibility (showIf and/or hideIf). */
+function dependencyMatchesParentAnswer(q, parentVal) {
+  if (parentVal === undefined || parentVal === null || parentVal === "") return false;
+  if (Array.isArray(q.showIf) && q.showIf.length > 0) {
+    return q.showIf.includes(parentVal);
+  }
+  if (Array.isArray(q.hideIf) && q.hideIf.length > 0) {
+    return !q.hideIf.includes(parentVal);
+  }
   return true;
 }
 
@@ -626,8 +720,7 @@ function answerIsFilled(val) {
 function isQuestionVisible(q, answers) {
   if (!q.dependsOn) return true;
   const parent = answers[q.dependsOn];
-  if (parent === undefined || parent === null || parent === "") return false;
-  return q.showIf.includes(parent);
+  return dependencyMatchesParentAnswer(q, parent);
 }
 
 /* ============================================================================
@@ -667,7 +760,7 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 function generatePeer(rand) {
   const p = {};
   QUESTIONS.forEach((q) => {
-    if (q.dependsOn && (p[q.dependsOn] == null || !q.showIf.includes(p[q.dependsOn]))) {
+    if (q.dependsOn && !dependencyMatchesParentAnswer(q, p[q.dependsOn])) {
       return;
     }
     if (!Array.isArray(q.options) || q.options.length === 0) return;
@@ -694,6 +787,7 @@ function buildPeerPool(size = 480, seed = 20260421) {
   return peers;
 }
 
+const LIVE_PEER_POOL_ENDPOINT = "/api/live-peers";
 const LIVE_PEER_POOL_URL = "https://docs.google.com/spreadsheets/d/1wKOyr9XtI9CEvcp3V7QrGFX42YvopkTxQghkW-dGqr0/gviz/tq?tqx=out:json";
 const LIVE_PEER_REFRESH_MS = 30000;
 
@@ -789,11 +883,25 @@ function usePeerPool() {
       let attemptedSheetCount = 0;
       let attemptedSample = [];
       try {
-        const res = await fetch(LIVE_PEER_POOL_URL, { cache: "no-store" });
-        if (!res.ok) throw new Error(`sheet fetch failed (${res.status})`);
-        const raw = await res.text();
-        const gviz = parseGvizResponse(raw);
-        const livePeers = buildPeersFromSheet(gviz?.table);
+        let table = null;
+        let sourceLabel = "api";
+        try {
+          const res = await fetch(LIVE_PEER_POOL_ENDPOINT, { cache: "no-store" });
+          if (!res.ok) throw new Error(`api fetch failed (${res.status})`);
+          const payload = await res.json();
+          table = payload?.table;
+          if (!table) throw new Error("api response missing table");
+        } catch (apiError) {
+          // Fallback to direct public sheet read when the sheet is link-accessible.
+          const res = await fetch(LIVE_PEER_POOL_URL, { cache: "no-store" });
+          if (!res.ok) throw new Error(`sheet fetch failed (${res.status})`);
+          const raw = await res.text();
+          const gviz = parseGvizResponse(raw);
+          table = gviz?.table;
+          sourceLabel = "public-sheet";
+        }
+
+        const livePeers = buildPeersFromSheet(table);
         attemptedSheetCount = livePeers.length;
         attemptedSample = livePeers.slice(0, 10);
         if (livePeers.length === 0) throw new Error("sheet returned no usable rows");
@@ -808,7 +916,7 @@ function usePeerPool() {
             sheetPeerCount: livePeers.length,
             sample: attemptedSample,
           });
-          debug("live-peers", `loaded ${livePeers.length} live peers from sheet`);
+          debug("live-peers", `loaded ${livePeers.length} live peers from sheet (${sourceLabel})`);
         }
       } catch (e) {
         if (!cancelled) {
@@ -1361,7 +1469,149 @@ function UniquenessMeter({ score, size = 80 }) {
         flexDirection: "column", gap: size * 0.02,
       }}>
         <div className="mono" style={{ fontSize: numberSize, color: "var(--ink)", fontWeight: 500, lineHeight: 1 }}>{pct}</div>
-        <div style={{ fontSize: labelSize, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em", lineHeight: 1 }}>unique</div>
+        <div style={{ fontSize: labelSize, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em", lineHeight: 1 }}>uniq</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Live, motivational uniqueness meter shown during the questionnaire.
+ *
+ * It does NOT use real peer data — the score is derived deterministically from a
+ * hash of (questionId + answerValue) so that it always reacts to *every* answer
+ * change (including adjustments), and gives users a tangible "your score is going
+ * up" feedback loop that nudges them through the quiz. Each answered question
+ * contributes 0.7–4 percentage points; the score floors at 1% and caps at 92%
+ * (intentional headroom — never hits 100% so it always feels earned).
+ *
+ * On every target change we play a short "calculating" jitter (≈600ms of noise)
+ * followed by an ease-out settle (≈500ms) and a pulse ring, so it visually reads
+ * as "the system just recomputed your score".
+ */
+function computeFakeUniquenessScore(answers) {
+  let score = 1;
+  if (!answers) return score;
+  const keys = Object.keys(answers);
+  for (let i = 0; i < keys.length; i++) {
+    const qid = keys[i];
+    const v = answers[qid];
+    if (!answerIsFilled(v)) continue;
+    const sig = qid + ":" + (typeof v === "string" || typeof v === "number" ? String(v) : JSON.stringify(v));
+    let h = 0;
+    for (let j = 0; j < sig.length; j++) {
+      h = ((h << 5) - h) + sig.charCodeAt(j);
+      h |= 0;
+    }
+    score += 0.7 + (Math.abs(h) % 33) / 10;
+  }
+  return Math.max(1, Math.min(92, Math.round(score)));
+}
+
+function LiveUniquenessMeter({ answers, size = 56 }) {
+  const target = useMemo(() => computeFakeUniquenessScore(answers), [answers]);
+  const [displayed, setDisplayed] = useState(target);
+  const [calculating, setCalculating] = useState(false);
+  const [pulseKey, setPulseKey] = useState(0);
+  const initRef = useRef(true);
+  const rafRef = useRef(0);
+  const displayedRef = useRef(target);
+  const targetRef = useRef(target);
+  useEffect(() => { displayedRef.current = displayed; }, [displayed]);
+
+  useEffect(() => {
+    if (initRef.current) {
+      initRef.current = false;
+      targetRef.current = target;
+      setDisplayed(target);
+      return;
+    }
+    if (targetRef.current === target) {
+      // Same numeric target but answers reference changed (e.g. user re-selected
+      // the same option). Just pulse the ring — no number change, no jitter.
+      cancelAnimationFrame(rafRef.current);
+      setPulseKey((k) => k + 1);
+      setCalculating(true);
+      const id = setTimeout(() => setCalculating(false), 750);
+      return () => clearTimeout(id);
+    }
+
+    // Smooth, monotonic count (no jitter, slow ease-out).
+    targetRef.current = target;
+    cancelAnimationFrame(rafRef.current);
+    const from = displayedRef.current;
+    const to = target;
+    setCalculating(true);
+    setPulseKey((k) => k + 1);
+
+    const dur = 1400;
+    const start = performance.now();
+
+    const tick = () => {
+      const e = performance.now() - start;
+      if (e >= dur) {
+        setDisplayed(to);
+        setCalculating(false);
+        return;
+      }
+      const t = e / dur;
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic — slow, calm finish
+      const v = Math.round(from + (to - from) * eased);
+      setDisplayed(Math.max(1, Math.min(99, v)));
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target]);
+
+  const r = 32;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, displayed));
+  const dashOffset = c - (pct / 100) * c;
+  const numberSize = Math.max(13, size * 0.32);
+  const labelSize = Math.max(8, size * 0.16);
+
+  return (
+    <div
+      style={{ position: "relative", width: size, height: size, flexShrink: 0 }}
+      aria-live="polite"
+      aria-label={`Uniqueness ${pct} percent${calculating ? ", calculating" : ""}`}
+      title={`Uniqueness ${pct}%`}
+    >
+      <svg viewBox="0 0 80 80" width={size} height={size}>
+        <circle cx={40} cy={40} r={r} fill="none" stroke="var(--line)" strokeWidth={4} />
+        <circle
+          cx={40} cy={40} r={r} fill="none"
+          stroke="var(--ink)" strokeWidth={4} strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={dashOffset}
+          style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
+        />
+      </svg>
+      <AnimatePresence>
+        {calculating && (
+          <motion.div
+            key={`pulse-${pulseKey}`}
+            initial={{ scale: 0.92, opacity: 0.55 }}
+            animate={{ scale: 1.35, opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.75, ease: EASE_OUT }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "50%",
+              border: "1px solid var(--ink)",
+              pointerEvents: "none",
+            }}
+          />
+        )}
+      </AnimatePresence>
+      <div style={{
+        position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", gap: size * 0.02, pointerEvents: "none",
+      }}>
+        <div className="mono" style={{ fontSize: numberSize, color: "var(--ink)", fontWeight: 500, lineHeight: 1 }}>{pct}</div>
+        <div style={{ fontSize: labelSize, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: "0.08em", lineHeight: 1 }}>uniq</div>
       </div>
     </div>
   );
@@ -1393,134 +1643,65 @@ function useMediaQuery(query) {
 }
 
 const THEME_STORAGE_KEY = "avg_io_theme";
-const THEME_PHASE_KEY = "avg_io_theme_phase";
-const THEME_LAST_COMPUTED_KEY = "avg_io_theme_last_computed";
 
-/** Questionnaire stores region as option label — map to approximate coords for sunrise/sunset */
-const REGION_LABEL_TO_COORDS = {
-  "Europe 🇪🇺": { lat: 50.1, lng: 10.4 },
-  "North America 🌎": { lat: 39.8, lng: -98.6 },
-  "South America 🌴": { lat: -14.2, lng: -57.9 },
-  "Asia 🌏": { lat: 34.0, lng: 105.6 },
-  "Africa 🌍": { lat: 1.6, lng: 20.0 },
-  "Oceania 🐨": { lat: -25.3, lng: 133.8 },
-  "Middle East 🕌": { lat: 29.3, lng: 47.7 },
-  "Caribbean 🏝️": { lat: 18.5, lng: -66.1 },
-  "Split between regions 🧳": { lat: 40.0, lng: -40.0 },
-};
-
-function coordsFromTimezoneFallback() {
+function readInitialMode() {
+  if (typeof window === "undefined") return "light";
   try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-    if (/^America\/(Argentina|Chile|Brazil)/.test(tz)) return { lat: -22.9, lng: -47.1 };
-    if (/^America\//.test(tz)) return { lat: 39.8, lng: -98.6 };
-    if (/^Pacific\/(Auckland|Chatham)/.test(tz)) return { lat: -36.85, lng: 174.76 };
-    if (/^Australia\//.test(tz)) return { lat: -25.27, lng: 133.78 };
-    if (/^Asia\//.test(tz)) return { lat: 30.0, lng: 105.0 };
-    if (/^Europe\//.test(tz)) return { lat: 50.1, lng: 10.4 };
-    if (/^Africa\//.test(tz)) return { lat: -1.29, lng: 36.82 };
-    if (/^Atlantic\/(Azores|Canary|Cape_Verde)/.test(tz)) return { lat: 38.7, lng: -9.1 };
-  } catch (_) {}
-  return { lat: 48.8566, lng: 2.3522 };
-}
-
-function getSunCoordsForAnswers(answers) {
-  const r = answers?.region;
-  if (r && REGION_LABEL_TO_COORDS[r]) return REGION_LABEL_TO_COORDS[r];
-  return coordsFromTimezoneFallback();
-}
-
-function isNightAtCoords(lat, lng, date = new Date()) {
-  const times = SunCalc.getTimes(date, lat, lng);
-  const t = date.getTime();
-  return t < times.sunrise.getTime() || t > times.sunset.getTime();
-}
-
-function readInitialPhase() {
-  if (typeof window === "undefined") return "auto";
-  try {
-    const p = localStorage.getItem(THEME_PHASE_KEY);
-    if (p === "auto" || p === "light" || p === "dark") return p;
+    const p = localStorage.getItem("avg_io_theme_phase");
+    if (p === "dark" || p === "light") return p;
     const legacy = localStorage.getItem(THEME_STORAGE_KEY);
     if (legacy === "dark") return "dark";
     if (legacy === "light") return "light";
-    return "auto";
+    return "light";
   } catch (_) {
-    return "auto";
+    return "light";
   }
 }
 
-function applyDomTheme(mode, phase) {
+function applyDomTheme(mode) {
   if (typeof document === "undefined") return;
   document.documentElement.classList.toggle("dark", mode === "dark");
   try {
-    localStorage.setItem(THEME_PHASE_KEY, phase);
     localStorage.setItem(THEME_STORAGE_KEY, mode);
-    if (phase === "auto") localStorage.setItem(THEME_LAST_COMPUTED_KEY, mode);
+    // Keep writing legacy key for backward compatibility with existing clients.
+    localStorage.setItem("avg_io_theme_phase", mode);
   } catch (_) {}
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", mode === "dark" ? "#121210" : "#FBFBFA");
 }
 
-function useTheme(answers) {
-  const [phase, setPhase] = useState(readInitialPhase);
-  const [tick, setTick] = useState(0);
-
-  const coords = useMemo(() => getSunCoordsForAnswers(answers || {}), [answers]);
+function useTheme() {
+  const [mode, setMode] = useState(readInitialMode);
 
   useEffect(() => {
-    if (phase !== "auto") return undefined;
-    const id = window.setInterval(() => setTick((x) => x + 1), 60 * 1000);
-    const onVis = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        setTick((x) => x + 1);
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => {
-      clearInterval(id);
-      document.removeEventListener("visibilitychange", onVis);
-    };
-  }, [phase]);
+    applyDomTheme(mode);
+  }, [mode]);
 
-  const effectiveMode = useMemo(() => {
-    if (phase === "light") return "light";
-    if (phase === "dark") return "dark";
-    return isNightAtCoords(coords.lat, coords.lng) ? "dark" : "light";
-  }, [phase, coords, tick]);
-
-  useEffect(() => {
-    applyDomTheme(effectiveMode, phase);
-  }, [effectiveMode, phase]);
-
-  const cycleTheme = useCallback(() => {
-    setPhase((p) => (p === "auto" ? "light" : p === "light" ? "dark" : "auto"));
+  const toggleTheme = useCallback(() => {
+    setMode((m) => (m === "dark" ? "light" : "dark"));
   }, []);
 
-  return { mode: effectiveMode, phase, cycleTheme };
+  return { mode, toggleTheme };
 }
 
-function ThemeToggle({ mode, phase, onCycle }) {
+function ThemeToggle({ mode, onToggle }) {
   const dark = mode === "dark";
-  const isAuto = phase === "auto";
-  const label = isAuto
-    ? (dark ? "Automatic dark (night where you said you are). Click to force light." : "Automatic light (daytime). Click to force dark.")
-    : (dark ? "Forced dark mode. Click for automatic sunset matching." : "Forced light mode. Click for dark.");
+  const label = dark ? "Dark mode enabled. Click to switch to light mode." : "Light mode enabled. Click to switch to dark mode.";
   return (
     <motion.button
       type="button"
       role="switch"
       aria-checked={dark}
       aria-label={label}
-      title={isAuto ? "Auto — matches sunset using your region answer (or timezone until then). Tap to cycle: force light → force dark → auto." : label}
-      onClick={onCycle}
+      title={label}
+      onClick={onToggle}
       whileTap={{ scale: 0.94 }}
       style={{
         flexShrink: 0,
         width: 42,
         height: 38,
         borderRadius: "var(--radius-m)",
-        border: `1px solid ${isAuto ? "var(--pale-violet-ink)" : "var(--line)"}`,
+        border: "1px solid var(--line)",
         background: "var(--surface-muted)",
         cursor: "pointer",
         display: "inline-flex",
@@ -1531,23 +1712,6 @@ function ThemeToggle({ mode, phase, onCycle }) {
         position: "relative",
       }}
     >
-      {isAuto && (
-        <span
-          className="mono"
-          style={{
-            position: "absolute",
-            top: 3,
-            right: 4,
-            fontSize: 8,
-            fontWeight: 600,
-            color: "var(--ink-3)",
-            lineHeight: 1,
-            letterSpacing: 0,
-          }}
-        >
-          A
-        </span>
-      )}
       <span style={{ position: "relative", width: 22, height: 22, display: "block" }}>
         <svg
           width="22"
@@ -1599,7 +1763,6 @@ function TopBar({
   state, dispatch, totalAnswered,
   peerSource = "synthetic", peerCount = 0, onOpenSheetData = null,
   themeMode = "light",
-  themePhase = "auto",
   onToggleTheme,
 }) {
   const items = [
@@ -1648,7 +1811,7 @@ function TopBar({
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {typeof onToggleTheme === "function" && (
-            <ThemeToggle mode={themeMode} phase={themePhase} onCycle={onToggleTheme} />
+            <ThemeToggle mode={themeMode} onToggle={onToggleTheme} />
           )}
           {isMobile ? (
             <button
@@ -1906,10 +2069,466 @@ function PageShell({ children, maxWidth = 1120 }) {
 }
 
 /* ============================================================================
+   PRIVATE ROOMS — invite-only comparison rooms
+   Server-gated. Up to 25 anonymous participants per room (numbered #1–#25).
+   ============================================================================ */
+
+const ROOM_STORAGE_KEY = "comparizzon:rooms";
+const ROOM_ACTIVE_KEY = "comparizzon:active-room";
+const ROOM_ID_REGEX = /^[A-Z0-9]{6,12}$/;
+const ROOMS_MAX_PARTICIPANTS = 25;
+const ROOMS_TTL_DAYS = 30;
+
+function getRoomIdFromUrl() {
+  if (typeof window === "undefined") return null;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get("room");
+    if (!raw) return null;
+    const id = String(raw).trim().toUpperCase();
+    return ROOM_ID_REGEX.test(id) ? id : null;
+  } catch (_) { return null; }
+}
+
+function buildRoomShareUrl(roomId) {
+  if (typeof window === "undefined" || !roomId) return "";
+  const origin = window.location.origin || "";
+  return `${origin}/?room=${encodeURIComponent(roomId)}`;
+}
+
+async function readRoomMap() {
+  try {
+    const r = await window.storage.get(ROOM_STORAGE_KEY);
+    if (!r?.value) return {};
+    const parsed = JSON.parse(r.value);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_) { return {}; }
+}
+
+async function writeRoomMap(map) {
+  try { await window.storage.set(ROOM_STORAGE_KEY, JSON.stringify(map || {})); } catch (_) {}
+}
+
+async function persistActiveRoomId(roomId) {
+  try {
+    if (roomId) await window.storage.set(ROOM_ACTIVE_KEY, roomId);
+    else await window.storage.delete(ROOM_ACTIVE_KEY);
+  } catch (_) {}
+}
+
+async function readActiveRoomId() {
+  try {
+    const r = await window.storage.get(ROOM_ACTIVE_KEY);
+    return r?.value || null;
+  } catch (_) { return null; }
+}
+
+async function fetchJsonOrThrow(url, init) {
+  const res = await fetch(url, init);
+  let json = {};
+  try { json = await res.json(); } catch (_) { json = {}; }
+  if (!res.ok) {
+    const err = new Error(json?.error || `Request failed (${res.status})`);
+    err.status = res.status;
+    err.requiresSubmission = Boolean(json?.requires_submission);
+    throw err;
+  }
+  return json;
+}
+
+async function apiCreateRoom({ title, maxParticipants, ttlDays }) {
+  return fetchJsonOrThrow("/api/rooms-create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title,
+      questionnaire_version: String(QUESTIONNAIRE_VERSION),
+      max_participants: maxParticipants,
+      ttl_days: ttlDays,
+    }),
+  });
+}
+
+async function apiJoinRoom(roomId) {
+  return fetchJsonOrThrow("/api/rooms-join", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ room_id: roomId }),
+  });
+}
+
+async function apiSubmitRoom({ roomId, token, answers }) {
+  return fetchJsonOrThrow("/api/rooms-submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ room_id: roomId, participant_token: token, answers }),
+  });
+}
+
+async function apiRoomStatus({ roomId, token }) {
+  const params = new URLSearchParams();
+  params.set("room_id", roomId);
+  if (token) params.set("token", token);
+  return fetchJsonOrThrow(`/api/rooms-status?${params.toString()}`);
+}
+
+async function apiRoomResults({ roomId, token }) {
+  const params = new URLSearchParams();
+  params.set("room_id", roomId);
+  params.set("token", token);
+  return fetchJsonOrThrow(`/api/rooms-results?${params.toString()}`);
+}
+
+async function apiLeaveRoom({ roomId, token }) {
+  return fetchJsonOrThrow("/api/rooms-leave", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ room_id: roomId, participant_token: token }),
+  });
+}
+
+async function apiManageRoom({ roomId, ownerToken, action, targetNumber }) {
+  return fetchJsonOrThrow("/api/rooms-manage", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      room_id: roomId,
+      owner_token: ownerToken,
+      action,
+      ...(targetNumber != null ? { target_number: targetNumber } : {}),
+    }),
+  });
+}
+
+/* Single source of truth for which rooms the user is part of, plus their
+   tokens / numbers. Survives page reloads via localStorage. The actual
+   answers live server-side; this only stores membership metadata. */
+function useRoomSession() {
+  const [rooms, setRooms] = useState({});
+  const [activeRoomId, setActiveRoomIdState] = useState(null);
+  const [hydrated, setHydrated] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const map = await readRoomMap();
+      const stored = await readActiveRoomId();
+      const fromUrl = getRoomIdFromUrl();
+      if (cancelled) return;
+      setRooms(map);
+      const candidate = fromUrl && map[fromUrl] ? fromUrl : stored;
+      if (candidate && map[candidate]) {
+        setActiveRoomIdState(candidate);
+        if (candidate !== stored) await persistActiveRoomId(candidate);
+      } else {
+        setActiveRoomIdState(null);
+      }
+      setHydrated(true);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const setActive = useCallback(async (roomId) => {
+    setActiveRoomIdState(roomId || null);
+    await persistActiveRoomId(roomId || null);
+  }, []);
+
+  const persistRoom = useCallback((roomId, data) => {
+    setRooms((prev) => {
+      const next = { ...prev, [roomId]: { ...(prev[roomId] || {}), ...data } };
+      writeRoomMap(next);
+      return next;
+    });
+  }, []);
+
+  const removeRoom = useCallback(async (roomId) => {
+    setRooms((prev) => {
+      const next = { ...prev };
+      delete next[roomId];
+      writeRoomMap(next);
+      return next;
+    });
+    setActiveRoomIdState((prev) => (prev === roomId ? null : prev));
+    const stored = await readActiveRoomId();
+    if (stored === roomId) await persistActiveRoomId(null);
+  }, []);
+
+  const createRoom = useCallback(async ({ title }) => {
+    setError(""); setBusy(true);
+    try {
+      const result = await apiCreateRoom({
+        title,
+        maxParticipants: ROOMS_MAX_PARTICIPANTS,
+        ttlDays: ROOMS_TTL_DAYS,
+      });
+      const data = {
+        role: "owner",
+        token: result.owner_token,
+        number: result.owner_number,
+        title: result.title,
+        expires_at: result.expires_at,
+        max_participants: result.max_participants,
+        questionnaire_version: result.questionnaire_version,
+        created_at: new Date().toISOString(),
+      };
+      persistRoom(result.room_id, data);
+      await setActive(result.room_id);
+      return { room_id: result.room_id, ...data };
+    } catch (err) {
+      setError(err?.message || "Could not create room");
+      throw err;
+    } finally {
+      setBusy(false);
+    }
+  }, [persistRoom, setActive]);
+
+  const joinRoom = useCallback(async (roomId) => {
+    setError(""); setBusy(true);
+    try {
+      const result = await apiJoinRoom(roomId);
+      const data = {
+        role: "member",
+        token: result.participant_token,
+        number: result.participant_number,
+        joined_at: new Date().toISOString(),
+      };
+      persistRoom(result.room_id, data);
+      await setActive(result.room_id);
+      return { room_id: result.room_id, ...data };
+    } catch (err) {
+      setError(err?.message || "Could not join room");
+      throw err;
+    } finally {
+      setBusy(false);
+    }
+  }, [persistRoom, setActive]);
+
+  const leaveRoom = useCallback(async (roomId) => {
+    const stored = rooms[roomId];
+    if (!stored?.token) return;
+    setError(""); setBusy(true);
+    try {
+      await apiLeaveRoom({ roomId, token: stored.token });
+      await removeRoom(roomId);
+    } catch (err) {
+      setError(err?.message || "Could not leave room");
+      throw err;
+    } finally {
+      setBusy(false);
+    }
+  }, [rooms, removeRoom]);
+
+  const deleteRoom = useCallback(async (roomId) => {
+    const stored = rooms[roomId];
+    if (!stored?.token || stored.role !== "owner") return;
+    setError(""); setBusy(true);
+    try {
+      await apiManageRoom({ roomId, ownerToken: stored.token, action: "delete" });
+      await removeRoom(roomId);
+    } catch (err) {
+      setError(err?.message || "Could not delete room");
+      throw err;
+    } finally {
+      setBusy(false);
+    }
+  }, [rooms, removeRoom]);
+
+  const kickFromRoom = useCallback(async (roomId, targetNumber) => {
+    const stored = rooms[roomId];
+    if (!stored?.token || stored.role !== "owner") return;
+    setError(""); setBusy(true);
+    try {
+      await apiManageRoom({ roomId, ownerToken: stored.token, action: "kick", targetNumber });
+    } catch (err) {
+      setError(err?.message || "Could not remove participant");
+      throw err;
+    } finally {
+      setBusy(false);
+    }
+  }, [rooms]);
+
+  return {
+    rooms,
+    activeRoom: activeRoomId ? rooms[activeRoomId] : null,
+    activeRoomId,
+    hydrated,
+    error,
+    busy,
+    setActive,
+    createRoom,
+    joinRoom,
+    leaveRoom,
+    deleteRoom,
+    kickFromRoom,
+    clearError: () => setError(""),
+  };
+}
+
+/* Lifted payment-status check so creating a room from the welcome screen
+   can decide whether to open the modal directly or send the user through
+   the paywall. Re-checks on focus so the unlock state stays fresh. */
+function usePaidStatus() {
+  const [paid, setPaid] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  const check = useCallback(async () => {
+    try {
+      const res = await fetch("/api/payment-status", { cache: "no-store" });
+      if (!res.ok) {
+        setChecked(true);
+        return false;
+      }
+      const json = await res.json();
+      const next = Boolean(json?.paid);
+      setPaid(next);
+      setChecked(true);
+      return next;
+    } catch (_) {
+      setChecked(true);
+      return false;
+    }
+  }, []);
+
+  useEffect(() => { check(); }, [check]);
+
+  useEffect(() => {
+    const onFocus = () => { check(); };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [check]);
+
+  return { paid, checked, refreshPaid: check, setPaidLocally: setPaid };
+}
+
+function CreateRoomModal({ open, onClose, onSubmit, busy, error }) {
+  const isMobile = useMediaQuery("(max-width: 639px)");
+  const [title, setTitle] = useState("");
+
+  useEffect(() => {
+    if (open) setTitle("");
+  }, [open]);
+
+  if (!open) return null;
+
+  const submit = async (e) => {
+    e?.preventDefault?.();
+    if (busy) return;
+    const cleaned = String(title || "").trim().slice(0, 80);
+    try { await onSubmit({ title: cleaned }); }
+    catch (_) { /* error surfaced by hook */ }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease: EASE_OUT }}
+        style={{
+          position: "fixed", inset: 0, zIndex: 130,
+          background: "var(--modal-scrim)",
+          display: "flex",
+          alignItems: isMobile ? "flex-end" : "center",
+          justifyContent: "center",
+          padding: isMobile ? 0 : 24,
+        }}
+        onClick={onClose}
+      >
+        <motion.form
+          onSubmit={submit}
+          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 8, scale: 0.99 }}
+          transition={{ duration: 0.22, ease: EASE_OUT }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: isMobile ? "100%" : "min(560px, 100%)",
+            background: "var(--bg-raised)",
+            border: "1px solid var(--line)",
+            borderRadius: isMobile ? "16px 16px 0 0" : "var(--radius-l)",
+            boxShadow: "0 12px 48px rgba(0,0,0,0.18)",
+            padding: isMobile ? "20px 18px calc(18px + env(safe-area-inset-bottom, 0px))" : 26,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
+            <div>
+              <div className="label">Private comparison</div>
+              <div className="serif" style={{ fontSize: 26, color: "var(--ink)", marginTop: 4, lineHeight: 1.15 }}>
+                Create a private room
+              </div>
+            </div>
+            <Button size="sm" variant="ghost" onClick={onClose} type="button">Close</Button>
+          </div>
+
+          <p style={{ fontSize: 14, color: "var(--ink-3)", lineHeight: 1.55, marginTop: 0, marginBottom: 18 }}>
+            Share the link with up to {ROOMS_MAX_PARTICIPANTS} people. Everyone stays
+            anonymous — you'll only see each other as <span className="mono">#1</span>,
+            <span className="mono"> #2</span>, <span className="mono">#3</span>… and
+            answers stay hidden until each person submits their own.
+          </p>
+
+          <label style={{ display: "block", marginBottom: 14 }}>
+            <div className="label" style={{ marginBottom: 6 }}>Room name (optional)</div>
+            <input
+              type="text"
+              value={title}
+              maxLength={80}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Family chat, Roommates, Team Friday"
+              style={{
+                width: "100%",
+                padding: "11px 12px",
+                fontSize: 14,
+                fontFamily: "inherit",
+                color: "var(--ink)",
+                background: "var(--surface-fallback)",
+                border: "1px solid var(--line)",
+                borderRadius: "var(--radius-s)",
+                outline: "none",
+              }}
+              autoFocus
+            />
+            <div style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 6 }}>
+              Only visible to you and people you invite. {ROOMS_TTL_DAYS}-day lifetime.
+            </div>
+          </label>
+
+          {error && (
+            <div style={{
+              marginBottom: 12, padding: "10px 12px",
+              border: "1px solid #ECDCC8", background: "#FFF7EE",
+              borderRadius: "var(--radius-s)",
+              fontSize: 12, color: "#7A4B0E",
+            }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            flexWrap: "wrap",
+          }}>
+            <Button variant="ghost" onClick={onClose} type="button" disabled={busy}>Cancel</Button>
+            <Button type="submit" disabled={busy}>
+              {busy ? "Creating…" : "Create room"}
+            </Button>
+          </div>
+        </motion.form>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/* ============================================================================
    WELCOME
    ============================================================================ */
 
-function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", themeMode = "light", themePhase = "auto", onToggleTheme }) {
+function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", themeMode = "light", onToggleTheme, onCreateRoom, paid = false }) {
   const isMobile = useMediaQuery("(max-width: 639px)");
   return (
     <div style={{
@@ -1919,7 +2538,7 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
       position: "relative", overflow: "hidden",
     }}>
       <div style={{ maxWidth: 1120, width: "100%", position: "relative", zIndex: 1 }}>
-        <div style={{ width: "min(760px, 100%)" }}>
+        <div style={{ width: "min(760px, 100%)", margin: "0 auto" }}>
         <motion.div
           {...FADE_UP}
           transition={{ duration: 0.5, ease: EASE_OUT }}
@@ -1933,7 +2552,7 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
         >
           <Logo size={44} />
           {typeof onToggleTheme === "function" && (
-            <ThemeToggle mode={themeMode} phase={themePhase} onCycle={onToggleTheme} />
+            <ThemeToggle mode={themeMode} onToggle={onToggleTheme} />
           )}
         </motion.div>
 
@@ -1964,9 +2583,7 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
           }}>
           <Button onClick={() => {
             dispatch({ type: "seenWelcome" });
-            const firstCat = CATEGORIES[0]?.id || "demographics";
-            dispatch({ type: "setCat", catId: firstCat, idx: 0 });
-            dispatch({ type: "go", screen: "question" });
+            dispatch({ type: "go", screen: "start" });
           }} style={isMobile ? { width: "100%" } : undefined}>
             Start questionnaire →
           </Button>
@@ -1985,6 +2602,10 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
             Open overview
           </Button>
         </motion.div>
+
+        {typeof onCreateRoom === "function" && (
+          <WelcomePrivateRoomCard onCreateRoom={onCreateRoom} paid={paid} isMobile={isMobile} />
+        )}
 
         {/* Benefits grid */}
         <WelcomeBenefits />
@@ -2005,6 +2626,73 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
         </div>
       </div>
     </div>
+  );
+}
+
+function WelcomePrivateRoomCard({ onCreateRoom, paid, isMobile }) {
+  return (
+    <motion.div
+      {...FADE_UP}
+      transition={{ duration: 0.55, delay: 0.32, ease: EASE_OUT }}
+      style={{
+        marginTop: 32,
+        padding: isMobile ? "20px 18px" : "22px 24px",
+        background: "var(--bg-raised)",
+        border: "1px solid var(--line)",
+        borderRadius: "var(--radius-m)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{
+        position: "absolute", top: 0, left: 0,
+        width: 56, height: 1, background: "var(--accent-solid)",
+      }} />
+      <div style={{
+        display: "flex",
+        gap: 16,
+        alignItems: isMobile ? "flex-start" : "center",
+        flexDirection: isMobile ? "column" : "row",
+        justifyContent: "space-between",
+      }}>
+        <div style={{ maxWidth: 460 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <div className="label">Compare with people you know</div>
+            {!paid && (
+              <span style={{
+                fontSize: 9, fontWeight: 600, letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                padding: "2px 7px",
+                borderRadius: 9999,
+                color: "var(--ink-2)",
+                background: "var(--surface-fallback)",
+                border: "1px solid var(--line)",
+              }}>
+                Premium
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 17, color: "var(--ink)", marginBottom: 6, lineHeight: 1.3 }}>
+            Invite friends, family or colleagues to a private room.
+          </div>
+          <div style={{ fontSize: 13, color: "var(--ink-3)", lineHeight: 1.55 }}>
+            Send a link to up to {ROOMS_MAX_PARTICIPANTS} people. Everyone answers
+            on their own — answers stay hidden until each person submits theirs.
+            Then compare side by side, fully anonymous (you'll see each other as
+            <span className="mono"> #1</span>, <span className="mono">#2</span>, <span className="mono">#3</span>…).
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexShrink: 0, width: isMobile ? "100%" : "auto" }}>
+          <Button
+            onClick={onCreateRoom}
+            variant="secondary"
+            style={isMobile ? { width: "100%" } : undefined}
+          >
+            {paid ? "Create a private room" : "Create a private room →"}
+          </Button>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -2211,7 +2899,249 @@ function GlobalMetalBackdrop() {
    CATEGORY HUB
    ============================================================================ */
 
-function CategoryHub({ state, dispatch }) {
+/* ============================================================================
+   FAQ MODULE
+   Reusable accordion placed low on Start, Category, and Overview screens.
+   Uses native <details>/<summary> so content is crawlable, keyboard-accessible
+   and works without JS. Variant selects which set of questions to show.
+   ============================================================================ */
+
+const FAQ_SETS = {
+  start: [
+    {
+      q: "What is Comparizzon?",
+      a: "Comparizzon is an anonymous life-comparison tool. You answer up to 200 quick questions about your looks, personality, lifestyle, dating life, work, money, habits, and health, and instantly see how your mix of answers stacks up against thousands of real people. No account, no email, free to start.",
+    },
+    {
+      q: "How does Comparizzon work?",
+      a: "Pick any of 18 categories and start answering. For every question you'll see live percentages showing how common or rare your answer is compared to everyone else. At the end, the overview gives you your uniqueness score, per-category breakdowns, and a downloadable PDF report.",
+    },
+    {
+      q: "How long does the questionnaire take?",
+      a: "About 5 to 10 minutes for the full 200-question set. You don't have to finish everything — even 30 well-answered questions are enough to see meaningful comparison data. You can skip any question or category and still get a full overview.",
+    },
+    {
+      q: "Is Comparizzon free?",
+      a: "Yes. Answering the questionnaire and seeing live comparisons costs nothing. A one-time €1 payment unlocks the full overview: your uniqueness score, every category breakdown, all peer-group filters (age, gender, country), and the downloadable PDF report. There is no subscription and no renewal.",
+    },
+    {
+      q: "Do I need an account, email address, or login?",
+      a: "No. Comparizzon never asks for your name, email, phone number, or social login. Your progress is saved locally in your browser, so you can close the tab and pick up later. Only the €1 unlock uses an email — purely so you can restore access on another device.",
+    },
+    {
+      q: "Is my data anonymous and private?",
+      a: "Yes. Comparizzon stores only anonymous, aggregated answers — never personal identifiers. We don't sell or share data with advertisers, and payments are handled securely by Stripe, so we never see your card details. You can clear your answers from your device at any time.",
+    },
+    {
+      q: "What is the uniqueness score?",
+      a: "Your uniqueness score is a number from 0 to 100 that reflects how rare your overall mix of answers is compared to everyone else. A score near 100 means your pattern of choices is statistically uncommon; near 0 means you're close to the global average. The overview also shows which specific answers pulled the score up or down.",
+    },
+    {
+      q: "How accurate is the comparison data?",
+      a: "Every percentage is calculated from real answers submitted by thousands of anonymous users across 18 categories. As more people answer, the comparisons become more representative — you're benchmarked against actual human responses, not made-up statistics. Segments with fewer than 30 responses are flagged as low confidence.",
+    },
+    {
+      q: "Can I compare myself against my age group, gender, or country?",
+      a: "Yes. The overview includes filters for Everyone, your gender, your age range, age + gender combined, and your country — so you can see how you compare to a peer group that actually looks like you, not just the entire world.",
+    },
+    {
+      q: "Which categories does Comparizzon cover?",
+      a: "18 in total: Basics, Looks & Identity, Personality, Lifestyle, Hobbies, Dating Scene, Education, Work, Money & Side Hustles, Habits & Vices, Food & Biohacking, Health & Body, Mind & Mood, Intimate History, Anatomy, AI & Digital Identity, Travel & World, and Real Talk. You can tackle them in any order.",
+    },
+    {
+      q: "Can I skip questions or sensitive categories?",
+      a: "Yes, always. Every question has a skip option, and whole categories can be left untouched. Sensitive topics (Intimate History, Anatomy, Real Talk) are clearly labeled and 100% optional — skip them and the rest of the experience still works normally.",
+    },
+    {
+      q: "Does Comparizzon work on mobile?",
+      a: "Yes. Comparizzon is built to feel native on phones, tablets, and desktop — nothing to install. Just open comparizzon.com in any modern browser (Chrome, Safari, Firefox, Edge) and you're in.",
+    },
+    {
+      q: "What do I get when I unlock the overview for €1?",
+      a: "The €1 unlock gives you: your uniqueness score, a full per-category breakdown, answer-by-answer comparisons, peer-group filters by age, gender and country, and a downloadable PDF report you can save or share. It's a one-time payment — no subscription, no upsell, no expiry.",
+    },
+    {
+      q: "How is Comparizzon different from a personality test?",
+      a: "Personality tests put you in a box with a type or letter code. Comparizzon doesn't — it shows, question by question, how your actual answers compare to everyone else's. It's less about labels and more about real, statistical context for your life choices.",
+    },
+  ],
+  category: [
+    {
+      q: "Do I have to finish this category to see my overview?",
+      a: "No. You can answer as much or as little as you want in any category, then jump to the overview. The more you answer, the more detail your overview shows — but even a handful of questions already produce meaningful comparisons.",
+    },
+    {
+      q: "Are my answers saved if I close the tab?",
+      a: "Yes. Your progress is stored locally in your browser, so you can close the window and return any time to pick up exactly where you stopped — no account needed.",
+    },
+    {
+      q: "How are the comparison percentages calculated?",
+      a: "Each percentage is the share of real responses in your selected peer group (Everyone, your gender, age range, country, etc.) that matched your answer. It's pure frequency — no algorithm, no weighting, no AI guessing.",
+    },
+    {
+      q: "Can I change my answer after I submit it?",
+      a: "Yes. Inside any category view, tap Edit on a question to change your answer or Clear to remove it. The live stats and your uniqueness score refresh instantly.",
+    },
+    {
+      q: "Why do some questions only appear after others?",
+      a: "A few questions depend on earlier answers — for example, anatomy-related questions only appear when they're relevant to the body type you picked in Basics. It keeps the questionnaire short and avoids asking things that don't apply to you.",
+    },
+    {
+      q: "What does the uniqueness score for a category mean?",
+      a: "It averages how rare your answers are across every question you answered in this category. 0 means very common answers; 100 means highly unusual. The more questions you answer, the more stable the score becomes.",
+    },
+    {
+      q: "Will skipping questions hurt my results?",
+      a: "No. Skipped questions simply aren't counted toward your overview, so skipping is free — it just means that category has a little less data. Answer only what you're comfortable with.",
+    },
+    {
+      q: "Are there right or wrong answers?",
+      a: "No. Comparizzon isn't judging you — it's just showing you where you sit relative to everyone else on each question. There's no grade, no personality type, no gotcha.",
+    },
+    {
+      q: "Are my answers private inside a category?",
+      a: "Yes. Nothing ties your answers back to you — no account, no name, no email. Only anonymized, aggregated data feeds the comparisons.",
+    },
+  ],
+  overview: [
+    {
+      q: "What does the €1 unlock actually include?",
+      a: "Your full overview: the uniqueness score, per-category breakdowns, every answer-by-answer comparison, peer-group filters (Everyone, gender, age range, age + gender, country), and a downloadable PDF report. One-time payment, yours to keep, no subscription.",
+    },
+    {
+      q: "Is this a subscription?",
+      a: "No. Comparizzon is a one-time €1 unlock for lifetime access to your overview. You will never be charged again and there is nothing to cancel.",
+    },
+    {
+      q: "How is my uniqueness score calculated?",
+      a: "For every question you answered, Comparizzon measures how rare your exact answer is inside your selected peer group, then averages those rarities. A score of 80 means only about 20% of people answered the way you did overall — the higher the number, the more unusual your mix of answers.",
+    },
+    {
+      q: "How do the age, gender, and country filters work?",
+      a: "You give the basics once (age, gender, country), then the overview lets you switch who you're compared against: Everyone, your gender, your age range, age + gender combined, or your country. Every chart and your uniqueness score recalculate instantly for the peer group you pick.",
+    },
+    {
+      q: "How do I pay? Is it safe?",
+      a: "Payments are processed by Stripe — the same provider used by Amazon, Google, and Shopify. Comparizzon never sees your card details and no payment information is stored on our servers. You'll get a Stripe receipt by email.",
+    },
+    {
+      q: "Can I get a refund?",
+      a: "Yes. If something's wrong with your unlock, reach out via the socials linked in the footer and we'll refund the €1 — no questions asked.",
+    },
+    {
+      q: "I already paid — how do I restore access on a new device?",
+      a: "Tap 'Already paid? Restore access' on the paywall and enter the email you used at Stripe checkout. If there's a successful payment under that email, your overview unlocks instantly and stays unlocked on that device.",
+    },
+    {
+      q: "What's in the PDF report?",
+      a: "A clean snapshot of your overview — your uniqueness score, the categories where you're most and least average, and a readable list of the answers that make you stand out. It's generated on your device, so nothing leaves your browser. Save it, print it, or share it.",
+    },
+    {
+      q: "Can I share my overview without sharing my answers?",
+      a: "Yes. 'Share snapshot' generates a clean image with just your uniqueness score and top comparisons — no individual answers, no personal data. Safe to post anywhere.",
+    },
+    {
+      q: "Why is there a paywall at all?",
+      a: "Running comparisons against thousands of responses, generating the PDF, and keeping the site ad-free costs real money. €1 covers hosting, Stripe fees, and ongoing development — that's it. No ads, no data selling, no email harvesting.",
+    },
+    {
+      q: "Will my uniqueness score change over time?",
+      a: "It can. As more people answer the questions, the global averages shift, so your score reflects the real-time population rather than a frozen snapshot. If you update, add, or remove answers, it recalculates too.",
+    },
+    {
+      q: "Can I delete my data?",
+      a: "Yes. You can clear your answers from your browser at any time inside the app. If you'd also like your anonymized responses removed from the aggregate dataset, reach out via the socials linked in the footer and we'll handle it.",
+    },
+  ],
+};
+
+function FaqItem({ q, a }) {
+  return (
+    <details
+      className="faq-item"
+      style={{
+        borderTop: "1px solid var(--faq-line)",
+        padding: "14px 0",
+      }}
+    >
+      <summary
+        style={{
+          cursor: "pointer",
+          listStyle: "none",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 16,
+          fontSize: 15,
+          fontWeight: 500,
+          color: "var(--ink)",
+          lineHeight: 1.4,
+        }}
+      >
+        <span style={{ flex: 1, minWidth: 0 }}>{q}</span>
+        <span
+          className="faq-chevron mono"
+          aria-hidden="true"
+          style={{
+            fontSize: 18,
+            lineHeight: 1,
+            color: "var(--ink-3)",
+            marginTop: 1,
+            flexShrink: 0,
+            transition: "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+          }}
+        >
+          +
+        </span>
+      </summary>
+      <div
+        style={{
+          marginTop: 10,
+          fontSize: 14,
+          lineHeight: 1.6,
+          color: "var(--ink-2)",
+        }}
+      >
+        {a}
+      </div>
+    </details>
+  );
+}
+
+function FaqModule({ variant = "start", title, style }) {
+  const items = FAQ_SETS[variant] || FAQ_SETS.start;
+  const heading =
+    title ||
+    (variant === "overview"
+      ? "Questions about your overview"
+      : variant === "category"
+        ? "Questions about this category"
+        : "Frequently asked");
+  return (
+    <section
+      aria-labelledby={`faq-${variant}-heading`}
+      style={{ marginTop: 72, paddingTop: 40, ...style }}
+    >
+      <div style={{ marginBottom: 14, display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+        <span className="label">FAQ</span>
+        <h3
+          id={`faq-${variant}-heading`}
+          className="serif"
+          style={{ fontSize: 22, color: "var(--ink)", margin: 0, letterSpacing: "-0.01em" }}
+        >
+          {heading}
+        </h3>
+      </div>
+      <div>
+        {items.map((item, i) => (
+          <FaqItem key={i} q={item.q} a={item.a} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CategoryHub({ state, dispatch, introMode = false }) {
   const { answers } = state;
   const cats = CATEGORIES.map(c => {
     const qs = QUESTIONS_BY_CAT[c.id].filter(q => isQuestionVisible(q, answers));
@@ -2233,12 +3163,30 @@ function CategoryHub({ state, dispatch }) {
       <motion.div {...FADE_UP}>
         <span className="label">Categories</span>
         <h2 className="serif" style={{ fontSize: 44, margin: "14px 0 10px", color: "var(--ink)" }}>
-          Where do you want to start?
+          {introMode ? "Start with any topic you like" : "Where do you want to start?"}
         </h2>
         <p style={{ color: "var(--ink-3)", fontSize: 15, maxWidth: 560, margin: 0 }}>
-          Jump between topics anytime. More answers unlock more detail on your overview.
+          {introMode
+            ? "Just start answering and watch your data build in real time."
+            : "Jump between topics anytime. More answers unlock more detail on your overview."}
         </p>
       </motion.div>
+
+      {introMode && (
+        <motion.div
+          {...FADE_UP}
+          transition={{ duration: 0.45, delay: 0.06, ease: EASE_OUT }}
+          style={{ marginTop: 22 }}
+        >
+          <Card padding={16} style={{ background: "var(--surface-fallback)" }}>
+            <div style={{ display: "grid", gap: 6, color: "var(--ink-2)", fontSize: 14, lineHeight: 1.45 }}>
+              <div>• Start with any category you like.</div>
+              <div>• Skip questions or whole categories anytime.</div>
+              <div>• Once mostly filled in, open Overview for detailed charts and peer comparisons.</div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       <div style={{
         display: "grid", gap: 16, marginTop: 40,
@@ -2251,7 +3199,17 @@ function CategoryHub({ state, dispatch }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: i * 0.04, ease: EASE_OUT }}
           >
-            <Card interactive onClick={() => openCat(c.id)} padding={22}>
+            <Card
+              interactive
+              onClick={() => {
+                if (c.answered === c.total && c.total > 0) {
+                  dispatch({ type: "go", screen: "category", patch: { currentCatId: c.id } });
+                } else {
+                  openCat(c.id);
+                }
+              }}
+              padding={22}
+            >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span className="mono" style={{ fontSize: 11, color: "var(--ink-4)" }}>
@@ -2259,7 +3217,6 @@ function CategoryHub({ state, dispatch }) {
                   </span>
                   <Tag tone={c.accent}>{c.title}</Tag>
                 </div>
-                {c.optional && <Tag tone="red">Optional</Tag>}
               </div>
               <div className="serif" style={{ fontSize: 26, color: "var(--ink)", margin: "18px 0 8px" }}>
                 {c.title}
@@ -2268,18 +3225,42 @@ function CategoryHub({ state, dispatch }) {
                 {c.blurb}
               </div>
               <ProgressBar value={c.answered} max={c.total} />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-                <span style={{ fontSize: 12, color: "var(--ink-3)" }}>
+              <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", marginTop: 10, fontSize: 12, color: "var(--ink-3)" }}>
+                <span>
                   <span className="mono" style={{ color: "var(--ink)" }}>{c.answered}</span> / {c.total} answered
                 </span>
-                <span style={{ fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>
-                  {c.answered === 0 ? "Start →" : c.answered < c.total ? "Continue →" : "Review →"}
-                </span>
+              </div>
+              <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                {(() => {
+                  const isFresh = c.answered === 0;
+                  const isDone = c.total > 0 && c.answered === c.total;
+                  const label = isFresh ? "Start" : isDone ? "View comparison" : "Continue";
+                  // Continue & Start are the active CTAs (primary). View comparison steps down to secondary.
+                  const variant = isDone ? "secondary" : "primary";
+                  return (
+                    <Button
+                      variant={variant}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isDone) {
+                          dispatch({ type: "go", screen: "category", patch: { currentCatId: c.id } });
+                        } else {
+                          openCat(c.id);
+                        }
+                      }}
+                      style={{ flex: 1, minHeight: 40 }}
+                    >
+                      {label}
+                    </Button>
+                  );
+                })()}
               </div>
             </Card>
           </motion.div>
         ))}
       </div>
+
+      <FaqModule variant="start" />
     </PageShell>
   );
 }
@@ -2311,6 +3292,28 @@ function QuestionScreen({ state, dispatch, peers }) {
     });
     return () => cancelAnimationFrame(id);
   }, [q?.id]);
+
+  /* Track time spent on the question screen (tab-visible only). Flush on unmount
+     so the Overview's "Time on questions" card reads an accurate cumulative total. */
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    let startedAt = document.hidden ? 0 : Date.now();
+    let accumulatedMs = 0;
+    const handleVis = () => {
+      if (document.hidden) {
+        if (startedAt) accumulatedMs += Date.now() - startedAt;
+        startedAt = 0;
+      } else {
+        startedAt = Date.now();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVis);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVis);
+      if (startedAt) accumulatedMs += Date.now() - startedAt;
+      if (accumulatedMs > 0) dispatch({ type: "addTime", ms: accumulatedMs });
+    };
+  }, [dispatch]);
 
   if (!q) {
     // Category complete
@@ -2398,9 +3401,11 @@ function QuestionScreen({ state, dispatch, peers }) {
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.28, ease: EASE_OUT }}
         >
-          <h2 className="serif" style={{ fontSize: "clamp(32px, 4.2vw, 44px)", margin: "24px 0 32px", color: "var(--ink)" }}>
-            {q.label}
-          </h2>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, margin: "24px 0 22px" }}>
+            <h2 className="serif" style={{ fontSize: "clamp(32px, 4.2vw, 44px)", margin: 0, color: "var(--ink)", flex: 1, lineHeight: 1.15 }}>
+              {q.label}
+            </h2>
+          </div>
 
           {q.type === "multi" && (
             <p style={{ fontSize: 15, color: "var(--ink-3)", margin: "-12px 0 28px", lineHeight: 1.45, maxWidth: 560 }}>
@@ -2547,7 +3552,7 @@ function AnswerInput({ q, value, onChange, onAnswered = null }) {
    OVERVIEW DASHBOARD
    ============================================================================ */
 
-function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
+function OverviewDashboard({ state, dispatch, peers, onDownloadPdf, onShareImage }) {
   const { answers, segment } = state;
   const totalAnswered = Object.keys(answers).filter(k => answerIsFilled(answers[k])).length;
   const segmentedPeers = useMemo(() => segmentPeers(peers, answers, segment), [peers, answers, segment]);
@@ -2557,6 +3562,10 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [isStripeLoading, setIsStripeLoading] = useState(false);
   const [stripeError, setStripeError] = useState("");
+  const [restoreEmail, setRestoreEmail] = useState("");
+  const [isRestoreLoading, setIsRestoreLoading] = useState(false);
+  const [restoreMsg, setRestoreMsg] = useState("");
+  const [showRestoreForm, setShowRestoreForm] = useState(false);
   const [isMobilePaywall, setIsMobilePaywall] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(max-width: 640px)").matches;
@@ -2604,19 +3613,82 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
   }, [prefersReducedMotion]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return undefined;
+    let cancelled = false;
     const qp = new URLSearchParams(window.location.search);
     const stripeStatus = qp.get("stripe");
-    if (!stripeStatus) return;
-    if (stripeStatus === "success") {
-      releasePaywallWithReverseStack(prefersReducedMotion ? 0 : 120);
-    } else if (stripeStatus === "canceled") {
-      setShowPaywallModal(true);
-      setIsBlurOn(true);
+    const sessionId = qp.get("session_id");
+
+    const handleReturn = async () => {
+      if (!stripeStatus) return;
+      if (stripeStatus === "success") {
+        if (!sessionId) {
+          setStripeError("Missing checkout session. Please contact support.");
+        } else {
+          try {
+            const response = await fetch("/api/verify-checkout-session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ sessionId }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok || !payload?.paid) {
+              throw new Error(payload?.error || "Payment verification failed.");
+            }
+            try {
+              if (typeof window !== "undefined" && typeof window.fbq === "function") {
+                window.fbq(
+                  "track",
+                  "Purchase",
+                  { value: 1.0, currency: "EUR", content_name: "Comparizzon overview unlock", content_ids: ["overview-unlock"], content_type: "product" },
+                  sessionId ? { eventID: sessionId } : undefined
+                );
+              }
+            } catch (_) { /* pixel errors must never break the flow */ }
+            if (!cancelled) releasePaywallWithReverseStack(prefersReducedMotion ? 0 : 120);
+          } catch (err) {
+            if (!cancelled) {
+              setStripeError(
+                err && typeof err.message === "string"
+                  ? err.message
+                  : "Payment verification failed. Please contact support."
+              );
+              setShowPaywallModal(true);
+              setIsBlurOn(true);
+            }
+          }
+        }
+      } else if (stripeStatus === "canceled") {
+        if (!cancelled) {
+          setShowPaywallModal(true);
+          setIsBlurOn(true);
+        }
+      }
+
+      qp.delete("stripe");
+      qp.delete("session_id");
+      const clean = `${window.location.pathname}${qp.toString() ? `?${qp.toString()}` : ""}${window.location.hash || ""}`;
+      window.history.replaceState({}, document.title, clean);
+    };
+
+    const checkExistingAccess = async () => {
+      try {
+        const response = await fetch("/api/payment-status", { cache: "no-store" });
+        const payload = await response.json();
+        if (!cancelled && payload?.paid) {
+          releasePaywallWithReverseStack(prefersReducedMotion ? 0 : 120);
+        }
+      } catch (_) {
+        // Ignore and keep paywall default state.
+      }
     }
-    qp.delete("stripe");
-    const clean = `${window.location.pathname}${qp.toString() ? `?${qp.toString()}` : ""}${window.location.hash || ""}`;
-    window.history.replaceState({}, document.title, clean);
+
+    handleReturn();
+    checkExistingAccess();
+
+    return () => {
+      cancelled = true;
+    };
   }, [prefersReducedMotion, releasePaywallWithReverseStack]);
 
   const startStripeCheckout = useCallback(async () => {
@@ -2645,6 +3717,18 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
       }
       const payload = await response.json();
       if (!payload?.url) throw new Error("No checkout URL returned");
+      try {
+        if (typeof window !== "undefined" && typeof window.fbq === "function") {
+          window.fbq("track", "InitiateCheckout", {
+            value: 1.0,
+            currency: "EUR",
+            content_name: "Comparizzon overview unlock",
+            content_ids: ["overview-unlock"],
+            content_type: "product",
+            num_items: 1,
+          });
+        }
+      } catch (_) { /* pixel errors must never break the flow */ }
       window.location.assign(payload.url);
     } catch (err) {
       const message = err && typeof err.message === "string"
@@ -2654,6 +3738,39 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
       setIsStripeLoading(false);
     }
   }, [isStripeLoading]);
+
+  const restorePurchase = useCallback(async () => {
+    if (isRestoreLoading) return;
+    const email = restoreEmail.trim();
+    if (!email) {
+      setRestoreMsg("Enter the email used at checkout.");
+      return;
+    }
+
+    setIsRestoreLoading(true);
+    setRestoreMsg("");
+    try {
+      const response = await fetch("/api/restore-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.paid) {
+        throw new Error(payload?.error || "No paid purchase found for that email.");
+      }
+      setRestoreMsg("Access restored. Unlocking your overview...");
+      releasePaywallWithReverseStack(prefersReducedMotion ? 0 : 120);
+    } catch (err) {
+      setRestoreMsg(
+        err && typeof err.message === "string"
+          ? err.message
+          : "Could not restore access right now."
+      );
+    } finally {
+      setIsRestoreLoading(false);
+    }
+  }, [isRestoreLoading, restoreEmail, releasePaywallWithReverseStack, prefersReducedMotion]);
 
   // Snapshot metrics
   const catsStarted = CATEGORIES.filter(c =>
@@ -2674,21 +3791,16 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
 
   // Unlock stages per spec
   const stage = totalAnswered < 5 ? 0 : totalAnswered < 10 ? 1 : totalAnswered < 20 ? 2 : 3;
+  /* Reality items are no longer rendered on the Overview page. We still compute
+     the top item so the paywall teaser can surface a preview stat. */
   const realityItems = useMemo(
     () => buildRealityCheckItems(segmentedPeers, answers),
     [segmentedPeers, answers]
   );
-  const jumpToQuestion = useCallback((qid) => {
-    const q = QUESTIONS_BY_ID[qid];
-    if (!q) return;
-    const visible = QUESTIONS_BY_CAT[q.cat].filter((candidate) => isQuestionVisible(candidate, answers));
-    const idx = Math.max(0, visible.findIndex((candidate) => candidate.id === qid));
-    dispatch({ type: "setCat", catId: q.cat, idx: idx >= 0 ? idx : 0 });
-    dispatch({ type: "go", screen: "question" });
-  }, [answers, dispatch]);
 
   const paywallActive = !isUnlockedForVisit;
   const blurPx = isBlurOn && paywallActive ? 6 : 0;
+  const showPremiumOverview = !paywallActive;
 
   return (
     <PageShell>
@@ -2708,48 +3820,54 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
             <h2 className="serif" style={{ fontSize: 48, margin: 0, color: "var(--ink)" }}>
               Overview
             </h2>
-            <p style={{ margin: "10px 0 0", fontSize: 14, color: "var(--ink-3)", lineHeight: 1.5, maxWidth: 440 }}>
-              <strong style={{ color: "var(--ink)", fontWeight: 600 }}>PDF overview included:</strong> export a printable report with every answer,
-              uniqueness scores, and peer comparisons — generated on your device, nothing uploaded.
+            <p style={{ margin: "10px 0 0", fontSize: 14, color: "var(--ink-3)", lineHeight: 1.5, maxWidth: 520 }}>
+              {showPremiumOverview
+                ? (
+                  <>
+                    <strong style={{ color: "var(--ink)", fontWeight: 600 }}>PDF overview included:</strong> export a printable report with every answer,
+                    uniqueness scores, and peer comparisons — generated on your device, nothing uploaded.
+                  </>
+                )
+                : "Your full peer comparison, per-category insights, and PDF export unlock after payment."}
             </p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", maxWidth: "100%" }}>
-            <div className="seg-scroll">
-              <SegmentedControl
-                value={segment}
-                onChange={(v) => dispatch({ type: "setSegment", segment: v })}
-                options={[
-                  { value: "all", label: "Everyone" },
-                  { value: "gender", label: "Same gender" },
-                  { value: "age", label: "Same age range" },
-                  { value: "age_gender", label: "Same age and gender" },
-                  { value: "country", label: "Same country" },
-                ]}
-              />
+          {showPremiumOverview && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", maxWidth: "100%" }}>
+              {typeof onShareImage === "function" && (
+                <Button size="sm" variant="primary" onClick={onShareImage} style={{ height: 40, minHeight: 40, lineHeight: 1, boxSizing: "border-box" }}>
+                  Share image
+                </Button>
+              )}
+              <Button size="sm" variant="primary" onClick={onDownloadPdf} style={{ height: 40, minHeight: 40, lineHeight: 1, boxSizing: "border-box" }}>PDF overview ↓</Button>
             </div>
-            <Button size="sm" variant="secondary" onClick={onDownloadPdf}>PDF overview ↓</Button>
-            <Button size="sm" onClick={onShare}>Share snapshot ↗</Button>
-          </div>
+          )}
         </div>
       </motion.div>
 
-      {/* Snapshot row */}
-      <div style={{
-        display: "grid", gap: 14, marginTop: 28,
-        gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
-      }}>
+      {/* Snapshot row — 4 cards, locked to 2×2 on narrow viewports so tiles never collapse to a single column */}
+      <div
+        className="overview-snapshot-grid"
+        style={{ display: "grid", gap: 14, marginTop: 28 }}
+      >
         <SnapshotCard label="Answered" value={totalAnswered} sub={`of ${QUESTIONS.length} questions`} />
         <SnapshotCard label="Categories started" value={catsStarted} sub={`${catsCompleted} complete`} />
-        <SnapshotCard label="Answers compared" value={localUnlocked} sub="included in charts" />
-        <SnapshotCard label="Global benchmarks"
-          value={Object.keys(answers).filter(qid => QUESTIONS_BY_ID[qid]?.global).length}
-          sub="brief stats" />
         <SnapshotCard
-          label="Uniqueness"
-          value={overallUniq != null ? `${Math.round(overallUniq * 100)}` : "—"}
-          sub={overallUniq != null ? labelForUniqueness(overallUniq) : "Answer more to see your score"}
-          accent
-          info="Average rarity of your answers across categories compared with the peer group you selected (0–100). Higher means fewer people answered like you overall."
+          label="Time on questions"
+          value={formatTimeSpentValue(state.timeSpentMs)}
+          sub={formatTimeSpentSub(state.timeSpentMs)}
+        />
+        <SnapshotCard
+          label={showPremiumOverview ? "Uniqueness" : "Uniqueness (locked)"}
+          value={showPremiumOverview && overallUniq != null ? `${Math.round(overallUniq * 100)}` : "—"}
+          sub={
+            showPremiumOverview
+              ? (overallUniq != null ? labelForUniqueness(overallUniq) : "Answer more to see your score")
+              : "Unlock to reveal your score and rarity label"
+          }
+          accent={showPremiumOverview}
+          info={showPremiumOverview
+            ? "Average rarity of your answers across categories compared with the peer group you selected (0–100). Higher means fewer people answered like you overall."
+            : undefined}
         />
       </div>
 
@@ -2758,103 +3876,65 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
         <StageHint stage={stage} totalAnswered={totalAnswered} dispatch={dispatch} />
       </motion.div>
 
-      {/* Category comparison cards */}
-      <div style={{ marginTop: 48 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 18 }}>
-          <h3 className="serif" style={{ fontSize: 26, color: "var(--ink)", margin: 0 }}>By category</h3>
-          <Button variant="quiet" onClick={() => dispatch({ type: "go", screen: "hub" })}>Answer more →</Button>
-        </div>
+      {showPremiumOverview ? (
+        <div style={{ marginTop: 48 }}>
+          <div style={{ marginBottom: 18 }}>
+            <h3 className="serif" style={{ fontSize: 26, color: "var(--ink)", margin: 0 }}>By category</h3>
+          </div>
 
-        <UniquenessExplainer />
+          {/* Peer segment filter — compact dropdown reads as a filter (not page tabs)
+              and avoids the multi-line wrapping that a 5-chip segmented control caused. */}
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
+            <PeerFilterMenu
+              value={segment}
+              onChange={(v) => dispatch({ type: "setSegment", segment: v })}
+            />
+          </div>
 
-        <div style={{
-          display: "grid", gap: 16,
-          gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-        }}>
-          {CATEGORIES.map((c, i) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: i * 0.035, ease: EASE_OUT }}
-              style={{ height: "100%" }}
-            >
-              <CategoryCard
-                cat={c} answers={answers} peers={segmentedPeers}
-                onOpen={() => dispatch({ type: "go", screen: "category", patch: { currentCatId: c.id } })}
-              />
-            </motion.div>
-          ))}
-        </div>
-      </div>
+          <UniquenessExplainer />
 
-      {/* Reality check feed */}
-      <div style={{ marginTop: 38 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 18 }}>
-          <h3 className="serif" style={{ fontSize: 26, color: "var(--ink)", margin: 0 }}>Reality check</h3>
-          <span className="label">Strongest signals first</span>
-        </div>
-        {realityItems.length === 0 ? (
-          <Card padding={18}>
-            <div style={{ fontSize: 14, color: "var(--ink-3)" }}>
-              Answer a few more questions to see standout comparisons here.
-            </div>
-          </Card>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {realityItems.map((item) => (
-              <div
-                key={item.qid}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 86px 40px",
-                  gap: 18,
-                  alignItems: "center",
-                  padding: "14px 16px",
-                  border: "1px solid var(--line)",
-                  borderRadius: "var(--radius-m)",
-                  background: "var(--surface-muted)",
-                }}
+          <div style={{
+            display: "grid", gap: 16,
+            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+          }}>
+            {CATEGORIES.map((c, i) => (
+              <motion.div
+                key={c.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: i * 0.035, ease: EASE_OUT }}
+                style={{ height: "100%" }}
               >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ color: "var(--ink)", fontSize: 20, lineHeight: 1.2 }}>
-                    <span style={{ color: realityToneColor(item.tone) }}>{item.agreementPct}%</span>
-                    <span style={{ marginLeft: 6 }}>{item.sentence.replace(/^\d+%/, "").trimStart()}</span>
-                  </div>
-                  <div style={{ marginTop: 4, fontSize: 12, color: "var(--ink-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {item.label}
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div className="label">Responses</div>
-                  <div className="mono" style={{ color: "var(--ink)", marginTop: 3 }}>{item.responses}</div>
-                </div>
-                <button
-                  type="button"
-                  aria-label={`Go to question ${item.qid}`}
-                  onClick={() => jumpToQuestion(item.qid)}
-                  style={{
-                    border: "1px solid var(--line)",
-                    background: "var(--bg-raised)",
-                    width: 32,
-                    height: 32,
-                    borderRadius: "var(--radius-s)",
-                    cursor: "pointer",
-                    color: "var(--ink)",
-                    display: "grid",
-                    placeItems: "center",
-                    fontSize: 22,
-                    lineHeight: 1,
+                <CategoryCard
+                  cat={c} answers={answers} peers={segmentedPeers}
+                  onOpen={() => dispatch({ type: "go", screen: "category", patch: { currentCatId: c.id } })}
+                  onStart={() => {
+                    const qs = QUESTIONS_BY_CAT[c.id].filter((q) => isQuestionVisible(q, answers));
+                    let idx = qs.findIndex((q) => !answerIsFilled(answers[q.id]));
+                    if (idx < 0) idx = 0;
+                    dispatch({ type: "setCat", catId: c.id, idx });
+                    dispatch({ type: "go", screen: "question" });
                   }}
-                >
-                  ›
-                </button>
-              </div>
+                />
+              </motion.div>
             ))}
           </div>
-        )}
+        </div>
+      ) : (
+        <motion.div {...FADE_UP} transition={{ duration: 0.35, delay: 0.12 }} style={{ marginTop: 40 }}>
+          <div className="card" style={{ padding: 18, borderStyle: "dashed" }}>
+            <div style={{ fontSize: 15, color: "var(--ink)", fontWeight: 600 }}>Premium overview is locked</div>
+            <p style={{ margin: "8px 0 0", color: "var(--ink-3)", fontSize: 14, lineHeight: 1.55 }}>
+              Category-by-category rarity, answer-level peer comparisons, and full PDF export are only rendered after a verified unlock.
+            </p>
+          </div>
+        </motion.div>
+      )}
       </div>
-      </div>
+
+      {/* FAQ lives outside the blur wrapper so users can read answers to objections
+         (price, privacy, what-you-get) while the paywall is visible. */}
+      <FaqModule variant="overview" />
 
       {paywallActive && (
         <div
@@ -2891,52 +3971,284 @@ function OverviewDashboard({ state, dispatch, peers, onShare, onDownloadPdf }) {
                   overflowY: "auto",
                 }}
               >
-                <div style={{ display: "grid", gap: 14 }}>
-                  <div className="serif" style={{ color: "var(--ink)", fontSize: 26, lineHeight: 1.1 }}>
-                    Unlock the full overview
-                  </div>
-                  <div style={{ color: "var(--ink-3)", fontSize: 14, maxWidth: 640 }}>
-                    Pay <strong style={{ color: "var(--ink)" }}>€1</strong> once to remove the blur and support hosting and updates.
-                  </div>
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: 8,
-                      color: "var(--ink-2)",
-                      fontSize: 13,
-                      background: "var(--surface-fallback)",
-                      border: "1px solid var(--line)",
-                      borderRadius: "var(--radius-m)",
-                      padding: "12px 14px",
-                      maxWidth: 640,
-                    }}
-                  >
-                    <div><strong style={{ color: "var(--ink)" }}>Includes:</strong></div>
-                    <div>• Full category breakdowns and the reality-check list</div>
-                    <div>• Uniqueness scores that stabilize as you answer more</div>
-                    <div>• Every comparison unlocked for all categories you’ve answered</div>
-                  </div>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
-                    <Button onClick={startStripeCheckout} disabled={isStripeLoading}>
-                      {isStripeLoading ? "Opening checkout…" : "Pay €1 securely with Stripe"}
-                    </Button>
-                    <Button variant="secondary" onClick={() => releasePaywallWithReverseStack()}>
-                      Continue without paying (demo)
-                    </Button>
-                    <Button variant="ghost" onClick={() => dispatch({ type: "go", screen: "hub" })}>
-                      Back to questionnaire
-                    </Button>
-                  </div>
-                  {stripeError ? (
-                    <div style={{ color: "var(--pale-red-ink)", fontSize: 12 }}>{stripeError}</div>
-                  ) : null}
-                </div>
+                <PaywallContent
+                  overallUniq={overallUniq}
+                  totalAnswered={totalAnswered}
+                  catsCompleted={catsCompleted}
+                  realityItems={realityItems}
+                  isMobilePaywall={isMobilePaywall}
+                  isStripeLoading={isStripeLoading}
+                  stripeError={stripeError}
+                  onCheckout={startStripeCheckout}
+                  onBack={() => dispatch({ type: "go", screen: "hub" })}
+                  showRestoreForm={showRestoreForm}
+                  setShowRestoreForm={setShowRestoreForm}
+                  restoreEmail={restoreEmail}
+                  setRestoreEmail={setRestoreEmail}
+                  isRestoreLoading={isRestoreLoading}
+                  restoreMsg={restoreMsg}
+                  onRestore={restorePurchase}
+                />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       )}
     </PageShell>
+  );
+}
+
+/* ============================================================================
+   PAYWALL — value-first layout with teaser reveal, dominant CTA, and collapsed
+   restore flow. Copy emphasises the outcome (how unique you are) over the
+   mechanism (removing a blur).
+   ============================================================================ */
+function PaywallContent({
+  overallUniq,
+  totalAnswered,
+  catsCompleted,
+  realityItems,
+  isMobilePaywall,
+  isStripeLoading,
+  stripeError,
+  onCheckout,
+  onBack,
+  showRestoreForm,
+  setShowRestoreForm,
+  restoreEmail,
+  setRestoreEmail,
+  isRestoreLoading,
+  restoreMsg,
+  onRestore,
+}) {
+  const teaserScore = overallUniq != null ? Math.round(overallUniq * 100) : null;
+  const teaserLabel = overallUniq != null ? labelForUniqueness(overallUniq) : "";
+  const rawTeaserStat = Array.isArray(realityItems) ? realityItems[0] : null;
+  const teaserStat = rawTeaserStat
+    ? {
+      pct: rawTeaserStat.agreementPct,
+      sentence: `${rawTeaserStat.agreementPct}% ${String(rawTeaserStat.sentence).replace(/^\d+%\s*/, "")}`,
+      label: rawTeaserStat.label,
+    }
+    : null;
+
+  return (
+    <div style={{ display: "grid", gap: 18 }}>
+      {/* Headline */}
+      <div style={{ display: "grid", gap: 6 }}>
+        <div className="serif" style={{ color: "var(--ink)", fontSize: 28, lineHeight: 1.08 }}>
+          See how you really compare
+        </div>
+        <div style={{ color: "var(--ink-3)", fontSize: 14, maxWidth: 560 }}>
+          One-time €1 unlocks your full breakdown — forever, no subscription, no account.
+        </div>
+      </div>
+
+      {/* Teaser reveal — the one unblurred thing */}
+      {teaserScore != null || teaserStat ? (
+        <div
+          style={{
+            display: "grid",
+            gap: 10,
+            background: "var(--surface-muted)",
+            border: "1px solid var(--line)",
+            borderRadius: "var(--radius-m)",
+            padding: "14px 16px",
+          }}
+        >
+          {teaserScore != null ? (
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+              <div className="label">Your uniqueness</div>
+              <div className="mono" style={{ color: "var(--ink)", fontSize: 30, fontWeight: 500, lineHeight: 1 }}>
+                {teaserScore}
+                <span style={{ color: "var(--ink-3)", fontSize: 16, marginLeft: 4 }}>/100</span>
+              </div>
+              <div style={{ color: "var(--ink-2)", fontSize: 14 }}>{teaserLabel}</div>
+            </div>
+          ) : null}
+          {teaserStat ? (
+            <div style={{ fontSize: 14, color: "var(--ink-2)", lineHeight: 1.45 }}>
+              Preview: <span style={{ color: "var(--ink)" }}>{teaserStat.sentence}</span>
+              <span style={{ color: "var(--ink-3)", marginLeft: 6, fontSize: 12 }}>({teaserStat.label})</span>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: "var(--ink-3)" }}>
+              Based on your {totalAnswered} answers{catsCompleted ? ` across ${catsCompleted} completed categor${catsCompleted === 1 ? "y" : "ies"}` : ""}.
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {/* Outcome bullets (not features) */}
+      <div style={{ display: "grid", gap: 8, color: "var(--ink-2)", fontSize: 14, lineHeight: 1.5 }}>
+        <div>• Which of your answers are rare, and which put you in the majority</div>
+        <div>• Your uniqueness score broken down by category — where you're weird, where you're normal</div>
+        <div>• Filter by gender, age, and country to find your real peer group</div>
+        <div>• Downloadable PDF you can keep, share, or revisit as you answer more</div>
+      </div>
+
+      {/* Primary CTA — dominant */}
+      <div style={{ display: "grid", gap: 8 }}>
+        <Button
+          onClick={onCheckout}
+          disabled={isStripeLoading}
+          style={{
+            width: "100%",
+            fontSize: 16,
+            padding: "14px 22px",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.10)",
+          }}
+        >
+          {isStripeLoading ? "Opening checkout…" : "See my results — €1"}
+        </Button>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            color: "var(--ink-3)",
+            fontSize: 11,
+            flexWrap: "wrap",
+          }}
+        >
+          <span aria-hidden="true" style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ color: "var(--ink-3)" }}>
+              <rect x="5" y="11" width="14" height="10" rx="2.5" stroke="currentColor" strokeWidth="2" />
+              <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </span>
+          <span>Your answers stay on your device — we only see the payment.</span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            color: "var(--ink-4)",
+            fontSize: 11,
+            flexWrap: "wrap",
+          }}
+        >
+          <span>Pay with</span>
+          <PayBadge label="Apple Pay" />
+          <PayBadge label="Google Pay" />
+          <PayBadge label="Card" />
+          <span style={{ color: "var(--ink-4)" }}>· powered by Stripe</span>
+        </div>
+        {stripeError ? (
+          <div style={{ color: "var(--pale-red-ink)", fontSize: 12, textAlign: "center" }}>{stripeError}</div>
+        ) : null}
+      </div>
+
+      {/* Tertiary actions: back (link) + restore (collapsed) */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+          fontSize: 13,
+        }}
+      >
+        <button
+          type="button"
+          onClick={onBack}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "var(--ink-3)",
+            cursor: "pointer",
+            padding: 0,
+            textDecoration: "underline",
+            fontSize: 13,
+          }}
+        >
+          {isMobilePaywall ? "Back" : "Back to questionnaire"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowRestoreForm((v) => !v)}
+          aria-expanded={showRestoreForm}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "var(--ink-3)",
+            cursor: "pointer",
+            padding: 0,
+            textDecoration: "underline",
+            fontSize: 13,
+          }}
+        >
+          {showRestoreForm ? "Hide" : "Already paid?"}
+        </button>
+      </div>
+
+      {showRestoreForm ? (
+        <div
+          style={{
+            display: "grid",
+            gap: 8,
+            padding: "12px 14px",
+            border: "1px solid var(--line)",
+            borderRadius: "var(--radius-s)",
+            background: "var(--bg-raised)",
+          }}
+        >
+          <div style={{ fontSize: 13, color: "var(--ink-2)" }}>
+            Welcome back. Enter the email you paid with to unlock everything.
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input
+              type="email"
+              value={restoreEmail}
+              onChange={(e) => setRestoreEmail(e.target.value)}
+              placeholder="you@example.com"
+              autoComplete="email"
+              style={{
+                flex: "1 1 240px",
+                minWidth: 0,
+                border: "1px solid var(--line)",
+                borderRadius: "var(--radius-s)",
+                padding: "9px 11px",
+                fontSize: 13,
+                background: "var(--bg-raised)",
+                color: "var(--ink)",
+              }}
+            />
+            <Button variant="secondary" onClick={onRestore} disabled={isRestoreLoading}>
+              {isRestoreLoading ? "Checking…" : "Restore"}
+            </Button>
+          </div>
+          {restoreMsg ? (
+            <div style={{ fontSize: 12, color: "var(--ink-3)" }}>{restoreMsg}</div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PayBadge({ label }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "2px 7px",
+        borderRadius: 4,
+        border: "1px solid var(--line)",
+        background: "var(--bg-raised)",
+        color: "var(--ink-3)",
+        fontSize: 10,
+        letterSpacing: 0.2,
+        textTransform: "uppercase",
+      }}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -3008,17 +4320,67 @@ function labelForUniqueness(score) {
 
 function SnapshotCard({ label, value, sub, accent, info }) {
   return (
-    <Card padding={18} style={accent ? { background: "var(--surface-fallback)" } : undefined}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <span className="label">{label}</span>
+    <Card padding={18} style={{ minWidth: 0, ...(accent ? { background: "var(--surface-fallback)" } : {}) }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+        <span
+          className="label"
+          title={typeof label === "string" ? label : undefined}
+          style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: "1 1 auto" }}
+        >
+          {label}
+        </span>
         {info && <InfoTip align="left">{info}</InfoTip>}
       </div>
-      <div className="mono" style={{ fontSize: 34, color: "var(--ink)", fontWeight: 500, margin: "6px 0 4px", lineHeight: 1 }}>
+      <div
+        className="mono"
+        style={{
+          fontSize: 34,
+          color: "var(--ink)",
+          fontWeight: 500,
+          margin: "6px 0 4px",
+          lineHeight: 1,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
         {value}
       </div>
-      <div style={{ fontSize: 12, color: "var(--ink-3)" }}>{sub}</div>
+      <div
+        title={typeof sub === "string" ? sub : undefined}
+        style={{
+          fontSize: 12,
+          color: "var(--ink-3)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {sub}
+      </div>
     </Card>
   );
+}
+
+/* Time-spent formatters for the Overview snapshot card */
+function formatTimeSpentValue(ms) {
+  const total = Math.max(0, Math.floor((Number(ms) || 0) / 1000));
+  if (total < 60) return `${total}s`;
+  const mins = Math.floor(total / 60);
+  if (mins < 60) {
+    const secs = total % 60;
+    return secs === 0 ? `${mins}m` : `${mins}m ${secs}s`;
+  }
+  const hrs = Math.floor(mins / 60);
+  const rem = mins % 60;
+  return rem === 0 ? `${hrs}h` : `${hrs}h ${rem}m`;
+}
+
+function formatTimeSpentSub(ms) {
+  const total = Math.floor((Number(ms) || 0) / 1000);
+  if (total <= 0) return "start answering";
+  if (total < 120) return "on questions";
+  return "focused time";
 }
 
 function StageHint({ stage, totalAnswered, dispatch }) {
@@ -3044,7 +4406,7 @@ function StageHint({ stage, totalAnswered, dispatch }) {
   );
 }
 
-function CategoryCard({ cat, answers, peers, onOpen }) {
+function CategoryCard({ cat, answers, peers, onOpen, onStart }) {
   const vis = QUESTIONS_BY_CAT[cat.id].filter(q => isQuestionVisible(q, answers));
   const answered = vis.filter(q => answerIsFilled(answers[q.id]));
   const pct = vis.length ? answered.length / vis.length : 0;
@@ -3065,31 +4427,67 @@ function CategoryCard({ cat, answers, peers, onOpen }) {
     }
   }
 
+  const isFresh = answered.length === 0;
+  const handlePrimary = (e) => {
+    e.stopPropagation();
+    if (isFresh && typeof onStart === "function") onStart();
+    else if (typeof onOpen === "function") onOpen();
+  };
+  const handleCardClick = () => {
+    if (isFresh && typeof onStart === "function") onStart();
+    else if (typeof onOpen === "function") onOpen();
+  };
+
   return (
-    <Card interactive onClick={onOpen} padding={22} style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+    <Card
+      interactive
+      onClick={handleCardClick}
+      padding={22}
+      style={{ height: "100%", display: "flex", flexDirection: "column", position: "relative" }}
+    >
+      {/* Uniqueness meter — pinned to top-right corner, doesn't push content down */}
+      {uniq && (
+        <div style={{ position: "absolute", top: 18, right: 18, zIndex: 1 }}>
+          <UniquenessMeter score={uniq.score} size={76} />
+        </div>
+      )}
+
+      <div style={{ paddingRight: uniq ? 88 : 0 }}>
         <Tag tone={cat.accent}>{cat.title}</Tag>
-        {uniq && <UniquenessMeter score={uniq.score} size={76} />}
+        <div className="serif" style={{ fontSize: 22, color: "var(--ink)", margin: "12px 0 6px" }}>
+          {cat.title}
+        </div>
+        <div style={{
+          fontSize: 13,
+          color: "var(--ink-2)",
+          minHeight: 42,
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}>
+          {answered.length === 0 ? "No answers in this category yet." : previewText || "Open for charts and per-question detail."}
+        </div>
       </div>
-      <div className="serif" style={{ fontSize: 22, color: "var(--ink)", margin: "14px 0 6px" }}>
-        {cat.title}
-      </div>
-      <div style={{
-        fontSize: 13,
-        color: "var(--ink-2)",
-        minHeight: 42,
-        display: "-webkit-box",
-        WebkitLineClamp: 2,
-        WebkitBoxOrient: "vertical",
-        overflow: "hidden",
-      }}>
-        {answered.length === 0 ? "No answers in this category yet." : previewText || "Open for charts and per-question detail."}
-      </div>
+
       <div style={{ marginTop: "auto", paddingTop: 18 }}>
         <ProgressBar value={answered.length} max={vis.length} />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: "var(--ink-3)" }}>
-          <span><span className="mono" style={{ color: "var(--ink)" }}>{answered.length}</span>/{vis.length}</span>
-          <span>{answered.length === 0 ? "Start →" : "Open detail →"}</span>
+        <div style={{
+          display: "flex", justifyContent: "flex-start", alignItems: "center",
+          marginTop: 8, fontSize: 12, color: "var(--ink-3)",
+        }}>
+          <span>
+            <span className="mono" style={{ color: "var(--ink)" }}>{answered.length}</span>/{vis.length}
+          </span>
+        </div>
+        <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
+          <Button
+            variant={isFresh ? "primary" : "secondary"}
+            onClick={handlePrimary}
+            style={{ flex: 1, minHeight: 40 }}
+          >
+            {isFresh ? "Start" : "Open detail"}
+          </Button>
         </div>
       </div>
     </Card>
@@ -3112,10 +4510,11 @@ function CategoryDetail({ state, dispatch, peers }) {
   }
   const vis = QUESTIONS_BY_CAT[cat.id].filter(q => isQuestionVisible(q, answers));
   const uniq = computeCategoryUniqueness(segmentedPeers, answers, cat.id);
-
   return (
     <PageShell>
-      <Button variant="quiet" onClick={() => dispatch({ type: "go", screen: "overview" })}>← Overview</Button>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+        <Button variant="quiet" onClick={() => dispatch({ type: "go", screen: "overview" })}>← Overview</Button>
+      </div>
 
       <motion.div {...FADE_UP} style={{ marginTop: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -3167,10 +4566,18 @@ function CategoryDetail({ state, dispatch, peers }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: i * 0.03, ease: EASE_OUT }}
           >
-            <QuestionDetailRow q={q} cat={cat} value={answers[q.id]} peers={segmentedPeers} dispatch={dispatch} />
+            <QuestionDetailRow
+              q={q}
+              cat={cat}
+              value={answers[q.id]}
+              peers={segmentedPeers}
+              dispatch={dispatch}
+            />
           </motion.div>
         ))}
       </div>
+
+      <FaqModule variant="category" />
     </PageShell>
   );
 }
@@ -3386,7 +4793,7 @@ function migrateAnswersToMultiChoice(answers) {
 }
 
 const initialState = {
-  screen: "welcome",             // welcome | hub | question | overview | category
+  screen: "welcome",             // welcome | start | hub | question | overview | category
   answers: {},                   // { [qid]: value }
   order: [],                     // list of qids answered in order (for timeline / back nav)
   currentCatId: null,            // active category when in question flow
@@ -3395,20 +4802,40 @@ const initialState = {
   hasSeenWelcome: false,
   consent: { contribute: true, intimate: false },
   sessions: [],                  // archive of recorded sessions (upsert by id)
+  timeSpentMs: 0,                // cumulative time user has spent on the question screen (tab-visible only)
 };
+
+// Read deep-link params from URL once at module load so the initial render can
+// land directly on the requested screen — no welcome flash, no exit/enter
+// transition, no perceived "URL didn't work" delay.
+function computeInitialDeepLinkState() {
+  return null;
+}
+
+const INITIAL_DEEP_LINK_STATE = computeInitialDeepLinkState();
 
 function reducer(state, action) {
   switch (action.type) {
     case "hydrate": {
       const migratedAnswers = migrateAnswersToMultiChoice(action.payload.answers || {});
       const migratedOrder = (action.payload.order || []).filter((qid) => migratedAnswers[qid] != null);
-      return {
+      const next = {
         ...state,
         ...action.payload,
         answers: migratedAnswers,
         order: migratedOrder,
         sessions: action.payload.sessions || [],
       };
+      // When the URL carried a deep-link, the URL takes precedence over saved
+      // navigation state — keep the screen/category/index/welcome flag we
+      // already seeded at init, so the recipient lands on the shared content.
+      if (action.preserveNav) {
+        next.screen = state.screen;
+        next.currentCatId = state.currentCatId;
+        next.currentQIdx = state.currentQIdx;
+        next.hasSeenWelcome = state.hasSeenWelcome;
+      }
+      return next;
     }
     case "go":
       return { ...state, screen: action.screen, ...(action.patch || {}) };
@@ -3430,6 +4857,11 @@ function reducer(state, action) {
       return { ...state, currentQIdx: Math.max(0, state.currentQIdx - 1) };
     case "setSegment":
       return { ...state, segment: action.segment };
+    case "addTime": {
+      const add = Math.max(0, Number(action.ms) || 0);
+      if (!add) return state;
+      return { ...state, timeSpentMs: (state.timeSpentMs || 0) + add };
+    }
     case "setConsent":
       return { ...state, consent: { ...state.consent, ...action.patch } };
     case "seenWelcome":
@@ -3458,7 +4890,14 @@ function reducer(state, action) {
 }
 
 function useAppState() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  // Seed reducer with the URL-derived deep-link state so the very first render
+  // lands on the requested screen instead of flashing the welcome page.
+  const [state, dispatch] = useReducer(
+    reducer,
+    initialState,
+    (init) =>
+      INITIAL_DEEP_LINK_STATE ? { ...init, ...INITIAL_DEEP_LINK_STATE } : init
+  );
   const [hydrated, setHydrated] = useState(false);
 
   // Hydrate once
@@ -3469,7 +4908,11 @@ function useAppState() {
         const r = await window.storage.get(STORAGE_KEY);
         if (!cancelled && r?.value) {
           const parsed = JSON.parse(r.value);
-          dispatch({ type: "hydrate", payload: parsed });
+          dispatch({
+            type: "hydrate",
+            payload: parsed,
+            preserveNav: Boolean(INITIAL_DEEP_LINK_STATE),
+          });
           debug("hydrate", `loaded state (sessions=${(parsed.sessions || []).length}, answers=${Object.keys(parsed.answers || {}).length})`);
         } else {
           debug("hydrate", "no prior state");
@@ -3509,13 +4952,10 @@ const SESSION_PREFIX = "session:";
 const QUESTIONNAIRE_VERSION = 2;
 
 /* ---------------------------------------------------------------------------
-   Webhook — sends each session snapshot to a Google Apps Script deployment.
-   Fire-and-forget: never blocks the UI, never throws.
-   The secret is a light gate (anyone who inspects the source can see it),
-   matching the token set in the Apps Script. Sufficient for prototypes.
+   Webhook relay — sends snapshots to same-origin API.
+   Secrets stay on the server (api/log-session.js), never in client code.
    --------------------------------------------------------------------------- */
-const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbywAaq9Ry5Cl9KH5EnfsIeOn8doBdQK6BQSTmpNLCfO89IabjvTNYYLQB4wTA5E3l5h/exec";
-const WEBHOOK_SECRET = "stijnbessem";
+const WEBHOOK_ENDPOINT = "/api/log-session";
 const WEBHOOK_ENABLED = true; // set false to disable POSTs without removing config
 
 function getClientMeta() {
@@ -3532,26 +4972,31 @@ function getClientMeta() {
   return meta;
 }
 
+/** Meta sent to the Sheet webhook only — excludes user agent / device usage (see api/log-session.js). */
+function getWebhookMeta() {
+  const m = getClientMeta();
+  return { language: m.language || "", timezone: m.timezone || "" };
+}
+
 async function postSnapshotToWebhook(snapshot) {
-  if (!WEBHOOK_ENABLED || !WEBHOOK_URL) {
-    debug("webhook", "skipped (disabled or missing URL)");
-    return;
+  if (!WEBHOOK_ENABLED || !WEBHOOK_ENDPOINT) {
+    debug("webhook", "skipped (disabled or missing endpoint)");
+    return false;
   }
-  const formBody = "payload=" + encodeURIComponent(JSON.stringify({
-    secret: WEBHOOK_SECRET,
+  const body = JSON.stringify({
     snapshot,
-    meta: getClientMeta(),
-  }));
+    meta: getWebhookMeta(),
+  });
 
   // Prefer navigator.sendBeacon — purpose-built for fire-and-forget cross-origin
   // telemetry. Handles CORS automatically, no preflight, survives tab close.
   if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
     try {
-      const blob = new Blob([formBody], { type: "application/x-www-form-urlencoded;charset=UTF-8" });
-      const ok = navigator.sendBeacon(WEBHOOK_URL, blob);
+      const blob = new Blob([body], { type: "application/json;charset=UTF-8" });
+      const ok = navigator.sendBeacon(WEBHOOK_ENDPOINT, blob);
       if (ok) {
-        debug("webhook", `sendBeacon queued for ${snapshot.id.slice(-8)} (${formBody.length} bytes)`);
-        return;
+        debug("webhook", `sendBeacon queued for ${snapshot.id.slice(-8)} (${body.length} bytes)`);
+        return true;
       }
       debug("webhook-error", `sendBeacon returned false — falling back to fetch`);
     } catch (e) {
@@ -3559,17 +5004,23 @@ async function postSnapshotToWebhook(snapshot) {
     }
   }
 
-  // Fallback: fetch with no-cors.
+  // Fallback: standard JSON POST.
   try {
-    await fetch(WEBHOOK_URL, {
+    const res = await fetch(WEBHOOK_ENDPOINT, {
       method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-      body: formBody,
+      headers: { "Content-Type": "application/json;charset=UTF-8" },
+      body,
+      keepalive: true,
     });
-    debug("webhook", `fetch sent for ${snapshot.id.slice(-8)} (${formBody.length} bytes, response opaque)`);
+    if (!res.ok) {
+      debug("webhook-error", `fetch failed (${res.status}) for ${snapshot.id.slice(-8)}`);
+      return false;
+    }
+    debug("webhook", `fetch sent for ${snapshot.id.slice(-8)} (${body.length} bytes)`);
+    return true;
   } catch (e) {
     debug("webhook-error", `fetch failed: ${e && e.message ? e.message : e}`);
+    return false;
   }
 }
 
@@ -3702,8 +5153,20 @@ function answerInterestingness(entry) {
 
 function formatStoredAnswer(e) {
   if (!e || e.value == null) return "";
-  if (Array.isArray(e.value)) return e.value.join(", ");
-  return `${e.value}${e.unit ? ` ${e.unit}` : ""}`;
+  if (Array.isArray(e.value)) return e.value.map((item) => choiceLabel(item)).join(", ");
+  return `${choiceLabel(e.value)}${e.unit ? ` ${e.unit}` : ""}`;
+}
+
+function choiceLabel(value) {
+  if (value == null) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (typeof value === "object") {
+    const v = value.label ?? value.option ?? value.value ?? value.name ?? value.title;
+    if (v != null) return String(v);
+  }
+  return String(value);
 }
 
 function phraseForEntry(entry) {
@@ -3722,7 +5185,7 @@ function phraseForEntry(entry) {
   if (entry.kind === "categorical") {
     const pct = entry.stat.userPct;
     if (pct == null) return "—";
-    const mc = entry.stat.mostCommon;
+    const mc = choiceLabel(entry.stat.mostCommon);
     if (pct >= 50) return `most common answer (~${roundPct(pct)}%)`;
     if (pct >= 25) return `common (~${roundPct(pct)}%; most pick "${mc}")`;
     if (pct >= 10) return `less common (~${roundPct(pct)}%; most pick "${mc}")`;
@@ -3831,6 +5294,53 @@ function buildMarkdownExport(sessions) {
 
     lines.push(`---`);
     lines.push(``);
+  });
+
+  return lines.join("\n");
+}
+
+function buildQuestionnaireTextExport() {
+  const now = new Date().toISOString();
+  const lines = [];
+  lines.push("Comparizzon — questionnaire export");
+  lines.push(`Generated: ${now}`);
+  lines.push(`Categories: ${CATEGORIES.length}`);
+  lines.push(`Questions: ${QUESTIONS.length}`);
+  lines.push("");
+
+  CATEGORIES.forEach((cat, catIndex) => {
+    const questions = QUESTIONS_BY_CAT[cat.id] || [];
+    lines.push(`${String(catIndex + 1).padStart(2, "0")}. ${cat.title}`);
+    lines.push(`Category ID: ${cat.id}`);
+    lines.push(`Questions in category: ${questions.length}`);
+    lines.push("");
+
+    questions.forEach((q, qIndex) => {
+      const qType = q.type === "multi" ? "multi-select" : "single-select";
+      lines.push(`  ${String(qIndex + 1).padStart(2, "0")}) ${q.label}`);
+      lines.push(`     - Question ID: ${q.id}`);
+      lines.push(`     - Type: ${qType}`);
+      if (q.dependsOn) {
+        if (Array.isArray(q.hideIf) && q.hideIf.length > 0) {
+          lines.push(`     - Visibility rule: shown if "${q.dependsOn}" is not ${JSON.stringify(q.hideIf)}`);
+        } else {
+          lines.push(`     - Visibility rule: shown if "${q.dependsOn}" is ${JSON.stringify(q.showIf || [])}`);
+        }
+      }
+      const options = Array.isArray(q.options) ? q.options : [];
+      if (options.length > 0) {
+        lines.push(`     - Options:`);
+        options.forEach((opt, i) => {
+          lines.push(`       ${String(i + 1).padStart(2, "0")}. ${choiceLabel(opt)}`);
+        });
+      } else {
+        lines.push(`     - Options: (none)`);
+      }
+      lines.push("");
+    });
+
+    lines.push("------------------------------------------------------------");
+    lines.push("");
   });
 
   return lines.join("\n");
@@ -3971,6 +5481,182 @@ function SingleSelect({ options, value, onChange, onSelect = null, columns = 1 }
           {opt}
         </Chip>
       ))}
+    </div>
+  );
+}
+
+/* PeerFilterMenu — compact "Compare with" dropdown used on the Overview.
+   Replaces a 5-chip segmented control that wrapped awkwardly ("Same / gender",
+   "Same / age / range"). Reads as a filter, keeps the current selection visible
+   in the trigger, and handles long labels on any viewport. */
+function PeerFilterMenu({ value, onChange }) {
+  const options = [
+    { value: "all", label: "Everyone" },
+    { value: "gender", label: "Same gender" },
+    { value: "age", label: "Same age range" },
+    { value: "age_gender", label: "Same age & gender" },
+    { value: "country", label: "Same country" },
+  ];
+  const current = options.find((o) => o.value === value) || options[0];
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handleClick = (event) => {
+      if (wrapRef.current && !wrapRef.current.contains(event.target)) setOpen(false);
+    };
+    const handleKey = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 10,
+          minHeight: 36,
+          padding: "7px 12px",
+          background: "var(--bg-raised)",
+          border: "1px solid var(--line)",
+          borderRadius: "var(--radius-s)",
+          color: "var(--ink)",
+          fontFamily: "var(--sans)",
+          fontSize: 13,
+          fontWeight: 500,
+          cursor: "pointer",
+          transition: "border-color 160ms ease, background 160ms ease",
+        }}
+      >
+        <span
+          style={{
+            color: "var(--ink-3)",
+            fontSize: 10,
+            fontWeight: 500,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Compare with
+        </span>
+        <span style={{ whiteSpace: "nowrap" }}>{current.label}</span>
+        <svg
+          aria-hidden="true"
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          style={{
+            color: "var(--ink-3)",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 180ms ease",
+            flexShrink: 0,
+          }}
+        >
+          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="menu"
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.16, ease: EASE_OUT }}
+            style={{
+              position: "absolute",
+              top: "calc(100% + 6px)",
+              left: 0,
+              zIndex: 30,
+              minWidth: 220,
+              background: "var(--bg-raised)",
+              border: "1px solid var(--line)",
+              borderRadius: "var(--radius-m)",
+              boxShadow: "0 12px 28px rgba(0,0,0,0.16)",
+              padding: 6,
+              transformOrigin: "top left",
+            }}
+          >
+            {options.map((opt) => {
+              const active = value === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={active}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) e.currentTarget.style.background = "var(--surface-muted)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) e.currentTarget.style.background = "transparent";
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    width: "100%",
+                    padding: "8px 10px",
+                    border: "none",
+                    background: active ? "var(--surface-muted)" : "transparent",
+                    color: "var(--ink)",
+                    fontFamily: "var(--sans)",
+                    fontSize: 13,
+                    fontWeight: active ? 500 : 400,
+                    cursor: "pointer",
+                    borderRadius: "var(--radius-s)",
+                    textAlign: "left",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 14,
+                      display: "inline-flex",
+                      justifyContent: "center",
+                      color: "var(--ink)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {active ? (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M5 12l4 4L19 6"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    ) : null}
+                  </span>
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -4234,7 +5920,7 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
     lines.push("# Comparizzon debug log");
     lines.push(`generated: ${now}`);
     lines.push(`app_version: ${APP_VERSION} (${APP_BUILD})`);
-    lines.push(`webhook_url: ${WEBHOOK_URL || "(none)"}`);
+    lines.push(`webhook_endpoint: ${WEBHOOK_ENDPOINT || "(none)"}`);
     lines.push(`webhook_enabled: ${WEBHOOK_ENABLED}`);
     lines.push(`sessions_archived: ${sortedSessions.length}`);
     lines.push(`user_agent: ${env.userAgent}`);
@@ -4296,7 +5982,8 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
       category_uniqueness: {},
     };
     try {
-      await postSnapshotToWebhook(snapshot);
+      const ok = await postSnapshotToWebhook(snapshot);
+      if (!ok) throw new Error("webhook relay returned non-ok");
       setTestStatus("sent");
       setTimeout(() => setTestStatus(null), 6000);
     } catch (_) {
@@ -4329,6 +6016,12 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
     const md = buildMarkdownExport(sortedSessions);
     const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
     downloadText(`average-io-sessions-${stamp}.md`, md, "text/markdown");
+  };
+
+  const exportQuestionnaireTxt = () => {
+    const text = buildQuestionnaireTextExport();
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
+    downloadText(`average-io-questionnaire-${stamp}.txt`, text, "text/plain");
   };
 
   const deleteOne = (id) => {
@@ -4429,14 +6122,14 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                   fontSize: 12, color: "var(--ink-3)", margin: "16px 0 12px", lineHeight: 1.5,
                 }}>
                   This panel lists sessions saved on <strong style={{ color: "var(--ink)" }}>this browser</strong>.
-                  {WEBHOOK_ENABLED && WEBHOOK_URL ? (
+                  {WEBHOOK_ENABLED && WEBHOOK_ENDPOINT ? (
                     <> All sessions are also sent to the Google Sheet webhook — check the Sheet for the full cross-device log.</>
                   ) : (
                     <> Webhook disabled — no cross-device logging.</>
                   )}
                 </div>
 
-                {WEBHOOK_ENABLED && WEBHOOK_URL && (
+                {WEBHOOK_ENABLED && WEBHOOK_ENDPOINT && (
                   <div style={{
                     display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
                     margin: "0 0 20px", padding: "10px 14px",
@@ -4467,6 +6160,9 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                     {sortedSessions.length} session{sortedSessions.length === 1 ? "" : "s"}
                   </span>
                   <div style={{ flex: 1 }} />
+                  <Button size="sm" variant="secondary" onClick={exportQuestionnaireTxt}>
+                    Export questionnaire (.txt) ↓
+                  </Button>
                   <Button size="sm" onClick={exportMd} disabled={sortedSessions.length === 0}>
                     Export all (.md) ↓
                   </Button>
@@ -4606,7 +6302,7 @@ const kbdStyle = {
    ============================================================================ */
 
 /* Gather the data that goes on the card */
-function buildSnapshotData(answers, peers, segment) {
+function buildSnapshotData(answers, peers, segment, timeSpentMs = 0) {
   const segPeers = segmentPeers(peers, answers, segment);
 
   // Enrich each answered question the same way the export does
@@ -4656,12 +6352,26 @@ function buildSnapshotData(answers, peers, segment) {
     : null;
 
   const totalAnswered = entries.length;
+  const totalCategories = CATEGORIES.length;
   const catsCompleted = CATEGORIES.filter(c => {
     const vis = QUESTIONS_BY_CAT[c.id].filter(q => isQuestionVisible(q, answers));
     return vis.length > 0 && vis.every(q => answerIsFilled(answers[q.id]));
   }).length;
+  const totalVisible = QUESTIONS.filter((q) => isQuestionVisible(q, answers)).length;
+  const timeSpentLabel = formatTimeSpentValue(timeSpentMs);
 
-  return { entries, standouts, catUniq, overallUniq, totalAnswered, catsCompleted };
+  return {
+    entries,
+    standouts,
+    catUniq,
+    overallUniq,
+    totalAnswered,
+    catsCompleted,
+    totalCategories,
+    totalVisible,
+    timeSpentMs,
+    timeSpentLabel,
+  };
 }
 
 /** Human-readable labels for peer comparison segment (matches overview SegmentedControl). */
@@ -4687,16 +6397,16 @@ function pdfSafeText(str) {
 
 function formatRawAnswerForPdf(val, q) {
   if (val == null || val === "") return "";
-  if (Array.isArray(val)) return val.join(", ");
+  if (Array.isArray(val)) return val.map((item) => choiceLabel(item)).join(", ");
   const u = q?.unit ? ` ${q.unit}` : "";
-  return `${val}${u}`;
+  return `${choiceLabel(val)}${u}`;
 }
 
 /**
  * Multi-page PDF: summary, uniqueness, standouts, and full Q&A by category.
  * Uses jsPDF (dynamic import). Text is ASCII-safe for standard PDF fonts.
  */
-async function buildOverviewPdfBlob(answers, peers, segment) {
+async function buildOverviewPdfBlob(answers, peers, segment, timeSpentMs = 0) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const pageW = doc.internal.pageSize.getWidth();
@@ -4705,9 +6415,9 @@ async function buildOverviewPdfBlob(answers, peers, segment) {
   const maxW = pageW - margin * 2;
   let y = margin;
 
-  const data = buildSnapshotData(answers, peers, segment);
+  const data = buildSnapshotData(answers, peers, segment, timeSpentMs);
   const segmentLabel = SEGMENT_LABELS[segment] || segment || "Everyone";
-  const visibleTotal = QUESTIONS.filter((q) => isQuestionVisible(q, answers)).length;
+  const visibleTotal = data.totalVisible;
 
   const ensureRoom = (neededMm) => {
     if (y + neededMm > pageH - margin) {
@@ -4759,26 +6469,44 @@ async function buildOverviewPdfBlob(answers, peers, segment) {
     y += 6.2;
   };
 
-  // Branded header strip
-  ensureRoom(30);
+  // Dark hero header band — tight top padding above wordmark
+  const headerH = 26;
+  ensureRoom(headerH + 4);
   doc.setFillColor(17, 17, 17);
-  doc.roundedRect(margin, y, maxW, 22, 3, 3, "F");
+  doc.rect(0, 0, pageW, y + headerH, "F");
+
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("Comparizzon", margin + 6, y + 8);
+  doc.setFontSize(22);
+  try { doc.setCharSpace(-0.2); } catch (_) {}
+  doc.text("Comparizzon", margin, y + 11);
+  try { doc.setCharSpace(0); } catch (_) {}
+
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.text("See how you compare", margin + 6, y + 15);
-  doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text("OVERVIEW REPORT", pageW - margin - 6, y + 11, { align: "right" });
-  y += 28;
+  doc.setTextColor(180, 178, 172);
+  doc.text("see how you compare to real people", margin, y + 19);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(180, 178, 172);
+  doc.text("COMPARIZZON.COM", pageW - margin, y + 7, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(150, 147, 140);
+  doc.text(
+    `Generated ${new Date().toLocaleDateString(undefined, { dateStyle: "medium" })}`,
+    pageW - margin,
+    y + 14,
+    { align: "right" }
+  );
+
+  y += headerH + 6;
   doc.setTextColor(17, 17, 17);
 
   writeLines("Your overview report", 13, "bold");
   writeLines(
-    `Generated on your device · ${new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · Nothing in this PDF was uploaded to our servers.`,
+    `Generated on your device · Nothing in this PDF was uploaded to our servers.`,
     8.5
   );
   y += 3;
@@ -4793,6 +6521,7 @@ async function buildOverviewPdfBlob(answers, peers, segment) {
 
   heading("Summary");
   writeLines(`Questions answered: ${data.totalAnswered} (of ${visibleTotal} visible for you)`, 10);
+  writeLines(`Time on questions: ${data.timeSpentLabel}`, 10);
   writeLines(`Categories fully completed: ${data.catsCompleted} of ${CATEGORIES.length}`, 10);
   if (data.overallUniq != null) {
     writeLines(
@@ -4823,33 +6552,6 @@ async function buildOverviewPdfBlob(answers, peers, segment) {
     y += 3;
   }
 
-  const ranked = [...data.entries].sort((a, b) => b.score - a.score).slice(0, 14);
-  if (ranked.length > 0) {
-    heading("Most interesting reality checks");
-    writeLines("Biggest signals vs the selected peer group (descriptive, not a judgment).", 8.5);
-    y += 1;
-    ranked.forEach((e, idx) => {
-      const raw = formatRawAnswerForPdf(e.value, e.q);
-      const phrase = e.stat
-        ? phraseForEntry({ kind: e.kind, stat: e.stat, unit: e.q.unit })
-        : "";
-      ensureRoom(16);
-      doc.setFillColor(247, 247, 247);
-      doc.roundedRect(margin, y - 0.5, maxW, 14, 1.8, 1.8, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8.5);
-      doc.setTextColor(120, 119, 116);
-      doc.text(`CHECK ${String(idx + 1).padStart(2, "0")}`, margin + 2.2, y + 3.2);
-      doc.setTextColor(17, 17, 17);
-      y += 4.8;
-      writeLines(`${pdfSafeText(e.q.label.replace(/\?$/, ""))}`, 10, "bold");
-      writeLines(`Answer: ${pdfSafeText(raw)}`, 9.5);
-      if (phrase) writeLines(`Compared with peers: ${pdfSafeText(phrase)}`, 9);
-      y += 2;
-    });
-    y += 2;
-  }
-
   heading("All answers by category");
   writeLines("Every visible answer you gave, with the same peer comparison note where available.", 8.5);
   y += 2;
@@ -4878,13 +6580,13 @@ async function buildOverviewPdfBlob(answers, peers, segment) {
   doc.setFontSize(8);
   ensureRoom(10);
   y += 4;
-  doc.text("Comparizzon · Compare your answers with real people.", margin, y);
+  doc.text("Comparizzon · comparizzon.com", margin, y);
 
   return doc.output("blob");
 }
 
-async function downloadOverviewPdf(answers, peers, segment) {
-  const blob = await buildOverviewPdfBlob(answers, peers, segment);
+async function downloadOverviewPdf(answers, peers, segment, timeSpentMs = 0) {
+  const blob = await buildOverviewPdfBlob(answers, peers, segment, timeSpentMs);
   const stamp = new Date().toISOString().slice(0, 10);
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -4981,207 +6683,338 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-/* Draws the bell-curve logomark next to wordmark */
+/* Draws the Comparizzon wordmark — matches the start page Logo (no bell curve, no .io) */
 function drawLogo(ctx, x, y, size = 28) {
   ctx.save();
   ctx.fillStyle = CARD_INK;
-  ctx.font = `${size}px ${CARD_SERIF}`;
+  ctx.font = `600 ${size}px 'Space Grotesk', ${CARD_SANS}`;
   ctx.textBaseline = "alphabetic";
-  const word = "Comparizzon";
-  ctx.fillText(word, x, y);
-  const wordW = ctx.measureText(word).width;
-
-  // Bell curve
-  const gx = x + wordW + size * 0.22;
-  const gy = y;
-  const gh = size * 0.55;
-  const gw = size * 1.2;
-  ctx.strokeStyle = CARD_INK;
-  ctx.lineWidth = size * 0.08;
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(gx, gy);
-  ctx.bezierCurveTo(gx + gw * 0.2, gy, gx + gw * 0.35, gy - gh * 0.7, gx + gw * 0.5, gy - gh);
-  ctx.bezierCurveTo(gx + gw * 0.65, gy - gh * 0.7, gx + gw * 0.8, gy, gx + gw, gy);
-  ctx.stroke();
-  // Center dot + tick
-  ctx.fillStyle = CARD_INK;
-  ctx.beginPath();
-  ctx.arc(gx + gw * 0.5, gy - gh, size * 0.08, 0, Math.PI * 2);
-  ctx.fill();
-
-  // ".io"
-  ctx.fillText(".io", gx + gw + size * 0.22, gy);
+  ctx.fillText("Comparizzon", x, y);
   ctx.restore();
 }
 
 async function renderSnapshotCanvas(data, opts = {}) {
   await ensureFontsReady();
 
+  const padX = 80;
+
+  // Order entries by category order, then question order within category
+  const entries = data.entries
+    .slice()
+    .sort((a, b) => {
+      const ao = CATEGORY_BY_ID[a.q.cat]?.order ?? 999;
+      const bo = CATEGORY_BY_ID[b.q.cat]?.order ?? 999;
+      if (ao !== bo) return ao - bo;
+      const ai = QUESTIONS_BY_CAT[a.q.cat]?.findIndex((q) => q.id === a.qid) ?? 0;
+      const bi = QUESTIONS_BY_CAT[b.q.cat]?.findIndex((q) => q.id === b.qid) ?? 0;
+      return ai - bi;
+    });
+
+  // === Layout constants ===
+  const headerH = 240;            // dark hero band
+  const heroBlockH = 320;         // uniqueness + 3 stats two-column
+  const dividerGap = 60;
+  const catRowH = 64;
+  const catSectionH = 70 + data.catUniq.length * catRowH + 30;
+  const perQRowH = 108;
+  const perCatGroupHeader = 36;
+  const groupedCount = entries.length;
+  const distinctCats = new Set(entries.map((e) => e.q.cat)).size;
+  const perQSectionH =
+    70 +
+    distinctCats * perCatGroupHeader +
+    groupedCount * perQRowH +
+    40;
+  const footerH = 120;
+
+  const totalH = headerH + heroBlockH + catSectionH + perQSectionH + footerH;
+
   const canvas = document.createElement("canvas");
   canvas.width = CARD_W;
-  canvas.height = CARD_H;
+  canvas.height = totalH;
   const ctx = canvas.getContext("2d");
 
-  // Background
   ctx.fillStyle = CARD_BG;
-  ctx.fillRect(0, 0, CARD_W, CARD_H);
+  ctx.fillRect(0, 0, CARD_W, canvas.height);
 
-  const padX = 80;
-  const padTop = 80;
-  const padBottom = 80;
-
-  // Top bar: logo + tiny label
   ctx.textBaseline = "alphabetic";
-  drawLogo(ctx, padX, padTop + 34, 40);
+  ctx.textAlign = "left";
+
+  const innerW = CARD_W - padX * 2;
+
+  // ============================================================
+  // 1. Dark hero header band
+  // ============================================================
+  ctx.fillStyle = "#0F0F0F";
+  ctx.fillRect(0, 0, CARD_W, headerH);
+
+  // Top tag (mono kicker)
+  ctx.fillStyle = "#B4B2AC";
+  ctx.font = `500 14px ${CARD_MONO}`;
+  ctx.textAlign = "left";
+  ctx.fillText("YOUR RESULTS", padX, 70);
+
+  ctx.textAlign = "right";
+  ctx.fillText("COMPARIZZON.COM", CARD_W - padX, 70);
+
+  // Wordmark — large, generous breathing room above
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = `600 84px 'Space Grotesk', ${CARD_SANS}`;
+  ctx.fillText("Comparizzon", padX, 165);
+
+  // Tagline
+  ctx.fillStyle = "#9F9D98";
+  ctx.font = `400 24px ${CARD_SERIF}`;
+  ctx.fillText("see how you compare to real people", padX, 200);
+
+  // Generated date, right-aligned, light
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#9F9D98";
+  ctx.font = `400 16px ${CARD_SANS}`;
+  ctx.fillText(
+    `Generated ${new Date().toLocaleDateString(undefined, { dateStyle: "medium" })}`,
+    CARD_W - padX,
+    200
+  );
+  ctx.textAlign = "left";
+
+  let y = headerH + 60;
+
+  // ============================================================
+  // 2. Hero block — uniqueness (left) + stats stacked (right)
+  // ============================================================
+  const heroLeftW = innerW * 0.48;
+  const heroRightX = padX + innerW * 0.52;
+
+  // Left: kicker + big number + label
+  ctx.fillStyle = CARD_INK3;
+  ctx.font = `500 13px ${CARD_MONO}`;
+  ctx.fillText("YOUR UNIQUENESS", padX, y);
+
+  const uniqPct = data.overallUniq != null ? Math.round(data.overallUniq * 100) : null;
+  const bigText = uniqPct != null ? `${uniqPct}` : "—";
+
+  ctx.fillStyle = CARD_INK;
+  ctx.font = `400 168px ${CARD_SERIF}`;
+  ctx.fillText(bigText, padX, y + 150);
+
+  if (uniqPct != null) {
+    const bigW = ctx.measureText(bigText).width;
+    ctx.font = `400 32px ${CARD_SERIF}`;
+    ctx.fillStyle = CARD_INK3;
+    ctx.fillText("/100", padX + bigW + 14, y + 150);
+  }
+
+  ctx.fillStyle = CARD_INK;
+  ctx.font = `500 22px ${CARD_SANS}`;
+  ctx.fillText(uniquenessHeadline(data.overallUniq), padX, y + 192);
 
   ctx.fillStyle = CARD_INK3;
-  ctx.font = `500 16px ${CARD_SANS}`;
-  ctx.textAlign = "right";
-  ctx.fillText("MY SNAPSHOT", CARD_W - padX, padTop + 30);
-  // letter-spacing via tracking (approx: draw letter by letter)
-  // (for simplicity keep as-is; visually close)
+  ctx.font = `400 16px ${CARD_SANS}`;
+  ctx.fillText(
+    `Across ${data.catUniq.length} categor${data.catUniq.length === 1 ? "y" : "ies"} · vs. peers`,
+    padX,
+    y + 218
+  );
 
-  // Divider
+  // Right: 3 small editorial stat pairs
+  const statPairs = [
+    {
+      label: "QUESTIONS ANSWERED",
+      value: String(data.totalAnswered),
+      sub: data.totalVisible ? `of ${data.totalVisible} visible to you` : "",
+    },
+    {
+      label: "TIME ON QUESTIONS",
+      value: data.timeSpentLabel || "—",
+      sub: data.totalAnswered > 0 ? "focused time" : "start answering",
+    },
+    {
+      label: "CATEGORIES COMPLETED",
+      value: `${data.catsCompleted}/${data.totalCategories}`,
+      sub: data.catsCompleted > 0 ? "fully answered" : "in progress",
+    },
+  ];
+
+  // Vertical separator between hero halves
   ctx.strokeStyle = CARD_LINE;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(padX, padTop + 78);
-  ctx.lineTo(CARD_W - padX, padTop + 78);
+  ctx.moveTo(heroRightX - 30, y - 8);
+  ctx.lineTo(heroRightX - 30, y + 232);
   ctx.stroke();
 
-  // === Headline: big uniqueness number ===
-  let cursorY = padTop + 78 + 80;
-  ctx.textAlign = "left";
-
-  // Small kicker
-  ctx.fillStyle = CARD_INK3;
-  ctx.font = `500 16px ${CARD_SANS}`;
-  ctx.fillText("YOUR UNIQUENESS", padX, cursorY);
-  cursorY += 30;
-
-  // Giant number
-  const uniqPct = data.overallUniq != null ? Math.round(data.overallUniq * 100) : null;
-  ctx.fillStyle = CARD_INK;
-  ctx.font = `400 260px ${CARD_SERIF}`;
-  ctx.textBaseline = "alphabetic";
-  const bigText = uniqPct != null ? `${uniqPct}` : "—";
-  ctx.fillText(bigText, padX, cursorY + 210);
-
-  // "/100" tick mark
-  if (uniqPct != null) {
-    const bigW = ctx.measureText(bigText).width;
-    ctx.font = `400 40px ${CARD_SERIF}`;
-    ctx.fillStyle = CARD_INK3;
-    ctx.fillText("/100", padX + bigW + 16, cursorY + 210);
-  }
-
-  cursorY += 230;
-
-  // Headline label
-  ctx.fillStyle = CARD_INK;
-  ctx.font = `500 26px ${CARD_SANS}`;
-  ctx.fillText(uniquenessHeadline(data.overallUniq), padX, cursorY);
-  cursorY += 12;
-
-  // Meta line
-  ctx.fillStyle = CARD_INK3;
-  ctx.font = `400 18px ${CARD_SANS}`;
-  ctx.fillText(
-    `Across ${data.catUniq.length} categor${data.catUniq.length === 1 ? "y" : "ies"} · ${data.totalAnswered} answers`,
-    padX, cursorY + 26
-  );
-  cursorY += 60;
-
-  // === Hairline divider ===
-  ctx.strokeStyle = CARD_LINE;
-  ctx.beginPath();
-  ctx.moveTo(padX, cursorY);
-  ctx.lineTo(CARD_W - padX, cursorY);
-  ctx.stroke();
-  cursorY += 44;
-
-  // === Standout findings ===
-  ctx.fillStyle = CARD_INK3;
-  ctx.font = `500 16px ${CARD_SANS}`;
-  ctx.fillText("STANDOUTS", padX, cursorY);
-  cursorY += 34;
-
-  const maxRows = 4;
-  const rowH = 108;
-  const rows = data.standouts.slice(0, maxRows);
-
-  rows.forEach((e, i) => {
-    const y = cursorY + i * rowH;
-    const line = cardLineFor(e);
-    if (!line) return;
-
-    // Row number
-    ctx.fillStyle = CARD_INK4;
-    ctx.font = `500 14px ${CARD_MONO}`;
-    ctx.fillText(String(i + 1).padStart(2, "0"), padX, y + 24);
-
-    // Big value
-    ctx.fillStyle = CARD_INK;
-    ctx.font = `500 40px ${CARD_SANS}`;
-    const valueMaxW = CARD_W - padX * 2 - 60;
-    // Fit: shrink font if too wide
-    let fontSize = 40;
-    while (fontSize > 24) {
-      ctx.font = `500 ${fontSize}px ${CARD_SANS}`;
-      if (ctx.measureText(line.val).width <= valueMaxW * 0.5) break;
-      fontSize -= 2;
-    }
-    ctx.fillText(line.val, padX + 52, y + 30);
-    const valW = ctx.measureText(line.val).width;
-
-    // Phrase to the right of the value
-    ctx.fillStyle = CARD_INK3;
-    ctx.font = `400 18px ${CARD_SANS}`;
-    const phraseX = padX + 52 + valW + 20;
-    const phrase = line.phrase;
-    // Wrap if too long
-    const phraseMaxW = CARD_W - padX - phraseX;
-    const phraseLines = wrapText(ctx, phrase, phraseMaxW);
-    phraseLines.slice(0, 2).forEach((l, li) => {
-      ctx.fillText(l, phraseX, y + 22 + li * 22);
-    });
-
-    // Question label below
-    ctx.fillStyle = CARD_INK3;
-    ctx.font = `400 17px ${CARD_SANS}`;
-    const labelMaxW = CARD_W - padX * 2 - 60;
-    const labelLines = wrapText(ctx, line.label, labelMaxW);
-    const labelStr = labelLines[0] + (labelLines.length > 1 ? "…" : "");
-    ctx.fillText(labelStr, padX + 52, y + 62);
-
-    // Row divider
-    if (i < rows.length - 1) {
+  let statY = y + 24;
+  statPairs.forEach((s, i) => {
+    if (i > 0) {
       ctx.strokeStyle = CARD_LINE;
       ctx.beginPath();
-      ctx.moveTo(padX, y + rowH - 16);
-      ctx.lineTo(CARD_W - padX, y + rowH - 16);
+      ctx.moveTo(heroRightX, statY - 22);
+      ctx.lineTo(CARD_W - padX, statY - 22);
       ctx.stroke();
     }
+    ctx.fillStyle = CARD_INK3;
+    ctx.font = `500 12px ${CARD_MONO}`;
+    ctx.fillText(s.label, heroRightX, statY);
+
+    ctx.fillStyle = CARD_INK;
+    ctx.font = `400 48px ${CARD_SERIF}`;
+    ctx.fillText(s.value, heroRightX, statY + 46);
+
+    if (s.sub) {
+      ctx.fillStyle = CARD_INK3;
+      ctx.font = `400 14px ${CARD_SANS}`;
+      ctx.fillText(s.sub, heroRightX, statY + 68);
+    }
+    statY += 80;
   });
 
-  // === Footer ===
-  const footerY = CARD_H - padBottom;
+  y += heroBlockH - dividerGap;
 
+  // Hairline + section gap
   ctx.strokeStyle = CARD_LINE;
   ctx.beginPath();
-  ctx.moveTo(padX, footerY - 44);
-  ctx.lineTo(CARD_W - padX, footerY - 44);
+  ctx.moveTo(padX, y);
+  ctx.lineTo(CARD_W - padX, y);
   ctx.stroke();
+  y += 50;
 
-  // Left footer: wordmark
-  drawLogo(ctx, padX, footerY - 4, 22);
-
-  // Right footer: tagline
+  // ============================================================
+  // 3. Uniqueness by category — bars
+  // ============================================================
   ctx.fillStyle = CARD_INK3;
-  ctx.font = `400 18px ${CARD_SERIF}`;
+  ctx.font = `500 13px ${CARD_MONO}`;
+  ctx.fillText("UNIQUENESS BY CATEGORY", padX, y);
+
+  ctx.fillStyle = CARD_INK4;
+  ctx.font = `400 13px ${CARD_SANS}`;
   ctx.textAlign = "right";
-  ctx.fillText("see how you compare", CARD_W - padX, footerY - 4);
+  ctx.fillText(`${data.catUniq.length} of ${data.totalCategories}`, CARD_W - padX, y);
+  ctx.textAlign = "left";
+  y += 36;
+
+  const sortedCatUniq = data.catUniq.slice().sort((a, b) => b.u.score - a.u.score);
+  sortedCatUniq.forEach(({ cat, u }) => {
+    const score = Math.round(u.score * 100);
+
+    ctx.fillStyle = CARD_INK;
+    ctx.font = `500 22px ${CARD_SANS}`;
+    ctx.textAlign = "left";
+    ctx.fillText(cat.title, padX, y + 24);
+
+    ctx.fillStyle = CARD_INK;
+    ctx.font = `500 22px ${CARD_SANS}`;
+    ctx.textAlign = "right";
+    ctx.fillText(`${score}`, CARD_W - padX - 38, y + 24);
+
+    ctx.fillStyle = CARD_INK3;
+    ctx.font = `400 16px ${CARD_SANS}`;
+    ctx.fillText("/100", CARD_W - padX, y + 24);
+    ctx.textAlign = "left";
+
+    const barY = y + 38;
+    const barW = innerW;
+    const barH = 6;
+    ctx.fillStyle = "#ECECE9";
+    ctx.fillRect(padX, barY, barW, barH);
+    ctx.fillStyle = CARD_INK;
+    ctx.fillRect(padX, barY, Math.max(2, barW * Math.max(0, Math.min(1, u.score))), barH);
+
+    y += catRowH;
+  });
+
+  y += 14;
+  ctx.strokeStyle = CARD_LINE;
+  ctx.beginPath();
+  ctx.moveTo(padX, y);
+  ctx.lineTo(CARD_W - padX, y);
+  ctx.stroke();
+  y += 50;
+
+  // ============================================================
+  // 4. Complete overview — every answer + peer phrase
+  // ============================================================
+  ctx.fillStyle = CARD_INK3;
+  ctx.font = `500 13px ${CARD_MONO}`;
+  ctx.fillText("COMPLETE OVERVIEW", padX, y);
+
+  ctx.fillStyle = CARD_INK4;
+  ctx.font = `400 13px ${CARD_SANS}`;
+  ctx.textAlign = "right";
+  ctx.fillText(`${entries.length} answers`, CARD_W - padX, y);
+  ctx.textAlign = "left";
+  y += 32;
+
+  let lastCat = null;
+  entries.forEach((e) => {
+    const cat = CATEGORY_BY_ID[e.q.cat];
+    if (cat && cat.id !== lastCat) {
+      // Group header — small mono kicker + thin rule
+      y += 12;
+      ctx.fillStyle = CARD_INK;
+      ctx.font = `500 13px ${CARD_MONO}`;
+      ctx.fillText(cat.title.toUpperCase(), padX, y);
+      ctx.strokeStyle = CARD_LINE;
+      ctx.beginPath();
+      ctx.moveTo(padX, y + 8);
+      ctx.lineTo(CARD_W - padX, y + 8);
+      ctx.stroke();
+      y += 20;
+      lastCat = cat.id;
+    }
+
+    const label = e.q.label.replace(/\?$/, "");
+    const rawAnswer = formatRawAnswerForPdf(e.value, e.q);
+    const phrase = e.stat ? phraseForEntry({ kind: e.kind, stat: e.stat, unit: e.q.unit }) : "";
+
+    ctx.fillStyle = CARD_INK;
+    ctx.font = `500 18px ${CARD_SANS}`;
+    const labelLines = wrapText(ctx, label, innerW);
+    const labelStr = labelLines[0] + (labelLines.length > 1 ? "…" : "");
+    ctx.fillText(labelStr, padX, y + 22);
+
+    ctx.fillStyle = CARD_INK;
+    ctx.font = `400 19px ${CARD_SERIF}`;
+    const answerLines = wrapText(ctx, rawAnswer || "—", innerW);
+    const answerStr = answerLines[0] + (answerLines.length > 1 ? "…" : "");
+    ctx.fillText(answerStr, padX, y + 50);
+
+    if (phrase) {
+      ctx.fillStyle = CARD_INK3;
+      ctx.font = `400 15px ${CARD_SANS}`;
+      const phraseLines = wrapText(ctx, phrase, innerW);
+      const phraseStr = phraseLines[0] + (phraseLines.length > 1 ? "…" : "");
+      ctx.fillText(phraseStr, padX, y + 76);
+    }
+
+    y += perQRowH;
+  });
+
+  // ============================================================
+  // 5. Dark footer band
+  // ============================================================
+  const footerY = canvas.height - footerH;
+  ctx.fillStyle = "#0F0F0F";
+  ctx.fillRect(0, footerY, CARD_W, footerH);
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = `600 32px 'Space Grotesk', ${CARD_SANS}`;
+  ctx.textAlign = "left";
+  ctx.fillText("Comparizzon", padX, footerY + 56);
+
+  ctx.fillStyle = "#9F9D98";
+  ctx.font = `400 16px ${CARD_SERIF}`;
+  ctx.fillText("compare your answers with real people", padX, footerY + 86);
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = `500 14px ${CARD_MONO}`;
+  ctx.textAlign = "right";
+  ctx.fillText("COMPARIZZON.COM", CARD_W - padX, footerY + 56);
+
+  ctx.fillStyle = "#9F9D98";
+  ctx.font = `400 14px ${CARD_SANS}`;
+  ctx.fillText("take your version", CARD_W - padX, footerY + 86);
   ctx.textAlign = "left";
 
   return canvas;
@@ -5192,135 +7025,83 @@ function canvasToBlob(canvas, type = "image/png") {
   return new Promise((resolve) => canvas.toBlob(resolve, type, 0.95));
 }
 
-/* Build the compact text blurb for copy/share */
-function buildShareText(data) {
-  const pct = data.overallUniq != null ? Math.round(data.overallUniq * 100) : null;
-  const headline = uniquenessHeadline(data.overallUniq);
-  const lines = [];
-  lines.push(pct != null ? `Uniqueness: ${pct}/100 — ${headline.toLowerCase()}` : "My Comparizzon snapshot (just getting started)");
-  lines.push("");
-  data.standouts.slice(0, 3).forEach(e => {
-    const l = cardLineFor(e);
-    if (!l) return;
-    lines.push(`• ${l.label} — ${l.phrase.toLowerCase()}`);
-  });
-  lines.push("");
-  lines.push("Comparizzon · Compare your answers with real people.");
-  if (typeof window !== "undefined") {
-    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
-    lines.push(cleanUrl);
-  }
-  return lines.join("\n");
-}
-
-/* =========================================================================
-   Share Modal (preview + actions)
-   ========================================================================= */
-
-function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
-  const [dataUrl, setDataUrl] = useState(null);
+function ShareSnapshotModal({ open, onClose, answers, peers, segment, timeSpentMs = 0 }) {
+  const [dataUrl, setDataUrl] = useState("");
   const [blob, setBlob] = useState(null);
-  const [copied, setCopied] = useState(false);
   const [rendering, setRendering] = useState(false);
-  const [pdfBusy, setPdfBusy] = useState(false);
-  const data = useMemo(() => buildSnapshotData(answers, peers, segment), [answers, peers, segment]);
-  const text = useMemo(() => buildShareText(data), [data]);
-  const hasWebShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const data = useMemo(
+    () => buildSnapshotData(answers, peers, segment, timeSpentMs),
+    [answers, peers, segment, timeSpentMs]
+  );
 
-  // Render canvas whenever the modal opens or the data changes
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
     let cancelled = false;
     (async () => {
       setRendering(true);
-      const canvas = await renderSnapshotCanvas(data);
-      if (cancelled) return;
-      const b = await canvasToBlob(canvas);
-      if (cancelled) return;
-      setBlob(b);
-      setDataUrl(canvas.toDataURL("image/png"));
-      setRendering(false);
+      try {
+        const canvas = await renderSnapshotCanvas(data);
+        const nextBlob = await canvasToBlob(canvas);
+        if (cancelled) return;
+        setBlob(nextBlob);
+        setDataUrl(canvas.toDataURL("image/png"));
+      } finally {
+        if (!cancelled) setRendering(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [open, data]);
 
-  const download = () => {
+  const downloadImage = () => {
     if (!blob) return;
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `average-io-snapshot-${new Date().toISOString().slice(0, 10)}.png`;
+    a.download = `comparizzon-results-${new Date().toISOString().slice(0, 10)}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 500);
   };
 
-  const copyText = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    } catch (_) {
-      // Fallback: select a hidden textarea
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand("copy"); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch(__) {}
-      document.body.removeChild(ta);
-    }
-  };
-
   const nativeShare = async () => {
-    if (!hasWebShare || !blob) return;
-    const file = new File([blob], "average-io-snapshot.png", { type: "image/png" });
-    const payload = {
-      title: "Comparizzon snapshot",
-      text,
-      url: typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : undefined,
-    };
-    // Prefer file sharing where supported
+    if (!blob || typeof navigator === "undefined" || typeof navigator.share !== "function") return;
+    const url = "https://comparizzon.com/";
+    const payload = { title: "Comparizzon", text: "My Comparizzon results", url };
+    const file = new File([blob], "comparizzon-results.png", { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ ...payload, files: [file] }); return; }
-      catch (_) { /* user cancelled or failed; fall through */ }
+      try {
+        await navigator.share({ ...payload, files: [file] });
+        return;
+      } catch (_) {}
     }
     try { await navigator.share(payload); } catch (_) {}
   };
-
-  const grabPdf = async () => {
-    if (pdfBusy) return;
-    setPdfBusy(true);
-    try {
-      await downloadOverviewPdf(answers, peers, segment);
-    } catch (_) {
-      /* ignore */
-    } finally {
-      setPdfBusy(false);
-    }
-  };
-
-  const notEnough = data.totalAnswered < 5;
 
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          key="share-backdrop"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={onClose}
           style={{
-            position: "fixed", inset: 0, zIndex: 90,
+            position: "fixed",
+            inset: 0,
+            zIndex: 90,
             background: "var(--modal-scrim)",
-            backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             padding: 24,
           }}
         >
           <motion.div
-            key="share-panel"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -5340,92 +7121,54 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
               <div>
                 <div className="label">Share</div>
                 <h3 className="serif" style={{ fontSize: 28, color: "var(--ink)", margin: "6px 0 0" }}>
-                  Your snapshot
+                  Your Results
                 </h3>
               </div>
               <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
             </div>
 
-            {notEnough ? (
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 20 }}>
               <div style={{
-                padding: "36px 20px", textAlign: "center",
-                background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-m)",
-                color: "var(--ink-3)", fontSize: 14, lineHeight: 1.55,
+                background: "var(--surface-muted)",
+                borderRadius: "var(--radius-m)",
+                height: 360,
+                overflow: "hidden",
+                border: "1px solid var(--line)",
+                position: "relative",
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "center",
               }}>
-                Answer at least five questions to build a snapshot card.
-                <div style={{ marginTop: 14 }}>
-                  <span className="mono" style={{ color: "var(--ink)" }}>{data.totalAnswered}</span>
-                  <span style={{ marginLeft: 6 }}>answered so far.</span>
-                </div>
-                <div style={{ marginTop: 20 }}>
-                  <Button variant="secondary" onClick={grabPdf} disabled={pdfBusy || data.totalAnswered === 0}>
-                    {pdfBusy ? "Preparing PDF…" : "Download PDF overview (so far) ↓"}
-                  </Button>
-                </div>
-                <div style={{ marginTop: 12, fontSize: 12, color: "var(--ink-4)" }}>
-                  The full PDF report works with any number of answers — not tied to the social snapshot card.
-                </div>
+                {rendering || !dataUrl ? (
+                  <div style={{
+                    color: "var(--ink-3)",
+                    fontSize: 13,
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}>Generating image…</div>
+                ) : (
+                  <img
+                    src={dataUrl}
+                    alt="Your Results"
+                    style={{ width: "100%", height: "auto", display: "block", objectFit: "contain", objectPosition: "top" }}
+                  />
+                )}
               </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 20 }}>
-                {/* Preview */}
-                <div style={{
-                  background: "var(--surface-muted)", borderRadius: "var(--radius-m)",
-                  padding: 20, display: "flex", justifyContent: "center", alignItems: "center",
-                  minHeight: 320,
-                }}>
-                  {rendering || !dataUrl ? (
-                    <div style={{ color: "var(--ink-3)", fontSize: 13 }}>Generating image…</div>
-                  ) : (
-                    <img
-                      src={dataUrl} alt="Your snapshot"
-                      style={{
-                        maxWidth: "100%", maxHeight: 520,
-                        width: "auto", height: "auto",
-                        borderRadius: 6,
-                        boxShadow: "0 4px 18px rgba(0,0,0,0.06)",
-                        border: "1px solid var(--line)",
-                      }}
-                    />
-                  )}
-                </div>
 
-                {/* Actions */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  <Button onClick={download} disabled={!blob}>
-                    Download image ↓
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <Button onClick={downloadImage} disabled={!blob} style={{ minHeight: 44, height: 44 }}>
+                  Download image ↓
+                </Button>
+                {typeof navigator !== "undefined" && typeof navigator.share === "function" && (
+                  <Button variant="secondary" onClick={nativeShare} disabled={!blob} style={{ minHeight: 44, height: 44 }}>
+                    Share via…
                   </Button>
-                  <Button variant="secondary" onClick={grabPdf} disabled={pdfBusy}>
-                    {pdfBusy ? "Preparing PDF…" : "PDF overview ↓"}
-                  </Button>
-                  <Button variant="secondary" onClick={copyText}>
-                    {copied ? "Copied ✓" : "Copy text"}
-                  </Button>
-                  {hasWebShare && (
-                    <Button variant="secondary" onClick={nativeShare} disabled={!blob}>
-                      Share via…
-                    </Button>
-                  )}
-                </div>
-
-                {/* Text preview */}
-                <div style={{
-                  padding: 14, background: "var(--surface-fallback)", borderRadius: "var(--radius-s)",
-                  border: "1px solid var(--line)",
-                  fontFamily: "var(--mono)", fontSize: 12, color: "var(--ink-2)",
-                  lineHeight: 1.6, whiteSpace: "pre-wrap",
-                }}>
-                  {text}
-                </div>
-
-                <div style={{ fontSize: 11, color: "var(--ink-4)", lineHeight: 1.5 }}>
-                  The image is generated on your device and never uploaded.
-                  1080×1350 PNG — fits Instagram Stories or any social post.
-                  {" "}
-                  The PDF includes your full answer list and peer notes—ideal for archiving or coaching.
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </motion.div>
         </motion.div>
       )}
@@ -5436,13 +7179,50 @@ function ShareSnapshotModal({ open, onClose, answers, peers, segment }) {
 export default function App() {
   const [state, dispatch, hydrated] = useAppState();
   const answers = state.answers;
-  const { mode: themeMode, phase: themePhase, cycleTheme } = useTheme(answers);
+  const { mode: themeMode, toggleTheme } = useTheme();
   const { peers, source: peerSource, sheetState } = usePeerPool();
   const isMobile = useMediaQuery("(max-width: 639px)");
   const totalAnswered = Object.keys(answers).filter(k => answerIsFilled(answers[k])).length;
   const admin = useAdminUnlock();
-  const [shareOpen, setShareOpen] = useState(false);
   const [sheetModalOpen, setSheetModalOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const handleShareSite = useCallback(() => {
+    shareSiteHome();
+  }, []);
+
+  /* Private rooms (step 3 of feature: homepage USP + create-room modal). The
+     full lifecycle (join / dashboard / comparison / leave) is wired in
+     subsequent steps; for now we only need the create flow + a paywall
+     handoff. */
+  const paidStatus = usePaidStatus();
+  const roomSession = useRoomSession();
+  const [createRoomOpen, setCreateRoomOpen] = useState(false);
+  const handleOpenCreateRoom = useCallback(() => {
+    if (paidStatus.paid) {
+      setCreateRoomOpen(true);
+      return;
+    }
+    /* Paywall lives on the overview screen — sending the user there
+       surfaces the paywall modal. After they unlock we re-check on
+       focus, so they can come back and create the room. */
+    dispatch({ type: "seenWelcome" });
+    dispatch({ type: "go", screen: "overview" });
+  }, [dispatch, paidStatus.paid]);
+  const handleCreateRoom = useCallback(async ({ title }) => {
+    const created = await roomSession.createRoom({ title });
+    setCreateRoomOpen(false);
+    /* Owner lands on the room dashboard URL so they can copy the invite
+       link. The dashboard itself ships in the next step; until then this
+       gives them a stable bookmarkable URL. */
+    if (typeof window !== "undefined" && created?.room_id) {
+      const shareUrl = buildRoomShareUrl(created.room_id);
+      try {
+        const targetPath = `/?room=${encodeURIComponent(created.room_id)}`;
+        window.history.replaceState({}, "", targetPath);
+      } catch (_) {}
+      try { window.__lastRoomShareUrl = shareUrl; } catch (_) {}
+    }
+  }, [roomSession]);
 
   // Force scroll to top on every screen/category transition.
   // We run repeated passes to handle Safari momentum + late layout shifts.
@@ -5574,7 +7354,7 @@ export default function App() {
         padding: "24px",
       }}>
         <div style={{ position: "absolute", top: isMobile ? 16 : 20, right: isMobile ? 18 : 24, zIndex: 5 }}>
-          <ThemeToggle mode={themeMode} phase={themePhase} onCycle={cycleTheme} />
+          <ThemeToggle mode={themeMode} onToggle={toggleTheme} />
         </div>
         <div className="label">Loading…</div>
       </div>
@@ -5586,26 +7366,41 @@ export default function App() {
         peerCount={peers.length}
         peerSource={peerSource}
         themeMode={themeMode}
-        themePhase={themePhase}
-        onToggleTheme={cycleTheme}
+        onToggleTheme={toggleTheme}
+        onCreateRoom={handleOpenCreateRoom}
+        paid={paidStatus.paid}
       />
     );
+  } else if (state.screen === "start") {
+    screenNode = <CategoryHub state={state} dispatch={dispatch} introMode />;
   } else if (state.screen === "hub") {
     screenNode = <CategoryHub state={state} dispatch={dispatch} />;
   } else if (state.screen === "question") {
-    screenNode = <QuestionScreen state={state} dispatch={dispatch} peers={peers} />;
+    screenNode = (
+      <QuestionScreen
+        state={state}
+        dispatch={dispatch}
+        peers={peers}
+      />
+    );
   } else if (state.screen === "overview") {
     screenNode = (
       <OverviewDashboard
         state={state}
         dispatch={dispatch}
         peers={peers}
-        onShare={() => setShareOpen(true)}
-        onDownloadPdf={() => downloadOverviewPdf(answers, peers, state.segment)}
+        onDownloadPdf={() => downloadOverviewPdf(answers, peers, state.segment, state.timeSpentMs)}
+        onShareImage={() => setShareOpen(true)}
       />
     );
   } else if (state.screen === "category") {
-    screenNode = <CategoryDetail state={state} dispatch={dispatch} peers={peers} />;
+    screenNode = (
+      <CategoryDetail
+        state={state}
+        dispatch={dispatch}
+        peers={peers}
+      />
+    );
   } else {
     screenNode = <CategoryHub state={state} dispatch={dispatch} />;
   }
@@ -5634,8 +7429,7 @@ export default function App() {
             peerCount={peers.length}
             onOpenSheetData={() => setSheetModalOpen(true)}
             themeMode={themeMode}
-            themePhase={themePhase}
-            onToggleTheme={cycleTheme}
+            onToggleTheme={toggleTheme}
           />
         )}
         <div style={{ flex: 1 }}>
@@ -5699,17 +7493,25 @@ export default function App() {
         )}
       </div>
       <AdminModal {...admin} sessions={state.sessions} dispatch={dispatch} />
+      <SheetDataModal
+        open={sheetModalOpen}
+        onClose={() => setSheetModalOpen(false)}
+        sheetState={sheetState}
+      />
       <ShareSnapshotModal
         open={shareOpen}
         onClose={() => setShareOpen(false)}
         answers={answers}
         peers={peers}
         segment={state.segment}
+        timeSpentMs={state.timeSpentMs}
       />
-      <SheetDataModal
-        open={sheetModalOpen}
-        onClose={() => setSheetModalOpen(false)}
-        sheetState={sheetState}
+      <CreateRoomModal
+        open={createRoomOpen}
+        onClose={() => { setCreateRoomOpen(false); roomSession.clearError(); }}
+        onSubmit={handleCreateRoom}
+        busy={roomSession.busy}
+        error={roomSession.error}
       />
     </>
   );
