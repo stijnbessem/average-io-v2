@@ -3138,7 +3138,7 @@ function CompareModeBanner({
               onClick={() => { if (!roomDisabled) onModeChange("room"); }}
               disabled={roomDisabled}
               title={roomDisabled
-                ? "Submit your own answers to unlock comparison with this room"
+                ? "Answer a few questions yourself to unlock comparison with this room"
                 : "Compare answers only with this room"}
               style={{
                 ...tabBase,
@@ -3158,13 +3158,13 @@ function CompareModeBanner({
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {requiresSubmission && (
             <span style={{ fontSize: 12, color: "var(--ink-3)" }}>
-              Submit your answers to unlock this room's comparison.
+              Answer a few questions to unlock this room's comparison.
             </span>
           )}
           {!requiresSubmission && mode === "room" && roomPeerCount === 0 && (
             <span style={{ fontSize: 12, color: "var(--ink-3)" }}>
               {submittedCount <= 1
-                ? "Waiting for others to submit…"
+                ? "Waiting for others to start answering…"
                 : "No answers from others yet."}
             </span>
           )}
@@ -3415,8 +3415,8 @@ function JoinRoomScreen({
         </motion.div>
 
         <div style={{ marginTop: 56, fontSize: 12, color: "var(--ink-4)", lineHeight: 1.6 }}>
-          Joining is free for invitees. The person who created the room is
-          covering it. You can leave at any time, and the room owner can
+          Joining is free for invitees — the person who created the room
+          covered it. You can leave at any time, and the room owner can
           remove participants too.
         </div>
       </div>
