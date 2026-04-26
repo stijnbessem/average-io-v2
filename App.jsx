@@ -2134,6 +2134,13 @@ function PageShell({ children, maxWidth = 1120 }) {
    ============================================================================ */
 
 const ROOMS_FEATURE_ENABLED = false;
+/** When admin enables “test rooms” in the admin panel, room UI/API hydrate for this tab only. */
+const ROOMS_ADMIN_TEST_STORAGE_KEY = "comparizzon:rooms-admin-test";
+
+function readRoomsAdminTestSessionFlag() {
+  if (typeof window === "undefined") return false;
+  try { return sessionStorage.getItem(ROOMS_ADMIN_TEST_STORAGE_KEY) === "1"; } catch (_) { return false; }
+}
 
 const ROOM_STORAGE_KEY = "comparizzon:rooms";
 const ROOM_ACTIVE_KEY = "comparizzon:active-room";
@@ -2278,7 +2285,7 @@ async function apiManageRoom({ roomId, ownerToken, action, targetNumber }) {
 /* Single source of truth for which rooms the user is part of, plus their
    tokens / numbers. Survives page reloads via localStorage. The actual
    answers live server-side; this only stores membership metadata. */
-function useRoomSession() {
+function useRoomSession(enabled) {
   const [rooms, setRooms] = useState({});
   const [activeRoomId, setActiveRoomIdState] = useState(null);
   const [hydrated, setHydrated] = useState(false);
@@ -2286,11 +2293,15 @@ function useRoomSession() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!ROOMS_FEATURE_ENABLED) {
+    if (!enabled) {
+      setRooms({});
+      setActiveRoomIdState(null);
+      setError("");
       setHydrated(true);
       return undefined;
     }
     let cancelled = false;
+    setHydrated(false);
     (async () => {
       const map = await readRoomMap();
       const stored = await readActiveRoomId();
@@ -2307,7 +2318,7 @@ function useRoomSession() {
       setHydrated(true);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [enabled]);
 
   const setActive = useCallback(async (roomId) => {
     setActiveRoomIdState(roomId || null);
@@ -6824,7 +6835,19 @@ function useAdminUnlock() {
   return { unlocked, prompting, setPrompting, setUnlocked };
 }
 
-function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions = [], dispatch }) {
+function AdminModal({
+  prompting,
+  setPrompting,
+  setUnlocked,
+  unlocked,
+  sessions = [],
+  dispatch,
+  roomsAdminTestMode = false,
+  onRoomsAdminTestModeChange = null,
+  onAdminOpenCreateRoom = null,
+  onAdminOpenRoomDashboard = null,
+  adminActiveRoomId = null,
+}) {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState(false);
   const [testStatus, setTestStatus] = useState(null); // null | "sending" | "sent" | "error"
@@ -7085,6 +7108,54 @@ function AdminModal({ prompting, setPrompting, setUnlocked, unlocked, sessions =
                         Request failed — check console
                       </span>
                     )}
+                  </div>
+                )}
+
+                {!ROOMS_FEATURE_ENABLED && typeof onRoomsAdminTestModeChange === "function" && (
+                  <div style={{
+                    margin: "0 0 20px", padding: "12px 14px",
+                    border: "1px solid var(--line)", borderRadius: "var(--radius-s)",
+                    background: "var(--surface-muted)",
+                  }}>
+                    <div className="label" style={{ marginBottom: 8 }}>Private rooms (beta)</div>
+                    <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "0 0 12px", lineHeight: 1.5 }}>
+                      Rooms are hidden for visitors. Turn on to test on <strong style={{ color: "var(--ink)" }}>this browser tab</strong> only (sessionStorage).
+                      Local dev: run <span className="mono" style={{ fontSize: 11 }}>npm run dev</span> — <span className="mono" style={{ fontSize: 11 }}>/api</span> proxies to production unless you set <span className="mono" style={{ fontSize: 11 }}>VITE_API_PROXY_TARGET</span>.
+                    </p>
+                    <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", marginBottom: 12 }}>
+                      <input
+                        type="checkbox"
+                        checked={roomsAdminTestMode}
+                        onChange={(e) => onRoomsAdminTestModeChange(e.target.checked)}
+                        style={{ marginTop: 2 }}
+                      />
+                      <span style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.45 }}>
+                        Show room UI &amp; API (create, join, compare toggle, dashboard)
+                      </span>
+                    </label>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={!roomsAdminTestMode}
+                        onClick={() => { onAdminOpenCreateRoom?.(); }}
+                      >
+                        Create a room
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={!roomsAdminTestMode || !adminActiveRoomId}
+                        onClick={() => { onAdminOpenRoomDashboard?.(); }}
+                      >
+                        Room dashboard
+                      </Button>
+                      {adminActiveRoomId && roomsAdminTestMode && (
+                        <span className="mono" style={{ fontSize: 11, color: "var(--ink-4)", alignSelf: "center" }}>
+                          Active: {adminActiveRoomId}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -8117,13 +8188,15 @@ export default function App() {
   const isMobile = useMediaQuery("(max-width: 639px)");
   const totalAnswered = Object.keys(answers).filter(k => answerIsFilled(answers[k])).length;
   const admin = useAdminUnlock();
+  const [roomsAdminTestMode, setRoomsAdminTestModeState] = useState(() => readRoomsAdminTestSessionFlag());
+  const roomsFeatureVisible = ROOMS_FEATURE_ENABLED || roomsAdminTestMode;
+  const roomSession = useRoomSession(roomsFeatureVisible);
   const [sheetModalOpen, setSheetModalOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const handleShareSite = useCallback(() => {
     shareSiteHome();
   }, []);
 
-  const roomSession = useRoomSession();
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const [roomDashboardOpen, setRoomDashboardOpen] = useState(false);
   /* "everyone" = global peer pool, "room" = only members of the active
@@ -8137,7 +8210,7 @@ export default function App() {
   const compareRoomData = useRoomCompareData({
     activeRoomId: roomSession.activeRoomId,
     token: roomSession.activeRoom?.token || "",
-    enabled: ROOMS_FEATURE_ENABLED && Boolean(roomSession.activeRoomId && roomSession.activeRoom?.token),
+    enabled: roomsFeatureVisible && Boolean(roomSession.activeRoomId && roomSession.activeRoom?.token),
   });
   const handleOpenCreateRoom = useCallback(() => {
     setCreateRoomOpen(true);
@@ -8200,23 +8273,48 @@ export default function App() {
   /* Room id we should treat as "the URL is asking for this room right now".
      Kept in state so we can react to popstate (back/forward) and our own
      replaceState calls. */
-  const [urlRoomId, setUrlRoomId] = useState(() => (
-    ROOMS_FEATURE_ENABLED ? getRoomIdFromUrl() : null
-  ));
+  const [urlRoomId, setUrlRoomId] = useState(() => {
+    if (typeof window === "undefined") return null;
+    if (!ROOMS_FEATURE_ENABLED && !readRoomsAdminTestSessionFlag()) return null;
+    return getRoomIdFromUrl();
+  });
+
+  const setRoomsAdminTestMode = useCallback((next) => {
+    setRoomsAdminTestModeState(next);
+    try {
+      if (next) sessionStorage.setItem(ROOMS_ADMIN_TEST_STORAGE_KEY, "1");
+      else sessionStorage.removeItem(ROOMS_ADMIN_TEST_STORAGE_KEY);
+    } catch (_) {}
+    if (typeof window === "undefined") return;
+    if (next) {
+      setUrlRoomId(getRoomIdFromUrl());
+    } else {
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has("room")) {
+          url.searchParams.delete("room");
+          const qs = url.searchParams.toString();
+          window.history.replaceState({}, "", `${url.pathname}${qs ? `?${qs}` : ""}${url.hash || ""}`);
+        }
+      } catch (_) {}
+      setUrlRoomId(null);
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const onPop = () => {
-      if (!ROOMS_FEATURE_ENABLED) return;
+      if (!roomsFeatureVisible) return;
       setUrlRoomId(getRoomIdFromUrl());
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, []);
+  }, [roomsFeatureVisible]);
 
   /* When rooms are off, drop ?room= from the address bar so invite links
      don't look like a broken feature. */
   useEffect(() => {
-    if (ROOMS_FEATURE_ENABLED || typeof window === "undefined") return undefined;
+    if (roomsFeatureVisible || typeof window === "undefined") return undefined;
     try {
       const url = new URL(window.location.href);
       if (!url.searchParams.has("room")) return undefined;
@@ -8227,13 +8325,13 @@ export default function App() {
       setUrlRoomId(null);
     } catch (_) {}
     return undefined;
-  }, []);
+  }, [roomsFeatureVisible]);
 
   /* "Pending join" = the URL points at a room that isn't in our known
      rooms map yet. That's the joiner intercept signal. We block the rest
      of the app until the user either accepts or declines. */
   const pendingJoinRoomId = (
-    ROOMS_FEATURE_ENABLED
+    roomsFeatureVisible
     && roomSession.hydrated
     && urlRoomId
     && !roomSession.rooms[urlRoomId]
@@ -8389,7 +8487,7 @@ export default function App() {
   const lastRoomSubmitSigRef = useRef("");
   const activeRoomToken = roomSession.activeRoom?.token || "";
   useEffect(() => {
-    if (!ROOMS_FEATURE_ENABLED) return undefined;
+    if (!roomsFeatureVisible) return undefined;
     if (!hydrated || !roomSession.hydrated) return undefined;
     if (!roomSession.activeRoomId || !activeRoomToken) return undefined;
     if (answersSignature === "") return undefined;
@@ -8438,7 +8536,7 @@ export default function App() {
   );
   const effectivePeers = useRoomPool ? compareRoomData.roomPeers : peers;
   const showCompareBanner = (
-    ROOMS_FEATURE_ENABLED
+    roomsFeatureVisible
     && !isWelcome
     && !showJoinScreen
     && hydrated
@@ -8481,7 +8579,7 @@ export default function App() {
         peerSource={peerSource}
         themeMode={themeMode}
         onToggleTheme={toggleTheme}
-        onCreateRoom={ROOMS_FEATURE_ENABLED ? handleOpenCreateRoom : undefined}
+        onCreateRoom={roomsFeatureVisible ? handleOpenCreateRoom : undefined}
       />
     );
   } else if (state.screen === "start") {
@@ -8504,9 +8602,9 @@ export default function App() {
         peers={effectivePeers}
         onDownloadPdf={() => downloadOverviewPdf(answers, effectivePeers, state.segment, state.timeSpentMs)}
         onShareImage={() => setShareOpen(true)}
-        onCreateRoom={ROOMS_FEATURE_ENABLED ? handleOpenCreateRoom : undefined}
-        onOpenRoomDashboard={ROOMS_FEATURE_ENABLED ? () => setRoomDashboardOpen(true) : undefined}
-        activeRoomId={ROOMS_FEATURE_ENABLED ? roomSession.activeRoomId : null}
+        onCreateRoom={roomsFeatureVisible ? handleOpenCreateRoom : undefined}
+        onOpenRoomDashboard={roomsFeatureVisible ? () => setRoomDashboardOpen(true) : undefined}
+        activeRoomId={roomsFeatureVisible ? roomSession.activeRoomId : null}
       />
     );
   } else if (state.screen === "category") {
@@ -8546,9 +8644,9 @@ export default function App() {
             onOpenSheetData={() => setSheetModalOpen(true)}
             themeMode={themeMode}
             onToggleTheme={toggleTheme}
-            activeRoom={ROOMS_FEATURE_ENABLED ? roomSession.activeRoom : null}
-            activeRoomId={ROOMS_FEATURE_ENABLED ? roomSession.activeRoomId : null}
-            onOpenRoomDashboard={ROOMS_FEATURE_ENABLED ? () => setRoomDashboardOpen(true) : undefined}
+            activeRoom={roomsFeatureVisible ? roomSession.activeRoom : null}
+            activeRoomId={roomsFeatureVisible ? roomSession.activeRoomId : null}
+            onOpenRoomDashboard={roomsFeatureVisible ? () => setRoomDashboardOpen(true) : undefined}
           />
         )}
         {showCompareBanner && (
@@ -8627,7 +8725,16 @@ export default function App() {
           </div>
         )}
       </div>
-      <AdminModal {...admin} sessions={state.sessions} dispatch={dispatch} />
+      <AdminModal
+        {...admin}
+        sessions={state.sessions}
+        dispatch={dispatch}
+        roomsAdminTestMode={roomsAdminTestMode}
+        onRoomsAdminTestModeChange={setRoomsAdminTestMode}
+        onAdminOpenCreateRoom={handleOpenCreateRoom}
+        onAdminOpenRoomDashboard={() => setRoomDashboardOpen(true)}
+        adminActiveRoomId={roomSession.activeRoomId}
+      />
       <SheetDataModal
         open={sheetModalOpen}
         onClose={() => setSheetModalOpen(false)}
@@ -8641,7 +8748,7 @@ export default function App() {
         segment={state.segment}
         timeSpentMs={state.timeSpentMs}
       />
-      {ROOMS_FEATURE_ENABLED && (
+      {roomsFeatureVisible && (
         <RoomDashboardModal
           open={roomDashboardOpen && Boolean(roomSession.activeRoomId)}
           onClose={() => { setRoomDashboardOpen(false); roomSession.clearError(); }}
@@ -8659,7 +8766,7 @@ export default function App() {
           }}
         />
       )}
-      {ROOMS_FEATURE_ENABLED && (
+      {roomsFeatureVisible && (
         <CreateRoomModal
           open={createRoomOpen}
           onClose={() => { setCreateRoomOpen(false); roomSession.clearError(); }}

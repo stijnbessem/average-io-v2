@@ -38,15 +38,23 @@ export const ROOM_DEFAULTS = Object.freeze({
 /* ------------------------------------------------------------------ */
 
 export function parseBody(req) {
-  if (!req.body) return {};
-  if (typeof req.body === "string") {
+  const raw = req.body;
+  if (raw == null) return {};
+  if (typeof Buffer !== "undefined" && Buffer.isBuffer(raw)) {
     try {
-      return JSON.parse(req.body);
+      return JSON.parse(raw.toString("utf8"));
     } catch (_) {
       return {};
     }
   }
-  if (typeof req.body === "object") return req.body;
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw);
+    } catch (_) {
+      return {};
+    }
+  }
+  if (typeof raw === "object" && !Array.isArray(raw)) return raw;
   return {};
 }
 
