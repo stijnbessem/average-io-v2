@@ -1010,6 +1010,8 @@ function computeNumericStats(peers, qid, userVal) {
 
 /* Categorical distribution: {option: count, pct} */
 function computeCategoricalStats(peers, qid, userVal) {
+  const q = QUESTIONS_BY_ID[qid];
+  const optionList = Array.isArray(q?.options) ? q.options : [];
   const counts = {};
   let total = 0;
   peers.forEach(p => {
@@ -1019,9 +1021,13 @@ function computeCategoricalStats(peers, qid, userVal) {
     total++;
   });
   if (total < 1) return null;
-  const dist = Object.entries(counts)
-    .map(([k, n]) => ({ option: k, n, pct: (n / total) * 100 }))
-    .sort((a, b) => b.pct - a.pct);
+  const dist = optionList.length
+    ? optionList
+      .map((opt) => ({ option: opt, n: counts[opt] || 0, pct: ((counts[opt] || 0) / total) * 100 }))
+      .sort((a, b) => b.pct - a.pct)
+    : Object.entries(counts)
+      .map(([k, n]) => ({ option: k, n, pct: (n / total) * 100 }))
+      .sort((a, b) => b.pct - a.pct);
   const userCount = counts[userVal] || 0;
   const userPct = (userCount / total) * 100;
   const mostCommon = dist[0];
@@ -1072,7 +1078,6 @@ function computeMultiCategoricalStats(peers, qid, userVal) {
   if (n < 1) return null;
   const dist = optionList
     .map((opt) => ({ option: opt, n: counts[opt] || 0, pct: ((counts[opt] || 0) / n) * 100 }))
-    .filter((d) => d.n > 0)
     .sort((a, b) => b.pct - a.pct);
   let overlap = 0;
   peers.forEach((p) => {
