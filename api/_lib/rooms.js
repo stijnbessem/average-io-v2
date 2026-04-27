@@ -104,15 +104,35 @@ export function rateLimit({ ip, bucket, windowMs, max }) {
 /*  Tokens                                                            */
 /* ------------------------------------------------------------------ */
 
+/**
+ * HMAC key for hashing participant/owner tokens before they hit the Sheet.
+ * Prefer explicit ROOM_TOKEN_SECRET; if unset, derive deterministically from
+ * GOOGLE_WEBHOOK_SECRET so a single Vercel secret is enough (Apps Script
+ * never re-hashes — it only stores the hex digest from this API).
+ */
+function getRoomTokenSecret() {
+  const explicit = process.env.ROOM_TOKEN_SECRET;
+  if (explicit && String(explicit).trim()) {
+    return String(explicit).trim();
+  }
+  const webhook = process.env.GOOGLE_WEBHOOK_SECRET;
+  if (webhook && String(webhook).trim()) {
+    return crypto
+      .createHash("sha256")
+      .update(`average-io:room-token-derive:v1:${String(webhook).trim()}`)
+      .digest("hex");
+  }
+  throw new Error(
+    "Set ROOM_TOKEN_SECRET or GOOGLE_WEBHOOK_SECRET in environment variables.",
+  );
+}
+
 export function generateToken() {
   return crypto.randomBytes(32).toString("base64url");
 }
 
 export function hashToken(token) {
-  const secret = process.env.ROOM_TOKEN_SECRET;
-  if (!secret) {
-    throw new Error("ROOM_TOKEN_SECRET is not configured");
-  }
+  const secret = getRoomTokenSecret();
   return crypto
     .createHmac("sha256", secret)
     .update(String(token))
