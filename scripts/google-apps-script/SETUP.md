@@ -66,6 +66,11 @@ room_id | participant_number | participant_token_hash | status | joined_at | sub
      **entire contents** into the new `Rooms.gs` file.
    - Save.
 
+4. (Optional, recommended) If you want session logs split across multiple
+   tabs with automatic rollover at 5000 rows per tab, replace your legacy
+   logger with `scripts/google-apps-script/LegacySessions.gs` in the same
+   project (keeps `doPostLegacy_(e)` + rotates `sessions_001`, `sessions_002`, ...).
+
 That's it for the code. The new file defines a fresh `doPost(e)` which:
 - routes any request that has an `action` field to a room handler, and
 - otherwise calls back into your renamed `doPostLegacy_(e)` so the session
