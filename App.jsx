@@ -2133,7 +2133,7 @@ function PageShell({ children, maxWidth = 1120 }) {
    Toggle off to hide all room UI and skip session/API until the feature is ready.
    ============================================================================ */
 
-const ROOMS_FEATURE_ENABLED = false;
+const ROOMS_FEATURE_ENABLED = true;
 /** When admin enables “test rooms” in the admin panel, room UI/API hydrate for this tab only. */
 const ROOMS_ADMIN_TEST_STORAGE_KEY = "comparizzon:rooms-admin-test";
 
