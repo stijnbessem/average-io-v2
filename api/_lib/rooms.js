@@ -177,7 +177,13 @@ export async function callAppsScript(action, args = {}) {
     throw new Error(json?.error || `Apps Script HTTP ${upstream.status}`);
   }
   if (!json.ok) {
-    const err = new Error(json.error || "Apps Script action failed");
+    const upstreamMessage = String(json.error || "Apps Script action failed");
+    const normalized = upstreamMessage.toLowerCase();
+    const err = new Error(
+      normalized.includes("missing snapshot")
+        ? "Apps Script room handler is not installed yet. Update/deploy scripts/google-apps-script/Code.gs (rooms dispatcher) and keep doPostLegacy_ for old logging."
+        : upstreamMessage
+    );
     err.appsScript = true;
     throw err;
   }
