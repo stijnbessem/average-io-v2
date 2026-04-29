@@ -2,8 +2,14 @@
   "functions": {
     "api/live-peers.js": {
       "maxDuration": 60
+    },
+    "api/snapshot.js": {
+      "maxDuration": 60
     }
   },
+  "crons": [
+    { "path": "/api/snapshot", "schedule": "0 4 * * *" }
+  ],
   "rewrites": [
     { "source": "/r", "destination": "/index.html" },
     { "source": "/overview", "destination": "/index.html" },
