@@ -1,5 +1,5 @@
 {
-  "name": "average-io",
+  "name": "comparizzon",
   "private": true,
   "version": "0.15.8",
   "type": "module",
@@ -8,10 +8,15 @@
     "build": "vite build",
     "preview": "vite preview",
     "simulate:v2": "node scripts/simulate-v2-sessions.mjs",
-    "seed:sheet": "node scripts/seed-sheet.mjs"
+    "seed:sheet": "node scripts/seed-sheet.mjs",
+    "migrate:sheets-to-supabase": "node scripts/migrate-sheets-to-supabase.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.105.1",
+    "@vercel/analytics": "^2.0.1",
+    "csv-parse": "^6.0.0",
     "framer-motion": "^11.11.1",
+    "googleapis": "^171.4.0",
     "jspdf": "^2.5.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

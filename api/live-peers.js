@@ -1,61 +1,15 @@
-import { google } from "googleapis";
+/**
+ * Live peer pool: reads finished sessions from Supabase and emits the
+ * wide-format gviz table that App.jsx:buildPeersFromSheet expects.
+ *
+ * Output shape: { table: { cols: [{label}], rows: [{c:[{v}, ...]}] } }
+ * Columns emitted: session_id, q_<qid> for every question id seen across
+ * all rows. Values are unwrapped from the rich {value, unit, ...} object.
+ */
+import { getSupabase } from "./_lib/supabase.js";
 
-const DEFAULT_RANGE = "A:ZZ";
-const SESSION_TAB_REGEX = /^sessions_\d{3}$/i;
-
-function normalizePrivateKey(value) {
-  if (!value) return "";
-  return value.replace(/\\n/g, "\n");
-}
-
-function toGvizTable(values) {
-  if (!Array.isArray(values) || values.length < 2) {
-    return { cols: [], rows: [] };
-  }
-
-  const headers = values[0].map((h) => String(h || "").trim());
-  const cols = headers.map((label) => ({ label }));
-  const rows = values.slice(1).map((row) => {
-    const c = headers.map((_, idx) => {
-      const v = row[idx];
-      return { v: v == null ? "" : String(v) };
-    });
-    return { c };
-  });
-  return { cols, rows };
-}
-
-function normalizeRows(values) {
-  if (!Array.isArray(values) || values.length < 2) return { headers: [], rows: [] };
-  const headers = (values[0] || []).map((h) => String(h || "").trim());
-  const rows = values.slice(1).map((row) => {
-    const obj = {};
-    headers.forEach((h, idx) => {
-      obj[h] = row[idx] == null ? "" : String(row[idx]);
-    });
-    return obj;
-  });
-  return { headers, rows };
-}
-
-function mergeNormalizedTables(tables) {
-  const headerSet = new Set();
-  tables.forEach((t) => t.headers.forEach((h) => { if (h) headerSet.add(h); }));
-  const headers = Array.from(headerSet);
-  if (headers.length === 0) return { cols: [], rows: [] };
-
-  const values = [headers];
-  tables.forEach((t) => {
-    t.rows.forEach((rowObj) => {
-      values.push(headers.map((h) => rowObj[h] ?? ""));
-    });
-  });
-  return toGvizTable(values);
-}
-
-function quoteSheetTitle(title) {
-  return `'${String(title).replace(/'/g, "''")}'!A:ZZ`;
-}
+const PEER_LIMIT = 2000;
+const PAGE_SIZE = 1000; // Supabase PostgREST default cap; we paginate around it.
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -63,77 +17,74 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
-  const privateKey = normalizePrivateKey(process.env.GOOGLE_SHEETS_PRIVATE_KEY);
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-  const range = process.env.GOOGLE_SHEETS_RANGE || DEFAULT_RANGE;
-
-  if (!clientEmail || !privateKey || !spreadsheetId) {
-    return res.status(500).json({
-      error:
-        "Google Sheets read is not configured. Missing GOOGLE_SHEETS_CLIENT_EMAIL, GOOGLE_SHEETS_PRIVATE_KEY, or GOOGLE_SHEETS_SPREADSHEET_ID.",
-    });
-  }
-
   try {
-    const auth = new google.auth.JWT({
-      email: clientEmail,
-      key: privateKey,
-      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-    });
-
-    const sheets = google.sheets({ version: "v4", auth });
-
-    let table = null;
-    /* Backward compatible: if a specific tab range is configured, keep using it.
-       Otherwise auto-aggregate rotating sessions_### tabs so live peer counts
-       reflect all session shards, not just sessions_001. */
-    if (range && range.includes("!")) {
-      const result = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range,
-        majorDimension: "ROWS",
-      });
-      table = toGvizTable(result.data.values || []);
-    } else {
-      const meta = await sheets.spreadsheets.get({
-        spreadsheetId,
-        includeGridData: false,
-        fields: "sheets(properties(title))",
-      });
-      const titles = (meta.data.sheets || [])
-        .map((s) => s?.properties?.title)
-        .filter((t) => typeof t === "string");
-      const sessionTabs = titles
-        .filter((t) => SESSION_TAB_REGEX.test(t))
-        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
-      if (sessionTabs.length === 0) {
-        const result = await sheets.spreadsheets.values.get({
-          spreadsheetId,
-          range,
-          majorDimension: "ROWS",
-        });
-        table = toGvizTable(result.data.values || []);
-      } else {
-        const batch = await sheets.spreadsheets.values.batchGet({
-          spreadsheetId,
-          ranges: sessionTabs.map(quoteSheetTitle),
-          majorDimension: "ROWS",
-        });
-        const tables = (batch.data.valueRanges || [])
-          .map((vr) => normalizeRows(vr.values || []))
-          .filter((t) => t.headers.length > 0 && t.rows.length > 0);
-        table = mergeNormalizedTables(tables);
-      }
+    const supabase = getSupabase();
+    // Fetch pages in parallel to stay under Supabase's per-statement timeout.
+    const ranges = [];
+    for (let offset = 0; offset < PEER_LIMIT; offset += PAGE_SIZE) {
+      ranges.push([offset, Math.min(offset + PAGE_SIZE, PEER_LIMIT) - 1]);
+    }
+    const results = await Promise.all(
+      ranges.map(([from, to]) =>
+        supabase
+          .from("sessions")
+          .select("id, version, segment_filter, finished_at, answers")
+          .eq("finished", true)
+          .order("created_at", { ascending: false })
+          .range(from, to),
+      ),
+    );
+    const all = [];
+    for (const { data, error } of results) {
+      if (error) throw new Error(error.message);
+      if (data && data.length > 0) all.push(...data);
     }
 
+    const table = buildGvizTable(all);
+    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=600");
     return res.status(200).json({ table });
   } catch (error) {
     const message =
       error && typeof error.message === "string"
         ? error.message
-        : "Failed to fetch live peers from Google Sheets.";
+        : "Failed to fetch live peers.";
     return res.status(502).json({ error: message });
   }
+}
+
+function buildGvizTable(rows) {
+  if (rows.length === 0) return { cols: [], rows: [] };
+
+  const questionIds = new Set();
+  for (const row of rows) {
+    const ans = row?.answers;
+    if (ans && typeof ans === "object") {
+      for (const k of Object.keys(ans)) questionIds.add(k);
+    }
+  }
+
+  const headers = ["session_id", ...Array.from(questionIds).map((q) => `q_${q}`)];
+  const cols = headers.map((label) => ({ label }));
+
+  const outRows = rows.map((row) => {
+    const ans = row?.answers && typeof row.answers === "object" ? row.answers : {};
+    const c = headers.map((h) => {
+      if (h === "session_id") return { v: String(row.id || "") };
+      const qid = h.slice(2);
+      const entry = ans[qid];
+      if (entry == null) return { v: "" };
+      const value = entry && typeof entry === "object" && "value" in entry ? entry.value : entry;
+      return { v: stringifyCell(value) };
+    });
+    return { c };
+  });
+
+  return { cols, rows: outRows };
+}
+
+function stringifyCell(value) {
+  if (value == null) return "";
+  if (Array.isArray(value)) return JSON.stringify(value);
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
 }

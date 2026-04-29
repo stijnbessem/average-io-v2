@@ -788,8 +788,8 @@ function buildPeerPool(size = 480, seed = 20260421) {
 }
 
 const LIVE_PEER_POOL_ENDPOINT = "/api/live-peers";
-const LIVE_PEER_POOL_URL = "https://docs.google.com/spreadsheets/d/1wKOyr9XtI9CEvcp3V7QrGFX42YvopkTxQghkW-dGqr0/gviz/tq?tqx=out:json";
 const LIVE_PEER_REFRESH_MS = 30000;
+const LIVE_PEER_CHUNK_SIZE = 1000;
 
 function parseGvizResponse(text) {
   if (typeof text !== "string" || text.trim() === "") throw new Error("empty gviz response");
@@ -805,13 +805,21 @@ function toNumberOrNull(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+function answerPayloadToRaw(payload) {
+  if (payload == null) return null;
+  if (typeof payload === "object" && "value" in payload) return payload.value;
+  return payload;
+}
+
 function extractAnswerValuesFromJsonCell(rawJsonCell) {
   if (!rawJsonCell || typeof rawJsonCell !== "string") return {};
   try {
     const parsed = JSON.parse(rawJsonCell);
     const answers = parsed?.answers || {};
     return Object.fromEntries(
-      Object.entries(answers).map(([qid, payload]) => [qid, payload?.value])
+      Object.entries(answers)
+        .map(([qid, payload]) => [qid, answerPayloadToRaw(payload)])
+        .filter(([, v]) => v != null && v !== "")
     );
   } catch (_) {
     return {};
@@ -841,8 +849,7 @@ function buildPeersFromSheet(table) {
   rows.forEach((row) => {
     const cells = row?.c || [];
     const sessionId = sessionIdColIndex >= 0 ? String(cells[sessionIdColIndex]?.v || "") : "";
-    // Ignore earlier synthetic bootstrap rows so varied replacements can take over.
-    if (sessionId.includes("-seed-")) return;
+    // Keep all available peer rows (including older seed-derived sessions).
     const fallbackFromJson = jsonColIndex >= 0
       ? extractAnswerValuesFromJsonCell(cells[jsonColIndex]?.v)
       : {};
@@ -855,6 +862,17 @@ function buildPeersFromSheet(table) {
       if (normalized != null && normalized !== "") peer[qid] = normalized;
     });
 
+    /* API may prune flat q_* columns and send only session_id + _json — then questionColumns is empty. */
+    if (questionColumns.length === 0 && jsonColIndex >= 0) {
+      Object.entries(fallbackFromJson).forEach(([qid, raw]) => {
+        if (raw == null || raw === "") return;
+        const q = QUESTIONS_BY_ID[qid];
+        if (!q) return;
+        const normalized = normalizeAnswerForQuestion(raw, q);
+        if (normalized != null && normalized !== "") peer[qid] = normalized;
+      });
+    }
+
     if (Object.keys(peer).length > 0) peers.push(peer);
   });
 
@@ -865,12 +883,16 @@ function usePeerPool() {
   const syntheticPeers = useMemo(() => buildPeerPool(480, 20260421), []);
   const [peers, setPeers] = useState(syntheticPeers);
   const [source, setSource] = useState("synthetic");
+  const [peerPoolLoading, setPeerPoolLoading] = useState(true);
   const [sheetState, setSheetState] = useState({
     source: "synthetic",
     lastAttemptAt: null,
     lastSuccessAt: null,
     lastError: "",
     sheetPeerCount: 0,
+    isLoading: true,
+    loadedPeerCount: 0,
+    totalPeerCount: null,
     sample: [],
   });
 
@@ -882,41 +904,100 @@ function usePeerPool() {
       const attemptedAt = new Date().toISOString();
       let attemptedSheetCount = 0;
       let attemptedSample = [];
+      if (!cancelled) {
+        setSheetState((prev) => ({
+          ...prev,
+          lastAttemptAt: attemptedAt,
+          isLoading: true,
+          loadedPeerCount: 0,
+          totalPeerCount: null,
+          lastError: "",
+        }));
+      }
       try {
-        let table = null;
-        let sourceLabel = "api";
+        let allLivePeers = [];
+        const seenPeerRowSignatures = new Set();
+        const sourceLabel = "api";
+        let totalPeerCount = null;
         try {
-          const res = await fetch(LIVE_PEER_POOL_ENDPOINT, { cache: "no-store" });
-          if (!res.ok) throw new Error(`api fetch failed (${res.status})`);
-          const payload = await res.json();
-          table = payload?.table;
-          if (!table) throw new Error("api response missing table");
+          let offset = 0;
+          let hasMore = true;
+          while (hasMore) {
+            const url = `${LIVE_PEER_POOL_ENDPOINT}?offset=${offset}&limit=${LIVE_PEER_CHUNK_SIZE}`;
+            const res = await fetch(url, { cache: "no-store" });
+            if (!res.ok) throw new Error(`api fetch failed (${res.status})`);
+            const payload = await res.json();
+            const table = payload?.table;
+            if (!table) throw new Error("api response missing table");
+            if (totalPeerCount == null && Number.isFinite(Number(payload?.totalCount))) {
+              totalPeerCount = Number(payload.totalCount);
+            }
+
+            // Guard against duplicate pages / unstable paging by deduping raw rows per chunk.
+            const dedupedTableRows = Array.isArray(table?.rows)
+              ? table.rows.filter((row) => {
+                  const cells = row?.c || [];
+                  const sig = `${String(cells[0]?.v || "")}::${String(cells[1]?.v || "")}`;
+                  if (!sig || seenPeerRowSignatures.has(sig)) return false;
+                  seenPeerRowSignatures.add(sig);
+                  return true;
+                })
+              : [];
+            const dedupedTable = { ...(table || {}), rows: dedupedTableRows };
+            const chunkPeers = buildPeersFromSheet(dedupedTable);
+            if (chunkPeers.length > 0) {
+              allLivePeers = allLivePeers.concat(chunkPeers);
+              attemptedSheetCount = allLivePeers.length;
+              attemptedSample = allLivePeers.slice(0, 10);
+
+              // Progressive hydration: show live count as chunks arrive.
+              if (!cancelled) {
+                setPeers(allLivePeers);
+                setSource("live");
+                setSheetState({
+                  source: "live",
+                  lastAttemptAt: attemptedAt,
+                  lastSuccessAt: attemptedAt,
+                  lastError: "",
+                  sheetPeerCount: allLivePeers.length,
+                  isLoading: true,
+                  loadedPeerCount: allLivePeers.length,
+                  totalPeerCount,
+                  sample: attemptedSample,
+                });
+              }
+            }
+
+            hasMore = payload?.hasMore === true;
+            offset = Number.isFinite(Number(payload?.nextOffset))
+              ? Number(payload.nextOffset)
+              : offset + LIVE_PEER_CHUNK_SIZE;
+
+            // Safety to avoid accidental infinite loops on malformed responses.
+            if (hasMore && (!Number.isFinite(offset) || offset < 0)) {
+              throw new Error("api pagination returned invalid nextOffset");
+            }
+          }
         } catch (apiError) {
-          // Fallback to direct public sheet read when the sheet is link-accessible.
-          const res = await fetch(LIVE_PEER_POOL_URL, { cache: "no-store" });
-          if (!res.ok) throw new Error(`sheet fetch failed (${res.status})`);
-          const raw = await res.text();
-          const gviz = parseGvizResponse(raw);
-          table = gviz?.table;
-          sourceLabel = "public-sheet";
+          throw apiError;
         }
 
-        const livePeers = buildPeersFromSheet(table);
-        attemptedSheetCount = livePeers.length;
-        attemptedSample = livePeers.slice(0, 10);
-        if (livePeers.length === 0) throw new Error("sheet returned no usable rows");
+        if (allLivePeers.length === 0) throw new Error("peer API returned no usable rows");
         if (!cancelled) {
-          setPeers(livePeers);
+          setPeers(allLivePeers);
           setSource("live");
           setSheetState({
             source: "live",
             lastAttemptAt: attemptedAt,
             lastSuccessAt: attemptedAt,
             lastError: "",
-            sheetPeerCount: livePeers.length,
+            sheetPeerCount: allLivePeers.length,
+            isLoading: false,
+            loadedPeerCount: allLivePeers.length,
+            totalPeerCount,
             sample: attemptedSample,
           });
-          debug("live-peers", `loaded ${livePeers.length} live peers from sheet (${sourceLabel})`);
+          debug("live-peers", `loaded ${allLivePeers.length} live peers from API (${sourceLabel})`);
         }
       } catch (e) {
         if (!cancelled) {
@@ -928,12 +1009,17 @@ function usePeerPool() {
             lastSuccessAt: prev.lastSuccessAt,
             lastError: e && e.message ? e.message : String(e),
             sheetPeerCount: attemptedSheetCount || prev.sheetPeerCount,
+            isLoading: false,
+            loadedPeerCount: attemptedSheetCount || prev.loadedPeerCount || 0,
+            totalPeerCount: prev.totalPeerCount,
             sample: attemptedSample.length ? attemptedSample : prev.sample,
           }));
           debug("live-peers-error", e && e.message ? e.message : String(e));
         }
       } finally {
         if (!cancelled) {
+          setPeerPoolLoading(false);
+          setSheetState((prev) => ({ ...prev, isLoading: false }));
           refreshTimer = setTimeout(load, LIVE_PEER_REFRESH_MS);
         }
       }
@@ -946,7 +1032,7 @@ function usePeerPool() {
     };
   }, [syntheticPeers]);
 
-  return { peers, source, sheetState };
+  return { peers, source, sheetState, peerPoolLoading };
 }
 
 /* ============================================================================
@@ -968,6 +1054,24 @@ function friendlyShare(pct) {
   if (pct <= 70) return "about 2 in 3";
   if (pct <= 85) return `roughly ${roundPct(pct)}%`;
   return "the vast majority";
+}
+
+/** Compact response counts for UI, PDF, and snapshots (e.g. 900 · 2k · 10.1k). */
+function formatCompactCount(n) {
+  if (n == null || !Number.isFinite(Number(n))) return "—";
+  const x = Math.max(0, Math.round(Number(n)));
+  if (x < 1000) return String(x);
+  if (x < 10000) {
+    const k = x / 1000;
+    const r = Math.round(k * 10) / 10;
+    const s = Number.isInteger(r) ? String(Math.round(r)) : r.toFixed(1);
+    return `${s}k`;
+  }
+  if (x < 1_000_000) return `${Math.round(x / 1000)}k`;
+  const m = x / 1_000_000;
+  const rm = Math.round(m * 10) / 10;
+  const sm = Number.isInteger(rm) ? String(Math.round(rm)) : rm.toFixed(1);
+  return `${sm}M`;
 }
 
 /* Build a segmented peer list given the user's current filter */
@@ -1089,7 +1193,7 @@ function computeMultiCategoricalStats(peers, qid, userVal) {
   const tagPcts = userSet.map((tag) => ((counts[tag] || 0) / n) * 100);
   const userPct = tagPcts.length ? tagPcts.reduce((a, b) => a + b, 0) / tagPcts.length : 0;
   const mostCommon = dist[0];
-  return { dist, userPct, overlapPct, mostCommon, n };
+  return { dist, userPct, overlapPct, overlapCount: overlap, mostCommon, n };
 }
 
 /* Per-answer rarity (0 = very common, 1 = very unique) */
@@ -1132,30 +1236,39 @@ function computeCategoryUniqueness(peers, answers, catId) {
 
 /* Comparison phrase generator (spec §18 tone) */
 function comparisonPhrase(kind, peerStat) {
+  const sample = peerStat?.n != null ? ` · ${formatCompactCount(peerStat.n)} in sample` : "";
   if (kind === "numeric") {
     const p = peerStat.percentile;
-    if (p <= 10) return `You're lower than most — roughly the bottom ${roundPct(p)}%.`;
-    if (p <= 30) return `Below average. About ${roundPct(p)}% of users sit lower than you.`;
-    if (p <= 45) return `A little below average.`;
-    if (p <= 55) return `You're close to average here.`;
-    if (p <= 70) return `A bit above average.`;
-    if (p <= 90) return `Above most — roughly top ${roundPct(100 - p)}%.`;
-    return `You're higher than almost everyone — top ${roundPct(100 - p)}%.`;
+    if (p <= 10) return `You're lower than most — roughly the bottom ${roundPct(p)}%.${sample}`;
+    if (p <= 30) return `Below average. About ${roundPct(p)}% of users sit lower than you.${sample}`;
+    if (p <= 45) return `A little below average.${sample}`;
+    if (p <= 55) return `You're close to average here.${sample}`;
+    if (p <= 70) return `A bit above average.${sample}`;
+    if (p <= 90) return `Above most — roughly top ${roundPct(100 - p)}%.${sample}`;
+    return `You're higher than almost everyone — top ${roundPct(100 - p)}%.${sample}`;
   }
   if (kind === "categorical") {
     const share = roundPct(peerStat.userPct);
-    if (peerStat.userPct >= 50) return `The most common answer — ${friendlyShare(peerStat.userPct)} share it.`;
-    if (peerStat.userPct >= 25) return `A common pick — ${friendlyShare(peerStat.userPct)} of users chose the same.`;
-    if (peerStat.userPct >= 10) return `Less common — about ${share}% picked this.`;
-    return `Uncommon — only around ${share}% of users chose this.`;
+    const same =
+      peerStat.userCount != null && peerStat.n != null
+        ? ` · ${formatCompactCount(peerStat.userCount)} · ${formatCompactCount(peerStat.n)}`
+        : sample;
+    if (peerStat.userPct >= 50) return `The most common answer — ${friendlyShare(peerStat.userPct)} share it.${same}`;
+    if (peerStat.userPct >= 25) return `A common pick — ${friendlyShare(peerStat.userPct)} of users chose the same.${same}`;
+    if (peerStat.userPct >= 10) return `Less common — about ${share}% picked this.${same}`;
+    return `Uncommon — only around ${share}% of users chose this.${same}`;
   }
   if (kind === "multi") {
     const o = peerStat.overlapPct;
     const share = roundPct(o);
-    if (o >= 62) return `Heavy overlap — ${friendlyShare(o)} picked at least one of the same options you did.`;
-    if (o >= 38) return `Solid overlap — about ${share}% share one or more picks with you.`;
-    if (o >= 18) return `Selective overlap — roughly ${share}% touched one of your choices.`;
-    return `Distinct combo — only about ${share}% picked any of the same options.`;
+    const ov =
+      peerStat.overlapCount != null && peerStat.n != null
+        ? ` · ${formatCompactCount(peerStat.overlapCount)} · ${formatCompactCount(peerStat.n)}`
+        : sample;
+    if (o >= 62) return `Heavy overlap — ${friendlyShare(o)} picked at least one of the same options you did.${ov}`;
+    if (o >= 38) return `Solid overlap — about ${share}% share one or more picks with you.${ov}`;
+    if (o >= 18) return `Selective overlap — roughly ${share}% touched one of your choices.${ov}`;
+    return `Distinct combo — only about ${share}% picked any of the same options.${ov}`;
   }
   return "";
 }
@@ -1302,30 +1415,81 @@ function optionMatchesUserChoice(option, userOption) {
   return userOption === option;
 }
 
-function HorizontalBars({ dist, userOption, accent = "var(--ink)" }) {
+function HorizontalBars({ dist, userOption, accent = "var(--ink)", compact = false }) {
   const max = Math.max(...dist.map(d => d.pct), 1);
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: compact ? 10 : 8, minWidth: 0, width: "100%" }}>
       {dist.map((d, i) => {
         const isUser = optionMatchesUserChoice(d.option, userOption);
+        const countLabel = formatCompactCount(d.n);
+        const labelCell = (
+          <div style={{
+            fontSize: 13, color: isUser ? "var(--ink)" : "var(--ink-3)",
+            fontWeight: isUser ? 500 : 400,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            minWidth: 0,
+          }}>{d.option}</div>
+        );
+        const barCell = (
+          <div style={{ height: 10, background: "var(--surface-muted)", borderRadius: 3, overflow: "hidden", position: "relative", minWidth: 0 }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(d.pct / max) * 100}%` }}
+              transition={{ duration: 0.55, delay: i * 0.05, ease: EASE_OUT }}
+              style={{ height: "100%", background: isUser ? accent : "#CFCDC6", borderRadius: 3 }}
+            />
+          </div>
+        );
+        const statsCell = (
+          <div
+            className="mono"
+            style={{
+              fontSize: compact ? 10.5 : 11,
+              color: "var(--ink-3)",
+              textAlign: "right",
+              whiteSpace: "nowrap",
+              lineHeight: compact ? 1.25 : 1.2,
+              flexShrink: 0,
+            }}
+          >
+            <span style={{ color: "var(--ink)", fontWeight: 500 }}>{Math.round(d.pct)}%</span>
+            <span style={{ color: "var(--ink-4)", marginLeft: compact ? 5 : 6 }}>{countLabel}</span>
+          </div>
+        );
+        if (compact) {
+          return (
+            <div
+              key={d.option}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) auto",
+                gridTemplateRows: "auto auto",
+                columnGap: 10,
+                rowGap: 5,
+                alignItems: "center",
+                minWidth: 0,
+              }}
+            >
+              <div style={{ gridColumn: 1, gridRow: 1, minWidth: 0 }}>{labelCell}</div>
+              <div style={{ gridColumn: 1, gridRow: 2, minWidth: 0 }}>{barCell}</div>
+              <div style={{ gridColumn: 2, gridRow: "1 / 3", justifySelf: "end", alignSelf: "center" }}>{statsCell}</div>
+            </div>
+          );
+        }
         return (
-          <div key={d.option} style={{ display: "grid", gridTemplateColumns: "minmax(100px, 1fr) 2.2fr 40px", gap: 10, alignItems: "center" }}>
-            <div style={{
-              fontSize: 13, color: isUser ? "var(--ink)" : "var(--ink-3)",
-              fontWeight: isUser ? 500 : 400,
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            }}>{d.option}</div>
-            <div style={{ height: 10, background: "var(--surface-muted)", borderRadius: 3, overflow: "hidden", position: "relative" }}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(d.pct / max) * 100}%` }}
-                transition={{ duration: 0.55, delay: i * 0.05, ease: EASE_OUT }}
-                style={{ height: "100%", background: isUser ? accent : "#CFCDC6", borderRadius: 3 }}
-              />
-            </div>
-            <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)", textAlign: "right" }}>
-              {Math.round(d.pct)}%
-            </div>
+          <div
+            key={d.option}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "minmax(0, 1.1fr) minmax(48px, 2fr) auto",
+              gap: 10,
+              alignItems: "center",
+              minWidth: 0,
+            }}
+          >
+            {labelCell}
+            {barCell}
+            {statsCell}
           </div>
         );
       })}
@@ -1337,7 +1501,10 @@ function Donut({ dist, userOption, accent = "var(--ink)", size = 120 }) {
   const palette = ["#111111", "#7E7D77", "#B4B2AC", "#D9D7D0", "#ECEAE3", "#F6F4EE"];
   let cumulative = 0;
   const total = dist.reduce((a, b) => a + b.pct, 0) || 1;
-  const r = 42; const cx = 50; const cy = 50;
+  const r = 44;
+  const rHole = 36;
+  const cx = 50;
+  const cy = 50;
   const segs = dist.map((d, i) => {
     const start = (cumulative / total) * Math.PI * 2 - Math.PI / 2;
     cumulative += d.pct;
@@ -1346,12 +1513,20 @@ function Donut({ dist, userOption, accent = "var(--ink)", size = 120 }) {
     const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start);
     const x2 = cx + r * Math.cos(end), y2 = cy + r * Math.sin(end);
     const isUser = optionMatchesUserChoice(d.option, userOption);
-    return { d: `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`, isUser, color: isUser ? accent : palette[i % palette.length], option: d.option, pct: d.pct };
+    return {
+      d: `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`,
+      isUser,
+      color: isUser ? accent : palette[i % palette.length],
+      option: d.option,
+      pct: d.pct,
+      n: d.n,
+    };
   });
   const userSeg = segs.find(s => s.isUser);
+  const countStr = userSeg != null ? formatCompactCount(userSeg.n) : "";
   return (
-    <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-      <svg viewBox="0 0 100 100" width={size} height={size}>
+    <div style={{ display: "flex", gap: 16, alignItems: "center", flexShrink: 0 }}>
+      <svg viewBox="0 0 100 100" width={size} height={size} style={{ display: "block" }}>
         {segs.map((s, i) => (
           <motion.path
             key={i}
@@ -1362,16 +1537,54 @@ function Donut({ dist, userOption, accent = "var(--ink)", size = 120 }) {
             d={s.d} fill={s.color}
           />
         ))}
-        <circle cx={50} cy={50} r={22} fill="var(--bg-raised)" />
+        <circle cx={cx} cy={cy} r={rHole} fill="var(--bg-raised)" />
         {userSeg && (
-          <text x={50} y={48} textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize={10} fill="var(--ink)" fontWeight={500}>
-            {Math.round(userSeg.pct)}%
-          </text>
-        )}
-        {userSeg && (
-          <text x={50} y={58} textAnchor="middle" fontFamily="Inter, sans-serif" fontSize={6} fill="#999">
-            you
-          </text>
+          <>
+            <text
+              x={50}
+              y={45}
+              textAnchor="middle"
+              fontFamily="JetBrains Mono, monospace"
+              fontSize={10}
+              fill="var(--ink)"
+              fontWeight={600}
+              paintOrder="stroke fill"
+              stroke="var(--bg-raised)"
+              strokeWidth={2.4}
+              strokeLinejoin="round"
+            >
+              {`${Math.round(userSeg.pct)}%`}
+            </text>
+            <text
+              x={50}
+              y={56}
+              textAnchor="middle"
+              fontFamily="JetBrains Mono, monospace"
+              fontSize={8.5}
+              fill="var(--ink-3)"
+              fontWeight={500}
+              paintOrder="stroke fill"
+              stroke="var(--bg-raised)"
+              strokeWidth={2}
+              strokeLinejoin="round"
+            >
+              {countStr}
+            </text>
+            <text
+              x={50}
+              y={68}
+              textAnchor="middle"
+              fontFamily="Inter, sans-serif"
+              fontSize={6.5}
+              fill="var(--ink-4)"
+              paintOrder="stroke fill"
+              stroke="var(--bg-raised)"
+              strokeWidth={1.6}
+              strokeLinejoin="round"
+            >
+              you
+            </text>
+          </>
         )}
       </svg>
     </div>
@@ -1764,9 +1977,33 @@ function ThemeToggle({ mode, onToggle }) {
   );
 }
 
+/** Welcome screen only: replaces the synthetic 480 count until the first peer-pool fetch finishes. */
+function PeerPoolCountSpinner({ size = 11, borderColor = "var(--ink-3)" }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.span
+      aria-label="Loading peer data"
+      role="status"
+      style={{
+        display: "inline-block",
+        verticalAlign: "-0.14em",
+        width: size,
+        height: size,
+        border: `2px solid ${borderColor}`,
+        borderTopColor: "transparent",
+        borderRadius: "50%",
+        boxSizing: "border-box",
+      }}
+      animate={reduce ? { rotate: 0 } : { rotate: 360 }}
+      transition={reduce ? { duration: 0 } : { duration: 0.7, repeat: Infinity, ease: "linear" }}
+    />
+  );
+}
+
 function TopBar({
   state, dispatch, totalAnswered,
   peerSource = "synthetic", peerCount = 0, onOpenSheetData = null,
+  peerPoolLoading = false,
   themeMode = "light",
   onToggleTheme,
   activeRoom = null,
@@ -1795,6 +2032,7 @@ function TopBar({
     if (onOpenSheetData) onOpenSheetData();
   };
   const isLive = peerSource === "live";
+  const showPeerLoader = peerPoolLoading || !isLive;
 
   return (
     <div style={{
@@ -1930,7 +2168,7 @@ function TopBar({
                     {isLive ? "LIVE" : "FALLBACK"}
                   </span>
                   <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>
-                    {peerCount}
+                    {showPeerLoader ? <PeerPoolCountSpinner size={10} borderColor="var(--ink-3)" /> : peerCount}
                   </span>
                 </button>
                 <span>
@@ -2036,7 +2274,13 @@ function SheetDataModal({ open, onClose, sheetState }) {
     lastSuccessAt = null,
     lastError = "",
     sheetPeerCount = 0,
+    isLoading = false,
+    loadedPeerCount = 0,
+    totalPeerCount = null,
   } = sheetState || {};
+  const completionPct = Number.isFinite(Number(totalPeerCount)) && Number(totalPeerCount) > 0
+    ? Math.min(100, Math.round((sheetPeerCount / Number(totalPeerCount)) * 100))
+    : null;
 
   const fmt = (iso) => {
     if (!iso) return "—";
@@ -2099,8 +2343,10 @@ function SheetDataModal({ open, onClose, sheetState }) {
               <div className="mono" style={{ color: "var(--ink)", marginTop: 6 }}>{sheetPeerCount}</div>
             </div>
             <div style={{ padding: 10, background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
-              <div className="label">Last refresh attempt</div>
-              <div style={{ color: "var(--ink)", marginTop: 6, fontSize: 12 }}>{fmt(lastAttemptAt)}</div>
+              <div className="label">Fetch completion</div>
+              <div className="mono" style={{ color: "var(--ink)", marginTop: 6 }}>
+                {completionPct == null ? (isLoading ? `${loadedPeerCount} loaded…` : "Complete") : `${completionPct}% (${sheetPeerCount}/${totalPeerCount})`}
+              </div>
             </div>
             <div style={{ padding: 10, background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
               <div className="label">Last successful sync</div>
@@ -3427,7 +3673,16 @@ function JoinRoomScreen({
    WELCOME
    ============================================================================ */
 
-function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", themeMode = "light", onToggleTheme, onCreateRoom }) {
+function WelcomeScreen({
+  dispatch,
+  peerCount = 480,
+  peerPoolLoading = false,
+  peerSource = "synthetic",
+  themeMode = "light",
+  onToggleTheme,
+  onCreateRoom,
+  activeRoomId = null,
+}) {
   const isMobile = useMediaQuery("(max-width: 639px)");
   return (
     <div style={{
@@ -3471,10 +3726,6 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
           the fuller your overview becomes.
         </motion.p>
 
-        {typeof onCreateRoom === "function" && (
-          <WelcomePrivateRoomCard onCreateRoom={onCreateRoom} isMobile={isMobile} />
-        )}
-
         <motion.div {...FADE_UP}
           transition={{ duration: 0.6, delay: 0.24, ease: EASE_OUT }}
           style={{
@@ -3506,6 +3757,10 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
           </Button>
         </motion.div>
 
+        {typeof onCreateRoom === "function" && !activeRoomId && (
+          <WelcomePrivateRoomCard onCreateRoom={onCreateRoom} isMobile={isMobile} />
+        )}
+
         {/* Benefits grid */}
         <WelcomeBenefits />
 
@@ -3514,7 +3769,20 @@ function WelcomeScreen({ dispatch, peerCount = 480, peerSource = "synthetic", th
           style={{ marginTop: 56, display: "flex", gap: 32, flexWrap: "wrap", color: "var(--ink-3)", fontSize: 13 }}>
           <div><span className="mono" style={{ color: "var(--ink)" }}>{QUESTIONS.length}</span> questions</div>
           <div><span className="mono" style={{ color: "var(--ink)" }}>{CATEGORIES.length}</span> categories</div>
-          <div><span className="mono" style={{ color: "var(--ink)" }}>{peerCount}</span> peers to compare against</div>
+          <div style={{ display: "inline-flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+            <span
+              className="mono"
+              style={{
+                color: "var(--ink)",
+                minWidth: peerPoolLoading ? 16 : undefined,
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              {peerPoolLoading ? <PeerPoolCountSpinner size={12} borderColor="var(--ink)" /> : peerCount}
+            </span>
+            <span>peers to compare against</span>
+          </div>
         </motion.div>
 
         <div style={{ marginTop: 64, fontSize: 12, color: "var(--ink-4)", maxWidth: 520, lineHeight: 1.6 }}>
@@ -3548,12 +3816,14 @@ function WelcomePrivateRoomCard({ onCreateRoom, isMobile }) {
         width: 56, height: 1, background: "var(--accent-solid)",
       }} />
       <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "stretch" }}>
-        <div style={{ maxWidth: 560 }}>
-          <div className="label" style={{ marginBottom: 6 }}>Compare with people you know</div>
-          <div style={{ fontSize: 17, color: "var(--ink)", marginBottom: 6, lineHeight: 1.3 }}>
+        <div style={{ width: "100%", minWidth: 0 }}>
+          <div style={{
+            fontSize: 15, fontWeight: 500, color: "var(--ink)",
+            marginTop: 6, marginBottom: 6, lineHeight: 1.35,
+          }}>
             Invite friends, family or colleagues to a private room.
           </div>
-          <div style={{ fontSize: 13, color: "var(--ink-3)", lineHeight: 1.55 }}>
+          <div style={{ fontSize: 13, color: "var(--ink-3)", lineHeight: 1.55, width: "100%" }}>
             Send a link to up to {ROOMS_MAX_PARTICIPANTS} people. Everyone answers
             on their own — answers stay hidden until each person submits theirs.
             Then compare side by side, fully anonymous (you'll see each other as
@@ -4437,7 +4707,6 @@ function OverviewDashboard({
   onDownloadPdf,
   onShareImage,
   onCreateRoom = null,
-  onOpenRoomDashboard = null,
   activeRoomId = null,
 }) {
   const { answers, segment } = state;
@@ -4807,11 +5076,8 @@ function OverviewDashboard({
             ))}
           </div>
 
-          {/* End-of-questionnaire CTA: surface the private rooms feature once
-              the user has reached / unlocked their overview. We only show
-              this once the user has at least started answering — otherwise
-              there's nothing meaningful to compare yet. */}
-          {(typeof onCreateRoom === "function" || (activeRoomId && typeof onOpenRoomDashboard === "function")) && totalAnswered > 0 && (
+          {/* Private-room invite only when not already in a room (room access stays in the shell pill). */}
+          {!activeRoomId && typeof onCreateRoom === "function" && totalAnswered > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -4832,38 +5098,32 @@ function OverviewDashboard({
               }} />
               <div style={{
                 display: "flex",
-                gap: 16,
-                alignItems: "center",
-                flexWrap: "wrap",
-                justifyContent: "space-between",
+                flexDirection: "column",
+                gap: 14,
+                alignItems: "stretch",
               }}>
-                <div style={{ minWidth: 0, flex: "1 1 320px" }}>
-                  <div className="label" style={{ marginBottom: 6 }}>
-                    {activeRoomId ? "Your private room" : "Compare with people you know"}
+                <div style={{
+                  display: "flex",
+                  gap: 16,
+                  alignItems: "flex-start",
+                  flexWrap: "wrap",
+                  justifyContent: "space-between",
+                }}>
+                  <div style={{
+                    fontSize: 15, fontWeight: 500, color: "var(--ink)",
+                    marginTop: 6, marginBottom: 0, lineHeight: 1.35,
+                    minWidth: 0, flex: "1 1 200px",
+                  }}>
+                    Invite friends, family, or your team to a private room.
                   </div>
-                  <div className="serif" style={{ fontSize: 22, color: "var(--ink)", lineHeight: 1.2, marginBottom: 6 }}>
-                    {activeRoomId
-                      ? "See how you compare with the people in your room."
-                      : "Invite friends, family, or your team to a private room."}
-                  </div>
-                  <div style={{ fontSize: 13, color: "var(--ink-3)", lineHeight: 1.55 }}>
-                    {activeRoomId
-                      ? "Open the dashboard to see who's joined and submitted, copy your invite link, or flip the comparison toggle to compare just within this room."
-                      : `Send a link to up to ${ROOMS_MAX_PARTICIPANTS} people. Everyone answers on their own — answers stay hidden until each person submits theirs. Then compare side by side, fully anonymous (you'll see each other as #1, #2, #3…).`}
+                  <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
+                    <Button size="sm" variant="secondary" onClick={onCreateRoom}>
+                      Create a private room
+                    </Button>
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
-                  {activeRoomId && typeof onOpenRoomDashboard === "function" ? (
-                    <Button size="sm" variant="secondary" onClick={onOpenRoomDashboard}>
-                      Open room
-                    </Button>
-                  ) : (
-                    typeof onCreateRoom === "function" && (
-                      <Button size="sm" variant="secondary" onClick={onCreateRoom}>
-                        Create a private room
-                      </Button>
-                    )
-                  )}
+                <div style={{ fontSize: 13, color: "var(--ink-3)", lineHeight: 1.55, width: "100%", minWidth: 0 }}>
+                  {`Send a link to up to ${ROOMS_MAX_PARTICIPANTS} people. Everyone answers on their own — answers stay hidden until each person submits theirs. Then compare side by side, fully anonymous (you'll see each other as #1, #2, #3…).`}
                 </div>
               </div>
             </motion.div>
@@ -5533,6 +5793,7 @@ function CategoryDetail({ state, dispatch, peers }) {
 
 function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
   const [editing, setEditing] = useState(false);
+  const narrowLocalViz = useMediaQuery("(max-width: 639px)");
   const unanswered = !answerIsFilled(value);
 
   let localStats = null, comparison = null, kind = null;
@@ -5619,18 +5880,42 @@ function QuestionDetailRow({ q, cat, value, peers, dispatch }) {
                 values={localStats.vals} userValue={value} min={q.min} max={q.max} unit={q.unit}
               />
             ) : localStats.dist.length <= 6 ? (
-              <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 24, alignItems: "center" }}>
-                <Donut dist={localStats.dist} userOption={value} size={110} />
-                <HorizontalBars dist={localStats.dist} userOption={value} />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: narrowLocalViz ? "column" : "row",
+                  alignItems: narrowLocalViz ? "stretch" : "center",
+                  gap: narrowLocalViz ? 16 : 24,
+                  minWidth: 0,
+                }}
+              >
+                <div style={{
+                  display: "flex",
+                  justifyContent: narrowLocalViz ? "center" : "flex-start",
+                  flexShrink: 0,
+                }}
+                >
+                  <Donut dist={localStats.dist} userOption={value} size={narrowLocalViz ? 148 : 120} />
+                </div>
+                <div style={{ minWidth: 0, flex: narrowLocalViz ? "none" : 1, width: narrowLocalViz ? "100%" : undefined }}>
+                  <HorizontalBars dist={localStats.dist} userOption={value} compact={narrowLocalViz} />
+                </div>
               </div>
             ) : (
-              <HorizontalBars dist={localStats.dist.slice(0, 8)} userOption={value} />
+              <HorizontalBars dist={localStats.dist.slice(0, 8)} userOption={value} compact={narrowLocalViz} />
             )}
             {kind === "numeric" && (
               <div style={{ marginTop: 12, fontSize: 12, color: "var(--ink-3)" }}>
                 Average <span className="mono" style={{ color: "var(--ink)" }}>{Math.round(localStats.mean * 10) / 10}</span>
                 <span style={{ margin: "0 8px" }}>·</span>
                 Median <span className="mono" style={{ color: "var(--ink)" }}>{localStats.median}</span>
+                {localStats.n != null && (
+                  <>
+                    <span style={{ margin: "0 8px" }}>·</span>
+                    <span className="mono" style={{ color: "var(--ink)" }}>{formatCompactCount(localStats.n)}</span>
+                    {" "}answers
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -5728,6 +6013,7 @@ function useDebugLog() {
   return log;
 }
 
+// Keep "average-io:v1" — renaming would orphan every existing user's saved sessions.
 const STORAGE_KEY = "average-io:v1";
 
 function migrateAnswersToMultiChoice(answers) {
@@ -5927,14 +6213,30 @@ function getWebhookMeta() {
   return { language: m.language || "", timezone: m.timezone || "" };
 }
 
-async function postSnapshotToWebhook(snapshot) {
+async function postSnapshotToWebhook(snapshot, options = {}) {
   if (!WEBHOOK_ENABLED || !WEBHOOK_ENDPOINT) {
     debug("webhook", "skipped (disabled or missing endpoint)");
     return false;
   }
+  const eventName =
+    typeof options.eventName === "string" && options.eventName.trim()
+      ? options.eventName.trim()
+      : snapshot?.finished
+        ? "session_finished"
+        : "session_snapshot";
+  const stepIndex = Number.isFinite(options.stepIndex)
+    ? options.stepIndex
+    : Number.isFinite(snapshot?.categories_completed)
+      ? snapshot.categories_completed
+      : null;
+  const source =
+    typeof options.source === "string" && options.source.trim() ? options.source.trim() : "web";
   const body = JSON.stringify({
     snapshot,
     meta: getWebhookMeta(),
+    event_name: eventName,
+    step_index: stepIndex,
+    source,
   });
 
   // Prefer navigator.sendBeacon — purpose-built for fire-and-forget cross-origin
@@ -6050,7 +6352,11 @@ async function saveSessionSnapshot(state, peers, { finished = false, sessionId =
   }
 
   // 2) Fire-and-forget to the webhook (independent of local storage).
-  postSnapshotToWebhook(snapshot);
+  postSnapshotToWebhook(snapshot, {
+    eventName: finished ? "session_finished" : "session_snapshot",
+    stepIndex: snapshot.categories_completed,
+    source: "web",
+  });
 
   return id;
 }
@@ -6118,32 +6424,87 @@ function choiceLabel(value) {
   return String(value);
 }
 
-function phraseForEntry(entry) {
+/** Inline count beside a % for PDF / snapshot (matches on-screen "16% · 82" style). */
+function phrasePctWithCounts(pctRounded, numer, denom) {
+  const p = `~${pctRounded}%`;
+  if (numer != null && denom != null) return `${p} (${formatCompactCount(numer)} of ${formatCompactCount(denom)})`;
+  if (numer != null) return `${p} (${formatCompactCount(numer)})`;
+  if (denom != null) return `${p} (${formatCompactCount(denom)} in sample)`;
+  return p;
+}
+
+/** Compact "~% · count of count" line for PDF and share image (explicit peer volume). */
+function alsoAnsweredExportLine(kind, stat) {
+  if (!stat || stat.n == null || stat.n < 1) return "";
+  const n = formatCompactCount(stat.n);
+  if (kind === "categorical") {
+    if (stat.userPct == null || stat.userCount == null) return `${n} peers answered`;
+    const p = roundPct(stat.userPct);
+    const u = formatCompactCount(stat.userCount);
+    return `~${p}% · ${u} of ${n} also chose this answer`;
+  }
+  if (kind === "multi") {
+    if (stat.overlapPct == null || stat.overlapCount == null) return `${n} peers answered`;
+    const p = roundPct(stat.overlapPct);
+    const u = formatCompactCount(stat.overlapCount);
+    return `~${p}% · ${u} of ${n} share at least one pick with you`;
+  }
+  if (kind === "numeric") {
+    const p = st.percentile;
+    if (p == null) return `${n} peers answered`;
+    return `${n} answered · ~${roundPct(p)}th percentile vs. peers`;
+  }
+  return "";
+}
+
+function phraseForEntry(entry, opts = {}) {
+  const omit = opts?.omitInlineCounts === true;
   if (!entry?.stat) return "—";
+  const st = entry.stat;
+  const nPeers = st.n != null ? formatCompactCount(st.n) : null;
+  const nSuffix = nPeers ? ` (${nPeers} peers)` : "";
   if (entry.kind === "numeric") {
-    const p = entry.stat.percentile;
+    const p = st.percentile;
     if (p == null) return "—";
-    if (p <= 10) return `bottom ${roundPct(p)}% (avg ${entry.stat.mean}${entry.unit ? ` ${entry.unit}` : ""})`;
-    if (p <= 30) return `below average — ~${roundPct(p)}th percentile`;
-    if (p <= 45) return `a little below average`;
-    if (p <= 55) return `about average`;
-    if (p <= 70) return `a bit above average`;
-    if (p <= 90) return `top ${roundPct(100 - p)}%`;
-    return `top ${roundPct(100 - p)}% (avg ${entry.stat.mean}${entry.unit ? ` ${entry.unit}` : ""})`;
+    if (omit) {
+      if (p <= 10) return `lower than most here`;
+      if (p <= 30) return `below average vs. peers`;
+      if (p <= 45) return `a little below average`;
+      if (p <= 55) return `about average`;
+      if (p <= 70) return `a bit above average`;
+      if (p <= 90) return `above most`;
+      return `higher than almost everyone`;
+    }
+    if (p <= 10) return `bottom ${roundPct(p)}%${nSuffix} (avg ${st.mean}${entry.unit ? ` ${entry.unit}` : ""})`;
+    if (p <= 30) return `below average — ~${roundPct(p)}th percentile${nSuffix}`;
+    if (p <= 45) return `a little below average${nSuffix}`;
+    if (p <= 55) return `about average${nSuffix}`;
+    if (p <= 70) return `a bit above average${nSuffix}`;
+    if (p <= 90) return `top ${roundPct(100 - p)}%${nSuffix}`;
+    return `top ${roundPct(100 - p)}%${nSuffix} (avg ${st.mean}${entry.unit ? ` ${entry.unit}` : ""})`;
   }
   if (entry.kind === "categorical") {
-    const pct = entry.stat.userPct;
+    const pct = st.userPct;
     if (pct == null) return "—";
-    const mc = choiceLabel(entry.stat.mostCommon);
-    if (pct >= 50) return `most common answer (~${roundPct(pct)}%)`;
-    if (pct >= 25) return `common (~${roundPct(pct)}%; most pick "${mc}")`;
-    if (pct >= 10) return `less common (~${roundPct(pct)}%; most pick "${mc}")`;
-    return `uncommon (~${roundPct(pct)}%; most pick "${mc}")`;
+    const mc = choiceLabel(st.mostCommon?.option ?? st.mostCommon);
+    if (omit) {
+      if (pct >= 50) return `most common answer among peers`;
+      if (pct >= 25) return `common — most pick "${mc}"`;
+      if (pct >= 10) return `less common — most pick "${mc}"`;
+      return `uncommon — most pick "${mc}"`;
+    }
+    const pc = phrasePctWithCounts(roundPct(pct), st.userCount, st.n);
+    if (pct >= 50) return `most common answer (${pc})`;
+    if (pct >= 25) return `common (${pc}; most pick "${mc}")`;
+    if (pct >= 10) return `less common (${pc}; most pick "${mc}")`;
+    return `uncommon (${pc}; most pick "${mc}")`;
   }
   if (entry.kind === "multi") {
-    const o = entry.stat.overlapPct;
+    const o = st.overlapPct;
     if (o == null) return "—";
-    return `overlap with peers ~${roundPct(o)}% (tags you chose)`;
+    if (omit) return `peer overlap on the tags you chose`;
+    const pc = phrasePctWithCounts(roundPct(o), st.overlapCount, st.n);
+    return `overlap with peers (${pc}; tags you chose)`;
   }
   return "—";
 }
@@ -6921,7 +7282,7 @@ function AdminModal({
   const downloadLog = () => {
     const text = buildLogText();
     const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
-    downloadText(`average-io-debug-${stamp}.txt`, text, "text/plain");
+    downloadText(`comparizzon-debug-${stamp}.txt`, text, "text/plain");
   };
 
   const runWebhookTest = async () => {
@@ -6943,7 +7304,11 @@ function AdminModal({
       category_uniqueness: {},
     };
     try {
-      const ok = await postSnapshotToWebhook(snapshot);
+      const ok = await postSnapshotToWebhook(snapshot, {
+        eventName: "admin_webhook_test",
+        stepIndex: 0,
+        source: "admin",
+      });
       if (!ok) throw new Error("webhook relay returned non-ok");
       setTestStatus("sent");
       setTimeout(() => setTestStatus(null), 6000);
@@ -6976,13 +7341,13 @@ function AdminModal({
   const exportMd = () => {
     const md = buildMarkdownExport(sortedSessions);
     const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
-    downloadText(`average-io-sessions-${stamp}.md`, md, "text/markdown");
+    downloadText(`comparizzon-sessions-${stamp}.md`, md, "text/markdown");
   };
 
   const exportQuestionnaireTxt = () => {
     const text = buildQuestionnaireTextExport();
     const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-");
-    downloadText(`average-io-questionnaire-${stamp}.txt`, text, "text/plain");
+    downloadText(`comparizzon-questionnaire-${stamp}.txt`, text, "text/plain");
   };
 
   const deleteOne = (id) => {
@@ -7574,12 +7939,14 @@ async function buildOverviewPdfBlob(answers, peers, segment, timeSpentMs = 0) {
     qs.forEach((q) => {
       const raw = formatRawAnswerForPdf(answers[q.id], q);
       const entry = data.entries.find((e) => e.qid === q.id);
+      const alsoLine = entry?.stat ? alsoAnsweredExportLine(entry.kind, entry.stat) : "";
       const phrase = entry?.stat
-        ? phraseForEntry({ kind: entry.kind, stat: entry.stat, unit: q.unit })
+        ? phraseForEntry({ kind: entry.kind, stat: entry.stat, unit: q.unit }, { omitInlineCounts: true })
         : "";
       writeLines(`${pdfSafeText(q.label.replace(/\?$/, ""))}`, 9.5, "bold");
       writeLines(`${pdfSafeText(raw)}`, 9);
-      if (phrase) writeLines(`Peers: ${pdfSafeText(phrase)}`, 8);
+      if (alsoLine) writeLines(pdfSafeText(alsoLine), 8.5, "bold");
+      if (phrase && phrase !== "—") writeLines(`Peers: ${pdfSafeText(phrase)}`, 8);
       y += 1.5;
     });
     y += 2;
@@ -7600,7 +7967,7 @@ async function downloadOverviewPdf(answers, peers, segment, timeSpentMs = 0) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `average-io-overview-${stamp}.pdf`;
+  a.download = `comparizzon-overview-${stamp}.pdf`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -7725,7 +8092,7 @@ async function renderSnapshotCanvas(data, opts = {}) {
   const dividerGap = 60;
   const catRowH = 64;
   const catSectionH = 70 + data.catUniq.length * catRowH + 30;
-  const perQRowH = 108;
+  const perQRowH = 120;
   const perCatGroupHeader = 36;
   const groupedCount = entries.length;
   const distinctCats = new Set(entries.map((e) => e.q.cat)).size;
@@ -7975,7 +8342,10 @@ async function renderSnapshotCanvas(data, opts = {}) {
 
     const label = e.q.label.replace(/\?$/, "");
     const rawAnswer = formatRawAnswerForPdf(e.value, e.q);
-    const phrase = e.stat ? phraseForEntry({ kind: e.kind, stat: e.stat, unit: e.q.unit }) : "";
+    const alsoLine = e.stat ? alsoAnsweredExportLine(e.kind, e.stat) : "";
+    const phrase = e.stat
+      ? phraseForEntry({ kind: e.kind, stat: e.stat, unit: e.q.unit }, { omitInlineCounts: true })
+      : "";
 
     ctx.fillStyle = CARD_INK;
     ctx.font = `500 18px ${CARD_SANS}`;
@@ -7989,12 +8359,24 @@ async function renderSnapshotCanvas(data, opts = {}) {
     const answerStr = answerLines[0] + (answerLines.length > 1 ? "…" : "");
     ctx.fillText(answerStr, padX, y + 50);
 
-    if (phrase) {
+    let peerY = y + 76;
+    if (alsoLine) {
+      ctx.fillStyle = CARD_INK2;
+      ctx.font = `500 15px ${CARD_SANS}`;
+      const alsoLines = wrapText(ctx, alsoLine, innerW);
+      const alsoStr = alsoLines[0] + (alsoLines.length > 1 ? "…" : "");
+      ctx.fillText(alsoStr, padX, peerY);
+      peerY += 26;
+    }
+    if (phrase && phrase !== "—") {
       ctx.fillStyle = CARD_INK3;
-      ctx.font = `400 15px ${CARD_SANS}`;
-      const phraseLines = wrapText(ctx, phrase, innerW);
+      ctx.font = `400 14px ${CARD_SANS}`;
+      const peerPrefix = "Peers: ";
+      ctx.fillText(peerPrefix, padX, peerY);
+      const pw = ctx.measureText(peerPrefix).width;
+      const phraseLines = wrapText(ctx, phrase, innerW - pw);
       const phraseStr = phraseLines[0] + (phraseLines.length > 1 ? "…" : "");
-      ctx.fillText(phraseStr, padX, y + 76);
+      ctx.fillText(phraseStr, padX + pw, peerY);
     }
 
     y += perQRowH;
@@ -8189,7 +8571,7 @@ export default function App() {
   const [state, dispatch, hydrated] = useAppState();
   const answers = state.answers;
   const { mode: themeMode, toggleTheme } = useTheme();
-  const { peers, source: peerSource, sheetState } = usePeerPool();
+  const { peers, source: peerSource, sheetState, peerPoolLoading } = usePeerPool();
   const isMobile = useMediaQuery("(max-width: 639px)");
   const totalAnswered = Object.keys(answers).filter(k => answerIsFilled(answers[k])).length;
   const admin = useAdminUnlock();
@@ -8422,6 +8804,7 @@ export default function App() {
   // Active session id — stable across answers, reset on reset
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [sessionIdHydrated, setSessionIdHydrated] = useState(false);
+  // Keep "average-io:..." prefix — renaming orphans every active user's session.
   const ACTIVE_KEY = "average-io:active-session";
 
   // Hydrate active session id from storage
@@ -8581,10 +8964,12 @@ export default function App() {
       <WelcomeScreen
         dispatch={dispatch}
         peerCount={peers.length}
+        peerPoolLoading={peerPoolLoading}
         peerSource={peerSource}
         themeMode={themeMode}
         onToggleTheme={toggleTheme}
         onCreateRoom={roomsFeatureVisible ? handleOpenCreateRoom : undefined}
+        activeRoomId={roomSession.activeRoomId || null}
       />
     );
   } else if (state.screen === "start") {
@@ -8608,7 +8993,6 @@ export default function App() {
         onDownloadPdf={() => downloadOverviewPdf(answers, effectivePeers, state.segment, state.timeSpentMs)}
         onShareImage={() => setShareOpen(true)}
         onCreateRoom={roomsFeatureVisible ? handleOpenCreateRoom : undefined}
-        onOpenRoomDashboard={roomsFeatureVisible ? () => setRoomDashboardOpen(true) : undefined}
         activeRoomId={roomsFeatureVisible ? roomSession.activeRoomId : null}
       />
     );
@@ -8646,6 +9030,7 @@ export default function App() {
             totalAnswered={totalAnswered}
             peerSource={peerSource}
             peerCount={peers.length}
+            peerPoolLoading={peerPoolLoading}
             onOpenSheetData={() => setSheetModalOpen(true)}
             themeMode={themeMode}
             onToggleTheme={toggleTheme}

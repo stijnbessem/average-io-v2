@@ -1,22 +1,27 @@
 /**
- * Single Vercel function for all room HTTP APIs (Hobby plan: max 12 functions).
+ * Single Vercel function for all room HTTP APIs.
  * GET  ?op=status|results  — public / gated reads
  * POST { op: create|join|submit|leave|manage } — mutations
  */
 import {
   ROOM_DEFAULTS,
-  callAppsScript,
+  createRoomInDb,
+  deleteRoomInDb,
   findActiveParticipantByTokenHash,
   generateToken,
   getIp,
   hashToken,
   isRoomActive,
   isValidRoomId,
+  joinRoomInDb,
+  kickParticipantInDb,
+  leaveRoomInDb,
   methodNotAllowed,
   parseBody,
   rateLimit,
-  readRoomFromSheet,
+  readRoomFromDb,
   safeTitle,
+  submitAnswersInDb,
   summarizeParticipants,
 } from "./_lib/rooms.js";
 
@@ -72,14 +77,14 @@ async function handleCreate(_req, res, ip, body) {
     body?.max_participants,
     ROOM_DEFAULTS.MIN_PARTICIPANTS,
     ROOM_DEFAULTS.MAX_PARTICIPANTS,
-    ROOM_DEFAULTS.MAX_PARTICIPANTS
+    ROOM_DEFAULTS.MAX_PARTICIPANTS,
   );
   const ttlDays = clampInt(body?.ttl_days, 1, 90, ROOM_DEFAULTS.TTL_DAYS);
 
   let ownerToken;
   try {
     ownerToken = generateToken();
-  } catch (err) {
+  } catch (_err) {
     return res.status(500).json({ error: "Could not generate token" });
   }
 
@@ -91,12 +96,12 @@ async function handleCreate(_req, res, ip, body) {
   }
 
   try {
-    const result = await callAppsScript("create_room", {
-      owner_token_hash: ownerTokenHash,
+    const result = await createRoomInDb({
+      ownerTokenHash,
       title,
-      questionnaire_version: questionnaireVersion,
-      max_participants: maxParticipants,
-      ttl_days: ttlDays,
+      questionnaireVersion,
+      maxParticipants,
+      ttlDays,
     });
 
     return res.status(200).json({
@@ -127,7 +132,7 @@ async function handleJoin(_req, res, ip, body) {
   let participantToken;
   try {
     participantToken = generateToken();
-  } catch (err) {
+  } catch (_err) {
     return res.status(500).json({ error: "Could not generate token" });
   }
 
@@ -139,10 +144,7 @@ async function handleJoin(_req, res, ip, body) {
   }
 
   try {
-    const result = await callAppsScript("join_room", {
-      room_id: roomId,
-      participant_token_hash: tokenHash,
-    });
+    const result = await joinRoomInDb({ roomId, participantTokenHash: tokenHash });
 
     return res.status(200).json({
       ok: true,
@@ -188,10 +190,10 @@ async function handleSubmit(_req, res, ip, body) {
   }
 
   try {
-    await callAppsScript("submit_answers", {
-      room_id: roomId,
-      participant_token_hash: tokenHash,
-      answers_json: answersJson,
+    await submitAnswersInDb({
+      roomId,
+      participantTokenHash: tokenHash,
+      answersJson,
     });
     return res.status(200).json({ ok: true });
   } catch (err) {
@@ -220,10 +222,7 @@ async function handleLeave(_req, res, ip, body) {
   }
 
   try {
-    const result = await callAppsScript("leave_room", {
-      room_id: roomId,
-      participant_token_hash: tokenHash,
-    });
+    const result = await leaveRoomInDb({ roomId, participantTokenHash: tokenHash });
     return res.status(200).json({
       ok: true,
       deleted_room: Boolean(result.deleted_room),
@@ -259,10 +258,7 @@ async function handleManage(_req, res, ip, body) {
 
   try {
     if (action === "delete") {
-      await callAppsScript("delete_room", {
-        room_id: roomId,
-        owner_token_hash: ownerTokenHash,
-      });
+      await deleteRoomInDb({ roomId, ownerTokenHash });
       return res.status(200).json({ ok: true, deleted_room: true });
     }
 
@@ -274,11 +270,7 @@ async function handleManage(_req, res, ip, body) {
     ) {
       return res.status(400).json({ error: "Invalid target_number" });
     }
-    await callAppsScript("kick_participant", {
-      room_id: roomId,
-      owner_token_hash: ownerTokenHash,
-      target_number: targetNumber,
-    });
+    await kickParticipantInDb({ roomId, ownerTokenHash, targetNumber });
     return res.status(200).json({ ok: true, kicked_number: targetNumber });
   } catch (err) {
     const message = err.message || "Action failed";
@@ -306,7 +298,7 @@ async function handleStatus(req, res, ip) {
   let room;
   let participants;
   try {
-    ({ room, participants } = await readRoomFromSheet(roomId));
+    ({ room, participants } = await readRoomFromDb(roomId));
   } catch (err) {
     return res.status(502).json({ error: err.message || "Failed to read room" });
   }
@@ -335,7 +327,7 @@ async function handleStatus(req, res, ip) {
   const summary = summarizeParticipants(participants);
   const activeCount = summary.filter((p) => p.status === "active").length;
   const submittedCount = summary.filter(
-    (p) => p.status === "active" && p.has_submitted
+    (p) => p.status === "active" && p.has_submitted,
   ).length;
 
   return res.status(200).json({
@@ -373,7 +365,7 @@ async function handleResults(req, res, ip) {
   let room;
   let participants;
   try {
-    ({ room, participants } = await readRoomFromSheet(roomId));
+    ({ room, participants } = await readRoomFromDb(roomId));
   } catch (err) {
     return res.status(502).json({ error: err.message || "Failed to read room" });
   }
@@ -404,7 +396,7 @@ async function handleResults(req, res, ip) {
       number: p.participant_number,
       submitted_at: p.submitted_at,
       is_you: p.participant_number === me.participant_number,
-      answers: safeParseAnswers(p.answers_json),
+      answers: normalizeAnswers(p.answers_json),
     }))
     .sort((a, b) => a.number - b.number);
 
@@ -422,8 +414,8 @@ async function handleResults(req, res, ip) {
   });
 }
 
-function safeParseAnswers(raw) {
-  if (!raw) return null;
+function normalizeAnswers(raw) {
+  if (raw == null) return null;
   if (typeof raw === "object") return raw;
   try {
     return JSON.parse(String(raw));

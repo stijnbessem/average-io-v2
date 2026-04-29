@@ -3,70 +3,107 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-    <meta name="theme-color" content="#FBFBFA" />
+
+    <!-- Meta Pixel Code -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '1274504894272748');
+      fbq('track', 'PageView');
+    </script>
+    <!-- End Meta Pixel Code -->
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FVR5TGPCSN"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-FVR5TGPCSN');
+    </script>
+
+    <!-- Theme bootstrap: hydrate saved light/dark preference before first paint -->
     <script>
       (function () {
         try {
-          var phase = localStorage.getItem("avg_io_theme_phase");
-          if (phase !== "light" && phase !== "dark" && phase !== "auto") phase = null;
-          if (!phase) {
-            var leg = localStorage.getItem("avg_io_theme");
-            if (leg === "dark") phase = "dark";
-            else if (leg === "light") phase = "light";
-            else phase = "auto";
+          var mode = localStorage.getItem("avg_io_theme");
+          if (mode !== "light" && mode !== "dark") {
+            var legacy = localStorage.getItem("avg_io_theme_phase");
+            mode = legacy === "dark" ? "dark" : "light";
           }
-          var dark =
-            phase === "auto"
-              ? localStorage.getItem("avg_io_theme_last_computed") === "dark"
-              : phase === "dark";
+          var dark = mode === "dark";
           if (dark) document.documentElement.classList.add("dark");
           else document.documentElement.classList.remove("dark");
         } catch (e) {}
       })();
     </script>
+
+    <!-- Performance: preconnect & DNS prefetch for critical third parties (LCP signal) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://www.googletagmanager.com" />
+    <link rel="preconnect" href="https://connect.facebook.net" />
+    <link rel="dns-prefetch" href="https://www.facebook.com" />
+    <link rel="dns-prefetch" href="https://script.google.com" />
+
+    <!-- Primary -->
+    <title>Comparizzon — See How You Really Compare</title>
+    <meta name="description" content="Answer 200 questions about your life and see how your mix of answers stacks up against real people. No account, no email, free to start." />
+    <link rel="canonical" href="https://comparizzon.com/" />
+    <link rel="alternate" hreflang="en" href="https://comparizzon.com/" />
+    <link rel="alternate" hreflang="x-default" href="https://comparizzon.com/" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="keywords" content="comparizzon, how unique am I, life comparison quiz, compare yourself with others, uniqueness test, personality comparison, lifestyle survey, dating comparison, habits test, how common am I" />
+    <meta name="author" content="Comparizzon" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Comparizzon" />
+    <meta property="og:title" content="Comparizzon — See How You Really Compare" />
+    <meta property="og:description" content="Answer 200 questions about your life and see how your mix of answers stacks up against real people. No account, no email, free to start." />
+    <meta property="og:url" content="https://comparizzon.com/" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://comparizzon.com/og-image.png?v=3" />
+    <meta property="og:image:secure_url" content="https://comparizzon.com/og-image.png?v=3" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Comparizzon wordmark on black — see how you really compare" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Comparizzon — See How You Really Compare" />
+    <meta name="twitter:description" content="How unique are you, really? Answer 200 questions and find out." />
+    <meta name="twitter:image" content="https://comparizzon.com/og-image.png?v=3" />
+    <meta name="twitter:image:alt" content="Comparizzon wordmark on black — see how you really compare" />
+
+    <!-- Icons -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/icon-google-96.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/icon-google-48.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Theme & PWA -->
+    <meta name="theme-color" content="#FBFBFA" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="application-name" content="Comparizzon" />
     <meta name="apple-mobile-web-app-title" content="Comparizzon" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-    <title>Comparizzon | See How You Compare</title>
-    <meta
-      name="description"
-      content="Answer questions about your life, then see how your answers compare with a real community dataset. Clear charts—no account required. Download a PDF overview anytime, generated on your device."
-    />
-    <meta
-      name="keywords"
-      content="Comparizzon, comparison quiz, lifestyle data, personality insights, social comparison, interactive questionnaire"
-    />
-    <link rel="canonical" href="/" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate icon" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
-    <link rel="manifest" href="/site.webmanifest" />
-
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Comparizzon" />
-    <meta property="og:title" content="Comparizzon | See How You Compare" />
-    <meta
-      property="og:description"
-      content="Compare your answers with real people across lifestyle, health, work, and more. Export a PDF overview privately on your device; share only if you want."
-    />
-    <meta property="og:url" content="/" />
-    <meta property="og:image" content="/og-image.png" />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Comparizzon share card with brand wordmark and tagline" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Comparizzon | See How You Compare" />
-    <meta
-      name="twitter:description"
-      content="Discover how average or unique you are through a modern comparison questionnaire powered by community data."
-    />
-    <meta name="twitter:image" content="/og-image.png" />
-    <meta name="twitter:image:alt" content="Comparizzon share card with brand wordmark and tagline" />
+    <!-- Keep canonical/OG URL in sync with the actual path when deep-linking into specific screens -->
     <script>
       (function () {
         try {
@@ -79,20 +116,360 @@
       })();
     </script>
 
+    <!-- Minimal styles for crawlable SEO content inside #root (replaced on hydration) -->
+    <style>
+      #seo-fallback {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 48px 20px 64px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #111;
+        background: #FBFBFA;
+        line-height: 1.55;
+      }
+      html.dark #seo-fallback { color: #FBFBFA; background: #111; }
+      #seo-fallback h1 { font-size: 32px; line-height: 1.2; margin: 0 0 12px; letter-spacing: -0.02em; }
+      #seo-fallback h2 { font-size: 20px; line-height: 1.3; margin: 32px 0 10px; letter-spacing: -0.01em; }
+      #seo-fallback p { margin: 0 0 12px; }
+      #seo-fallback ul, #seo-fallback ol { margin: 0 0 12px; padding-left: 20px; }
+      #seo-fallback li { margin: 4px 0; }
+      #seo-fallback a { color: inherit; text-decoration: underline; }
+      #seo-fallback .tag { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; }
+
+      /* Pre-hydration page loader (shown to JS-enabled users, hidden from crawlers) */
+      #app-loader {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 20px;
+        background: #FBFBFA;
+        color: #111;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        opacity: 1;
+        transition: opacity 260ms ease;
+        will-change: opacity;
+      }
+      html.dark #app-loader { background: #121210; color: #ECEBE7; }
+      html.js-loading #app-loader { display: flex; }
+      html.js-loading #seo-fallback { display: none; }
+      #app-loader .mark {
+        font-size: 22px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        opacity: 0.94;
+      }
+      #app-loader .bar {
+        width: 112px;
+        height: 2px;
+        background: rgba(17, 17, 17, 0.08);
+        border-radius: 2px;
+        overflow: hidden;
+        position: relative;
+      }
+      html.dark #app-loader .bar { background: rgba(255, 255, 255, 0.1); }
+      #app-loader .bar::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        width: 40%;
+        background: #111;
+        border-radius: 2px;
+        animation: app-loader-slide 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+      html.dark #app-loader .bar::after { background: #ECEBE7; }
+      @keyframes app-loader-slide {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(250%); }
+      }
+      #app-loader.is-leaving { opacity: 0; pointer-events: none; }
+      @media (prefers-reduced-motion: reduce) {
+        #app-loader .bar::after { animation-duration: 2.4s; }
+        #app-loader { transition-duration: 120ms; }
+      }
+    </style>
+
+    <!-- Structured data: WebApplication (product + offer) -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Comparizzon",
-        "url": "https://average.io/",
+        "url": "https://comparizzon.com/",
         "applicationCategory": "LifestyleApplication",
         "operatingSystem": "Web",
-        "description": "A comparison questionnaire that shows how your answers compare with others across lifestyle and behavior categories."
+        "description": "A comparison questionnaire that shows how your answers compare with others across 18 life categories.",
+        "image": "https://comparizzon.com/og-image.png?v=3",
+        "inLanguage": "en",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "offers": {
+          "@type": "Offer",
+          "price": "1.00",
+          "priceCurrency": "EUR",
+          "description": "One-time unlock for the full overview"
+        }
+      }
+    </script>
+
+    <!-- Structured data: Organization (Knowledge Panel eligibility) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Comparizzon",
+        "url": "https://comparizzon.com/",
+        "logo": "https://comparizzon.com/icon-512.png",
+        "image": "https://comparizzon.com/og-image.png?v=3",
+        "description": "Comparizzon is an anonymous life-comparison questionnaire that shows how your answers stack up against thousands of real people.",
+        "foundingDate": "2026"
+      }
+    </script>
+
+    <!-- Structured data: WebSite (SearchAction + sitelinks searchbox potential) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Comparizzon",
+        "alternateName": ["Comparizzon.com", "Comparizon"],
+        "url": "https://comparizzon.com/",
+        "inLanguage": "en",
+        "publisher": { "@type": "Organization", "name": "Comparizzon" }
+      }
+    </script>
+
+    <!-- Structured data: FAQPage (eligible for expandable FAQ rich results on Google SERP) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is Comparizzon?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Comparizzon is an anonymous life-comparison tool. You answer up to 200 quick questions about your looks, personality, lifestyle, dating life, work, money, habits, and health, and instantly see how your mix of answers stacks up against thousands of real people. No account, no email, free to start."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does Comparizzon work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pick any of 18 categories and start answering. For every question you'll see live percentages showing how common or rare your answer is compared to everyone else. At the end, the overview gives you your uniqueness score, per-category breakdowns, and a downloadable PDF report."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How long does the Comparizzon questionnaire take?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "About 5 to 10 minutes for the full 200-question set. You don't have to finish everything — even 30 well-answered questions are enough to see meaningful comparison data. You can skip any question or category and still get a full overview."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is Comparizzon free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Answering the questionnaire and seeing live comparisons costs nothing. A one-time €1 payment unlocks the full overview: your uniqueness score, every category breakdown, all peer-group filters by age, gender and country, and the downloadable PDF report. There is no subscription and no renewal."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do I need an account, email address, or login to use Comparizzon?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Comparizzon never asks for your name, email, phone number, or social login. Your progress is saved locally in your browser so you can close the tab and pick up later. Only the €1 unlock uses an email, purely so you can restore access on another device."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my data anonymous and private?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Comparizzon stores only anonymous, aggregated answers — never personal identifiers. We don't sell or share data with advertisers, and payments are handled securely by Stripe, so we never see your card details. You can clear your answers from your device at any time."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the uniqueness score?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Your uniqueness score is a number from 0 to 100 that reflects how rare your overall mix of answers is compared to everyone else. A score near 100 means your pattern of choices is statistically uncommon; near 0 means you're close to the global average. The overview also shows which specific answers pulled your score up or down."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How accurate is the Comparizzon comparison data?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Every percentage is calculated from real answers submitted by thousands of anonymous users across 18 categories. As more people answer, comparisons become more representative — you're benchmarked against actual human responses, not made-up statistics. Segments with fewer than 30 responses are flagged as low confidence."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I compare myself against my age group, gender, or country?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The overview includes filters for Everyone, your gender, your age range, age and gender combined, and your country — so you can see how you compare to a peer group that actually looks like you, not just the whole world."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What categories does Comparizzon cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "18 in total: Basics, Looks & Identity, Personality, Lifestyle, Hobbies, Dating Scene, Education, Work, Money & Side Hustles, Habits & Vices, Food & Biohacking, Health & Body, Mind & Mood, Intimate History, Anatomy, AI & Digital Identity, Travel & World, and Real Talk. You can tackle them in any order."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I skip questions or sensitive categories?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, always. Every question has a skip option and whole categories can be left untouched. Sensitive topics — Intimate History, Anatomy, Real Talk — are clearly labeled and 100% optional. Skip them and the rest of the experience still works normally."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Comparizzon work on mobile?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Comparizzon is built to feel native on phones, tablets, and desktop — nothing to install. Just open comparizzon.com in any modern browser (Chrome, Safari, Firefox, Edge) and you're in."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What do I get when I unlock the overview for €1?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The €1 unlock gives you your uniqueness score, a full per-category breakdown, answer-by-answer comparisons, peer-group filters by age, gender and country, and a downloadable PDF report you can save or share. It's a one-time payment — no subscription, no upsell, no expiry."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How is Comparizzon different from a personality test?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Personality tests put you in a box with a type or letter code. Comparizzon doesn't — it shows, question by question, how your actual answers compare to everyone else's. It's less about labels and more about real, statistical context for your life choices."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is this a subscription? How do payments work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No subscription. Comparizzon is a one-time €1 unlock for lifetime access to your overview. Payments are handled by Stripe — the same provider used by Amazon, Google, and Shopify. You'll receive a Stripe receipt by email and card details never touch Comparizzon's servers."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "I paid already — how do I restore access on a new device?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tap 'Already paid? Restore access' on the paywall and enter the email you used at Stripe checkout. If there's a successful payment under that email, your overview unlocks instantly on that device and stays unlocked."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I delete my Comparizzon data?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. You can clear your answers from your browser at any time inside the app. To remove your anonymized responses from the aggregate dataset as well, reach out via the socials linked in the footer and we'll handle it."
+            }
+          }
+        ]
       }
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Meta Pixel <noscript> fallback -->
+    <noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=1274504894272748&ev=PageView&noscript=1" /></noscript>
+
+    <!-- Mark the document as JS-capable immediately so the loader replaces the SEO fallback for real users -->
+    <script>document.documentElement.classList.add("js-loading");</script>
+
+    <!-- Pre-hydration page loader -->
+    <div id="app-loader" role="status" aria-live="polite" aria-label="Loading Comparizzon">
+      <div class="mark">Comparizzon</div>
+      <div class="bar" aria-hidden="true"></div>
+    </div>
+
+    <div id="root">
+      <!--
+        Crawlable SEO fallback content.
+        Visible to search engines and to users during the brief pre-hydration window.
+        React replaces this entire subtree on mount, so users never see it in production.
+      -->
+      <main id="seo-fallback">
+        <p class="tag">Comparizzon · Life comparison questionnaire</p>
+        <h1>See how you really compare</h1>
+        <p>Comparizzon is an anonymous life-comparison questionnaire. Answer 200 questions about your looks, personality, lifestyle, dating, work, money, habits, health and more — then see exactly how your mix of answers stacks up against thousands of real people. No account, no email, free to start.</p>
+        <p><a href="https://comparizzon.com/">Start the questionnaire →</a></p>
+
+        <h2>How it works</h2>
+        <ol>
+          <li>Pick a topic and start answering — 5 to 10 minutes for the full picture.</li>
+          <li>See live charts of how common or rare each of your answers is.</li>
+          <li>Unlock the full overview, your uniqueness score (0–100) and a PDF report for €1.</li>
+        </ol>
+
+        <h2>18 categories to compare yourself in</h2>
+        <ul>
+          <li><a href="https://comparizzon.com/?start=basics">Basics</a> — age, gender, region, relationship status, education.</li>
+          <li><a href="https://comparizzon.com/?start=looks_identity">Looks &amp; Identity</a> — how you describe your appearance, style and self-image.</li>
+          <li><a href="https://comparizzon.com/?start=personality">Personality</a> — introversion, ambition, humour, conflict style.</li>
+          <li><a href="https://comparizzon.com/?start=lifestyle">Lifestyle</a> — routines, social life, screen time, living situation.</li>
+          <li><a href="https://comparizzon.com/?start=hobbies">Hobbies</a> — what you actually spend your free time on.</li>
+          <li><a href="https://comparizzon.com/?start=dating_scene">Dating Scene 2026</a> — dating app use, relationship dynamics, modern dating behaviour.</li>
+          <li><a href="https://comparizzon.com/?start=education">Education</a> — degrees, languages, continuous learning.</li>
+          <li><a href="https://comparizzon.com/?start=work">Work</a> — role, seniority, remote vs office, work hours.</li>
+          <li><a href="https://comparizzon.com/?start=money">Money &amp; Side Hustles</a> — income, savings, debt, side income.</li>
+          <li><a href="https://comparizzon.com/?start=habits_vices">Habits &amp; Vices</a> — caffeine, alcohol, smoking, sleep.</li>
+          <li><a href="https://comparizzon.com/?start=food_biohacking">Food &amp; Biohacking</a> — diet style, supplements, cooking habits.</li>
+          <li><a href="https://comparizzon.com/?start=health_body">Health &amp; Body</a> — exercise, body composition, checkups.</li>
+          <li><a href="https://comparizzon.com/?start=mind_mood">Mind &amp; Mood</a> — stress, therapy, mental-health habits.</li>
+          <li><a href="https://comparizzon.com/?start=intimate_history">Intimate History</a> — sensitive topics, answered by choice only.</li>
+          <li><a href="https://comparizzon.com/?start=anatomy">Anatomy</a> — optional body measurements (fully anonymous).</li>
+          <li><a href="https://comparizzon.com/?start=ai_digital">AI &amp; Digital Identity</a> — AI use, screen habits, online presence.</li>
+          <li><a href="https://comparizzon.com/?start=travel_world">Travel &amp; World</a> — countries visited, travel style, worldview.</li>
+          <li><a href="https://comparizzon.com/?start=real_talk">Real Talk</a> — the uncomfortable questions most surveys skip.</li>
+        </ul>
+
+        <h2>Why people use Comparizzon</h2>
+        <p>Because everyone wonders <em>am I normal?</em> — but no survey, personality test or dating app actually answers that. Comparizzon does. You'll see the percentage of people who answered the same as you, which of your choices are statistically rare, and which categories make you the most "you."</p>
+
+        <h2>Frequently asked questions</h2>
+        <h3>What is Comparizzon?</h3>
+        <p>Comparizzon is an anonymous life-comparison tool that shows how your answers about your looks, personality, lifestyle, dating life, work, money, habits, and health stack up against thousands of real people across 18 categories. No account, no email, free to start.</p>
+        <h3>How does Comparizzon work?</h3>
+        <p>Pick any category and start answering. For every question you'll see live percentages showing how common or rare your answer is. At the end, the overview gives you a uniqueness score from 0 to 100, per-category breakdowns, and a downloadable PDF report.</p>
+        <h3>How long does the questionnaire take?</h3>
+        <p>About 5 to 10 minutes for the full 200-question set — but even 30 well-answered questions are enough to see meaningful comparisons. Skip anything you don't want to answer.</p>
+        <h3>Is Comparizzon free?</h3>
+        <p>Yes. Answering and seeing live percentages is free. A one-time €1 payment unlocks your full overview — uniqueness score, every category breakdown, age/gender/country filters, and the PDF report. There is no subscription and no renewal.</p>
+        <h3>Do I need an account or email?</h3>
+        <p>No. Comparizzon never asks for your name, email, phone number, or social login. Your progress is saved locally in your browser. Only the €1 unlock uses an email — purely so you can restore access on another device.</p>
+        <h3>Is my data anonymous and private?</h3>
+        <p>Yes. Comparizzon stores only anonymous, aggregated answers. Payments are handled securely by Stripe so we never see your card details, and nothing is sold or shared with advertisers.</p>
+        <h3>What is the uniqueness score?</h3>
+        <p>A number from 0 to 100 that reflects how rare your overall mix of answers is. Near 100 = statistically uncommon; near 0 = close to the global average. The overview also shows which specific answers drove the score up or down.</p>
+        <h3>Can I compare against my age group, gender, or country?</h3>
+        <p>Yes. The overview has filters for Everyone, your gender, your age range, age + gender combined, or your country — so you can see how you compare to a peer group that actually looks like you.</p>
+        <h3>How accurate are the comparisons?</h3>
+        <p>Every percentage is calculated from real anonymous responses. As more people answer, the comparisons get more representative. Segments with fewer than 30 responses are flagged as low confidence.</p>
+        <h3>How is Comparizzon different from a personality test?</h3>
+        <p>Personality tests put you in a box with a type or letter code. Comparizzon doesn't — it shows, question by question, how your actual answers compare to everyone else's. Real, statistical context for your life choices, no labels.</p>
+
+        <p><strong><a href="https://comparizzon.com/">Start comparing yourself — free →</a></strong></p>
+        <p style="font-size: 12px; opacity: 0.6; margin-top: 24px;">Loading the interactive version… If this page doesn't load, make sure JavaScript is enabled.</p>
+      </main>
+    </div>
     <script type="module" src="/main.jsx"></script>
   </body>
 </html>

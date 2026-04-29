@@ -1,28 +1,9 @@
 import crypto from "node:crypto";
-import { google } from "googleapis";
+import { getSupabase } from "./supabase.js";
 
 const ACCESS_COOKIE = "comparizzon_paid_overview";
-const ROOMS_SHEET_NAME = "rooms";
-const PARTICIPANTS_SHEET_NAME = "room_participants";
-const ROOMS_HEADERS = [
-  "room_id",
-  "owner_token_hash",
-  "created_at",
-  "expires_at",
-  "max_participants",
-  "title",
-  "questionnaire_version",
-  "status",
-];
-const PARTICIPANTS_HEADERS = [
-  "room_id",
-  "participant_number",
-  "participant_token_hash",
-  "status",
-  "joined_at",
-  "submitted_at",
-  "answers_json",
-];
+const ROOM_ID_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const ROOM_ID_LENGTH = 8;
 
 export const ROOM_DEFAULTS = Object.freeze({
   MAX_PARTICIPANTS: 25,
@@ -66,7 +47,7 @@ export function getIp(req) {
   return req.socket?.remoteAddress || "unknown";
 }
 
-function parseCookies(raw = "") {
+export function parseCookies(raw = "") {
   return String(raw)
     .split(";")
     .map((entry) => entry.trim())
@@ -83,6 +64,8 @@ export function hasPaidCookie(req) {
   const cookies = parseCookies(req.headers.cookie || "");
   return cookies[ACCESS_COOKIE] === "1";
 }
+
+export const PAID_COOKIE_NAME = ACCESS_COOKIE;
 
 /* ------------------------------------------------------------------ */
 /*  Rate limiting (in-memory, per serverless instance)                */
@@ -105,10 +88,9 @@ export function rateLimit({ ip, bucket, windowMs, max }) {
 /* ------------------------------------------------------------------ */
 
 /**
- * HMAC key for hashing participant/owner tokens before they hit the Sheet.
- * Prefer explicit ROOM_TOKEN_SECRET; if unset, derive deterministically from
- * GOOGLE_WEBHOOK_SECRET so a single Vercel secret is enough (Apps Script
- * never re-hashes — it only stores the hex digest from this API).
+ * HMAC key for hashing participant/owner tokens. Same derivation as before
+ * the Supabase migration so existing room links keep working — DO NOT rotate.
+ * Prefer ROOM_TOKEN_SECRET; if unset, derive from GOOGLE_WEBHOOK_SECRET.
  */
 function getRoomTokenSecret() {
   const explicit = process.env.ROOM_TOKEN_SECRET;
@@ -117,6 +99,8 @@ function getRoomTokenSecret() {
   }
   const webhook = process.env.GOOGLE_WEBHOOK_SECRET;
   if (webhook && String(webhook).trim()) {
+    // Salt is fixed forever: changing it invalidates every existing room's
+    // owner_token_hash and participant_token_hash. Do NOT rename.
     return crypto
       .createHash("sha256")
       .update(`average-io:room-token-derive:v1:${String(webhook).trim()}`)
@@ -147,139 +131,265 @@ export function safeTitle(value) {
   return String(value || "").trim().slice(0, ROOM_DEFAULTS.MAX_TITLE_LENGTH);
 }
 
-/* ------------------------------------------------------------------ */
-/*  Apps Script writer                                                */
-/* ------------------------------------------------------------------ */
-
-export async function callAppsScript(action, args = {}) {
-  const url = process.env.GOOGLE_WEBHOOK_URL;
-  const secret = process.env.GOOGLE_WEBHOOK_SECRET;
-  if (!url || !secret) {
-    throw new Error("Apps Script webhook is not configured (GOOGLE_WEBHOOK_URL / GOOGLE_WEBHOOK_SECRET).");
+function generateRoomId() {
+  let id = "";
+  for (let i = 0; i < ROOM_ID_LENGTH; i++) {
+    const idx = Math.floor(Math.random() * ROOM_ID_ALPHABET.length);
+    id += ROOM_ID_ALPHABET.charAt(idx);
   }
-  const payload = { secret, action, ...args };
-  const body = "payload=" + encodeURIComponent(JSON.stringify(payload));
-
-  const upstream = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-    body,
-    redirect: "follow",
-  });
-  const text = await upstream.text();
-  let json;
-  try {
-    json = JSON.parse(text);
-  } catch (_) {
-    throw new Error(`Apps Script returned non-JSON (${upstream.status})`);
-  }
-  if (!upstream.ok) {
-    throw new Error(json?.error || `Apps Script HTTP ${upstream.status}`);
-  }
-  if (!json.ok) {
-    const upstreamMessage = String(json.error || "Apps Script action failed");
-    const normalized = upstreamMessage.toLowerCase();
-    const err = new Error(
-      normalized.includes("missing snapshot")
-        ? "Apps Script room handler is not installed yet. Update/deploy scripts/google-apps-script/Code.gs (rooms dispatcher) and keep doPostLegacy_ for old logging."
-        : upstreamMessage
-    );
-    err.appsScript = true;
-    throw err;
-  }
-  return json;
+  return id;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Direct Sheet reads (fast, no Apps Script round-trip)              */
+/*  Supabase helpers                                                  */
 /* ------------------------------------------------------------------ */
 
-function normalizePrivateKey(value) {
-  if (!value) return "";
-  return value.replace(/\\n/g, "\n");
-}
-
-let sheetsClientPromise = null;
-async function getSheetsClient() {
-  if (sheetsClientPromise) return sheetsClientPromise;
-  const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
-  const privateKey = normalizePrivateKey(process.env.GOOGLE_SHEETS_PRIVATE_KEY);
-  if (!clientEmail || !privateKey) {
-    throw new Error("Google Sheets read is not configured (GOOGLE_SHEETS_CLIENT_EMAIL / GOOGLE_SHEETS_PRIVATE_KEY).");
-  }
-  const auth = new google.auth.JWT({
-    email: clientEmail,
-    key: privateKey,
-    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-  });
-  sheetsClientPromise = Promise.resolve(google.sheets({ version: "v4", auth }));
-  return sheetsClientPromise;
-}
-
-function rowsToObjects(values, headers) {
-  if (!Array.isArray(values) || values.length === 0) return [];
-  const headerRow = (values[0] || []).map((h) => String(h || "").trim());
-  const headerMap = headers.map((name) => headerRow.indexOf(name));
-  const out = [];
-  for (let r = 1; r < values.length; r++) {
-    const row = values[r] || [];
-    const obj = {};
-    for (let i = 0; i < headers.length; i++) {
-      const idx = headerMap[i];
-      obj[headers[i]] = idx === -1 ? "" : (row[idx] == null ? "" : row[idx]);
-    }
-    out.push(obj);
-  }
-  return out;
-}
-
-async function readSheetTab(spreadsheetId, sheets, sheetName, headers) {
-  const range = `'${sheetName}'!A1:Z`;
-  let response;
-  try {
-    response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range,
-      majorDimension: "ROWS",
-    });
-  } catch (err) {
-    if (err && err.code === 400) {
-      return [];
-    }
-    throw err;
-  }
-  return rowsToObjects(response.data.values || [], headers);
-}
-
-export async function readRoomFromSheet(roomId) {
+export async function readRoomFromDb(roomId) {
   if (!isValidRoomId(roomId)) {
     throw new Error("Invalid room id");
   }
-  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-  if (!spreadsheetId) {
-    throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is not configured.");
-  }
-  const sheets = await getSheetsClient();
-  const [roomsRows, partRows] = await Promise.all([
-    readSheetTab(spreadsheetId, sheets, ROOMS_SHEET_NAME, ROOMS_HEADERS),
-    readSheetTab(spreadsheetId, sheets, PARTICIPANTS_SHEET_NAME, PARTICIPANTS_HEADERS),
+  const supabase = getSupabase();
+  const [roomRes, partRes] = await Promise.all([
+    supabase.from("rooms").select("*").eq("room_id", roomId).maybeSingle(),
+    supabase
+      .from("room_participants")
+      .select("*")
+      .eq("room_id", roomId)
+      .order("participant_number", { ascending: true }),
   ]);
+  if (roomRes.error) throw new Error(roomRes.error.message);
+  if (partRes.error) throw new Error(partRes.error.message);
 
-  const room = roomsRows.find((r) => String(r.room_id) === roomId) || null;
-  const participants = partRows
-    .filter((p) => String(p.room_id) === roomId)
-    .map((p) => ({
+  return {
+    room: roomRes.data,
+    participants: (partRes.data || []).map((p) => ({
       participant_number: Number(p.participant_number),
       participant_token_hash: String(p.participant_token_hash || ""),
       status: String(p.status || ""),
-      joined_at: String(p.joined_at || ""),
-      submitted_at: String(p.submitted_at || ""),
-      answers_json: String(p.answers_json || ""),
-    }))
-    .sort((a, b) => a.participant_number - b.participant_number);
-
-  return { room, participants };
+      joined_at: p.joined_at || "",
+      submitted_at: p.submitted_at || "",
+      answers_json: p.answers_json,
+    })),
+  };
 }
+
+export async function createRoomInDb({
+  ownerTokenHash,
+  title,
+  questionnaireVersion,
+  maxParticipants,
+  ttlDays,
+}) {
+  const supabase = getSupabase();
+  const now = new Date();
+  const expires = new Date(now.getTime() + ttlDays * 24 * 60 * 60 * 1000);
+
+  let lastError = null;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const roomId = generateRoomId();
+    const { error: roomErr } = await supabase.from("rooms").insert({
+      room_id: roomId,
+      owner_token_hash: ownerTokenHash,
+      created_at: now.toISOString(),
+      expires_at: expires.toISOString(),
+      max_participants: maxParticipants,
+      title,
+      questionnaire_version: questionnaireVersion,
+      status: "active",
+    });
+    if (roomErr) {
+      // 23505 = unique_violation (room_id collision). Retry.
+      if (roomErr.code === "23505") {
+        lastError = roomErr;
+        continue;
+      }
+      throw new Error(roomErr.message);
+    }
+
+    const { error: partErr } = await supabase.from("room_participants").insert({
+      room_id: roomId,
+      participant_number: 1,
+      participant_token_hash: ownerTokenHash,
+      status: "active",
+      joined_at: now.toISOString(),
+    });
+    if (partErr) {
+      // Best-effort rollback so we don't leave an orphan room.
+      await supabase.from("rooms").delete().eq("room_id", roomId);
+      throw new Error(partErr.message);
+    }
+
+    return {
+      room_id: roomId,
+      owner_number: 1,
+      expires_at: expires.toISOString(),
+      max_participants: maxParticipants,
+      title,
+      questionnaire_version: questionnaireVersion,
+    };
+  }
+  throw new Error(lastError ? `Could not generate unique room id (${lastError.message})` : "Could not generate unique room id");
+}
+
+export async function joinRoomInDb({ roomId, participantTokenHash }) {
+  const supabase = getSupabase();
+  const { room, participants } = await readRoomFromDb(roomId);
+  if (!room || !isRoomActive(room)) throw new Error("Room not found");
+
+  const existing = participants.find(
+    (p) => p.status === "active" && p.participant_token_hash === participantTokenHash,
+  );
+  if (existing) {
+    return {
+      room_id: roomId,
+      participant_number: existing.participant_number,
+      already_member: true,
+    };
+  }
+
+  const max = Number(room.max_participants) || ROOM_DEFAULTS.MAX_PARTICIPANTS;
+  const used = new Set(
+    participants.filter((p) => p.status === "active").map((p) => p.participant_number),
+  );
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let next = -1;
+    for (let n = 1; n <= max; n++) {
+      if (!used.has(n)) {
+        next = n;
+        break;
+      }
+    }
+    if (next === -1) throw new Error("Room is full");
+
+    const { error } = await supabase.from("room_participants").insert({
+      room_id: roomId,
+      participant_number: next,
+      participant_token_hash: participantTokenHash,
+      status: "active",
+      joined_at: new Date().toISOString(),
+    });
+    if (!error) {
+      return { room_id: roomId, participant_number: next, already_member: false };
+    }
+    if (error.code !== "23505") {
+      throw new Error(error.message);
+    }
+    // Slot raced; mark it used and retry with next slot.
+    used.add(next);
+  }
+  throw new Error("Could not allocate participant slot");
+}
+
+export async function submitAnswersInDb({ roomId, participantTokenHash, answersJson }) {
+  const supabase = getSupabase();
+  const { room } = await readRoomFromDb(roomId);
+  if (!room || !isRoomActive(room)) throw new Error("Room not found");
+
+  const parsed = typeof answersJson === "string" ? safeJsonParse(answersJson) : answersJson;
+
+  const { data, error } = await supabase
+    .from("room_participants")
+    .update({
+      submitted_at: new Date().toISOString(),
+      answers_json: parsed,
+    })
+    .eq("room_id", roomId)
+    .eq("participant_token_hash", participantTokenHash)
+    .eq("status", "active")
+    .select("participant_number");
+
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error("Not a participant");
+  return { ok: true };
+}
+
+export async function leaveRoomInDb({ roomId, participantTokenHash }) {
+  const supabase = getSupabase();
+  const { participants } = await readRoomFromDb(roomId);
+  const me = participants.find(
+    (p) => p.status === "active" && p.participant_token_hash === participantTokenHash,
+  );
+  if (!me) throw new Error("Not a participant");
+
+  if (me.participant_number === 1) {
+    return deleteRoomCascade(roomId);
+  }
+
+  const { error } = await supabase
+    .from("room_participants")
+    .update({ status: "left", answers_json: null })
+    .eq("room_id", roomId)
+    .eq("participant_number", me.participant_number);
+  if (error) throw new Error(error.message);
+  return { deleted_room: false };
+}
+
+export async function kickParticipantInDb({ roomId, ownerTokenHash, targetNumber }) {
+  const supabase = getSupabase();
+  if (!(await verifyOwner(roomId, ownerTokenHash))) {
+    throw new Error("Unauthorized");
+  }
+  const { error } = await supabase
+    .from("room_participants")
+    .update({ status: "kicked", answers_json: null })
+    .eq("room_id", roomId)
+    .eq("participant_number", targetNumber)
+    .eq("status", "active");
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+export async function deleteRoomInDb({ roomId, ownerTokenHash }) {
+  if (!(await verifyOwner(roomId, ownerTokenHash))) {
+    throw new Error("Unauthorized");
+  }
+  return deleteRoomCascade(roomId);
+}
+
+async function deleteRoomCascade(roomId) {
+  const supabase = getSupabase();
+  const { error: roomErr } = await supabase
+    .from("rooms")
+    .update({ status: "deleted" })
+    .eq("room_id", roomId);
+  if (roomErr) throw new Error(roomErr.message);
+
+  const { error: partErr } = await supabase
+    .from("room_participants")
+    .update({ status: "left", answers_json: null })
+    .eq("room_id", roomId)
+    .neq("status", "left");
+  if (partErr) throw new Error(partErr.message);
+
+  return { deleted_room: true };
+}
+
+async function verifyOwner(roomId, ownerTokenHash) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("room_participants")
+    .select("participant_number")
+    .eq("room_id", roomId)
+    .eq("participant_number", 1)
+    .eq("participant_token_hash", ownerTokenHash)
+    .eq("status", "active")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return Boolean(data);
+}
+
+function safeJsonParse(s) {
+  try {
+    return JSON.parse(s);
+  } catch (_) {
+    return {};
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Read-side helpers (unchanged shape — used by the dispatcher)      */
+/* ------------------------------------------------------------------ */
 
 export function isRoomActive(room) {
   if (!room) return false;
@@ -303,7 +413,7 @@ export function findActiveParticipantByTokenHash(participants, tokenHash) {
   if (!tokenHash) return null;
   return (
     participants.find(
-      (p) => p.status === "active" && p.participant_token_hash === tokenHash
+      (p) => p.status === "active" && p.participant_token_hash === tokenHash,
     ) || null
   );
 }
