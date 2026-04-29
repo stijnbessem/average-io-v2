@@ -788,8 +788,8 @@ function buildPeerPool(size = 480, seed = 20260421) {
 }
 
 const LIVE_PEER_POOL_ENDPOINT = "/api/live-peers";
-const LIVE_PEER_REFRESH_MS = 30000;
 const LIVE_PEER_CHUNK_SIZE = 500;
+const PEER_SNAPSHOT_ENDPOINT = "/api/peers-snapshot";
 
 function parseGvizResponse(text) {
   if (typeof text !== "string" || text.trim() === "") throw new Error("empty gviz response");
@@ -879,11 +879,33 @@ function buildPeersFromSheet(table) {
   return peers;
 }
 
+/* Snapshot records arrive as a slim {qid: rawValue} per peer (api/snapshot.js
+   strips the JSONB envelope server-side). We still run each value through
+   normalizeAnswerForQuestion since QUESTIONS_BY_ID lives client-only. */
+function buildPeersFromSnapshotRecords(records) {
+  if (!Array.isArray(records)) return [];
+  const out = [];
+  for (const rec of records) {
+    if (!rec || typeof rec !== "object") continue;
+    const peer = {};
+    for (const [qid, raw] of Object.entries(rec)) {
+      const q = QUESTIONS_BY_ID[qid];
+      if (!q) continue;
+      if (raw == null || raw === "") continue;
+      const normalized = normalizeAnswerForQuestion(raw, q);
+      if (normalized != null && normalized !== "") peer[qid] = normalized;
+    }
+    if (Object.keys(peer).length > 0) out.push(peer);
+  }
+  return out;
+}
+
 function usePeerPool() {
   const syntheticPeers = useMemo(() => buildPeerPool(480, 20260421), []);
   const [peers, setPeers] = useState(syntheticPeers);
-  const [source, setSource] = useState("synthetic");
+  const [source, setSource] = useState("synthetic"); // "synthetic" | "snapshot" | "live"
   const [peerPoolLoading, setPeerPoolLoading] = useState(true);
+  const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState(null);
   const [sheetState, setSheetState] = useState({
     source: "synthetic",
     lastAttemptAt: null,
@@ -895,144 +917,174 @@ function usePeerPool() {
     totalPeerCount: null,
     sample: [],
   });
+  const cancelledRef = useRef(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    let refreshTimer = null;
+  /* Live pagination: hits /api/live-peers in batches of 500 until hasMore is
+     false. Used for the initial load if the snapshot is missing, and for the
+     manual "Refresh data" button (in-memory only — does not touch the
+     snapshot). */
+  const loadLive = useCallback(async () => {
+    const attemptedAt = new Date().toISOString();
+    let attemptedSheetCount = 0;
+    let attemptedSample = [];
+    setPeerPoolLoading(true);
+    setSheetState((prev) => ({
+      ...prev,
+      lastAttemptAt: attemptedAt,
+      isLoading: true,
+      loadedPeerCount: 0,
+      totalPeerCount: null,
+      lastError: "",
+    }));
+    try {
+      let allLivePeers = [];
+      const seenPeerRowSignatures = new Set();
+      let totalPeerCount = null;
+      let offset = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const url = `${LIVE_PEER_POOL_ENDPOINT}?offset=${offset}&limit=${LIVE_PEER_CHUNK_SIZE}`;
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`api fetch failed (${res.status})`);
+        const payload = await res.json();
+        const table = payload?.table;
+        if (!table) throw new Error("api response missing table");
+        if (totalPeerCount == null && Number.isFinite(Number(payload?.totalCount))) {
+          totalPeerCount = Number(payload.totalCount);
+        }
 
-    const load = async () => {
-      const attemptedAt = new Date().toISOString();
-      let attemptedSheetCount = 0;
-      let attemptedSample = [];
-      if (!cancelled) {
-        setSheetState((prev) => ({
-          ...prev,
-          lastAttemptAt: attemptedAt,
-          isLoading: true,
-          loadedPeerCount: 0,
-          totalPeerCount: null,
-          lastError: "",
-        }));
-      }
-      try {
-        let allLivePeers = [];
-        const seenPeerRowSignatures = new Set();
-        const sourceLabel = "api";
-        let totalPeerCount = null;
-        try {
-          let offset = 0;
-          let hasMore = true;
-          while (hasMore) {
-            const url = `${LIVE_PEER_POOL_ENDPOINT}?offset=${offset}&limit=${LIVE_PEER_CHUNK_SIZE}`;
-            const res = await fetch(url, { cache: "no-store" });
-            if (!res.ok) throw new Error(`api fetch failed (${res.status})`);
-            const payload = await res.json();
-            const table = payload?.table;
-            if (!table) throw new Error("api response missing table");
-            if (totalPeerCount == null && Number.isFinite(Number(payload?.totalCount))) {
-              totalPeerCount = Number(payload.totalCount);
-            }
-
-            // Guard against duplicate pages / unstable paging by deduping raw rows per chunk.
-            const dedupedTableRows = Array.isArray(table?.rows)
-              ? table.rows.filter((row) => {
-                  const cells = row?.c || [];
-                  const sig = `${String(cells[0]?.v || "")}::${String(cells[1]?.v || "")}`;
-                  if (!sig || seenPeerRowSignatures.has(sig)) return false;
-                  seenPeerRowSignatures.add(sig);
-                  return true;
-                })
-              : [];
-            const dedupedTable = { ...(table || {}), rows: dedupedTableRows };
-            const chunkPeers = buildPeersFromSheet(dedupedTable);
-            if (chunkPeers.length > 0) {
-              allLivePeers = allLivePeers.concat(chunkPeers);
-              attemptedSheetCount = allLivePeers.length;
-              attemptedSample = allLivePeers.slice(0, 10);
-
-              // Progressive hydration: show live count as chunks arrive.
-              if (!cancelled) {
-                setPeers(allLivePeers);
-                setSource("live");
-                setSheetState({
-                  source: "live",
-                  lastAttemptAt: attemptedAt,
-                  lastSuccessAt: attemptedAt,
-                  lastError: "",
-                  sheetPeerCount: allLivePeers.length,
-                  isLoading: true,
-                  loadedPeerCount: allLivePeers.length,
-                  totalPeerCount,
-                  sample: attemptedSample,
-                });
-              }
-            }
-
-            hasMore = payload?.hasMore === true;
-            offset = Number.isFinite(Number(payload?.nextOffset))
-              ? Number(payload.nextOffset)
-              : offset + LIVE_PEER_CHUNK_SIZE;
-
-            // Safety to avoid accidental infinite loops on malformed responses.
-            if (hasMore && (!Number.isFinite(offset) || offset < 0)) {
-              throw new Error("api pagination returned invalid nextOffset");
-            }
+        const dedupedTableRows = Array.isArray(table?.rows)
+          ? table.rows.filter((row) => {
+              const cells = row?.c || [];
+              const sig = `${String(cells[0]?.v || "")}::${String(cells[1]?.v || "")}`;
+              if (!sig || seenPeerRowSignatures.has(sig)) return false;
+              seenPeerRowSignatures.add(sig);
+              return true;
+            })
+          : [];
+        const dedupedTable = { ...(table || {}), rows: dedupedTableRows };
+        const chunkPeers = buildPeersFromSheet(dedupedTable);
+        if (chunkPeers.length > 0) {
+          allLivePeers = allLivePeers.concat(chunkPeers);
+          attemptedSheetCount = allLivePeers.length;
+          attemptedSample = allLivePeers.slice(0, 10);
+          if (!cancelledRef.current) {
+            setPeers(allLivePeers);
+            setSource("live");
+            setSheetState({
+              source: "live",
+              lastAttemptAt: attemptedAt,
+              lastSuccessAt: attemptedAt,
+              lastError: "",
+              sheetPeerCount: allLivePeers.length,
+              isLoading: true,
+              loadedPeerCount: allLivePeers.length,
+              totalPeerCount,
+              sample: attemptedSample,
+            });
           }
-        } catch (apiError) {
-          throw apiError;
         }
 
-        if (allLivePeers.length === 0) throw new Error("peer API returned no usable rows");
-        if (!cancelled) {
-          setPeers(allLivePeers);
-          setSource("live");
-          setSheetState({
-            source: "live",
-            lastAttemptAt: attemptedAt,
-            lastSuccessAt: attemptedAt,
-            lastError: "",
-            sheetPeerCount: allLivePeers.length,
-            isLoading: false,
-            loadedPeerCount: allLivePeers.length,
-            totalPeerCount,
-            sample: attemptedSample,
-          });
-          debug("live-peers", `loaded ${allLivePeers.length} live peers from API (${sourceLabel})`);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setPeers(syntheticPeers);
-          setSource("synthetic");
-          setSheetState((prev) => ({
-            source: "synthetic",
-            lastAttemptAt: attemptedAt,
-            lastSuccessAt: prev.lastSuccessAt,
-            lastError: e && e.message ? e.message : String(e),
-            sheetPeerCount: attemptedSheetCount || prev.sheetPeerCount,
-            isLoading: false,
-            loadedPeerCount: attemptedSheetCount || prev.loadedPeerCount || 0,
-            totalPeerCount: prev.totalPeerCount,
-            sample: attemptedSample.length ? attemptedSample : prev.sample,
-          }));
-          debug("live-peers-error", e && e.message ? e.message : String(e));
-        }
-      } finally {
-        if (!cancelled) {
-          setPeerPoolLoading(false);
-          setSheetState((prev) => ({ ...prev, isLoading: false }));
-          refreshTimer = setTimeout(load, LIVE_PEER_REFRESH_MS);
+        hasMore = payload?.hasMore === true;
+        offset = Number.isFinite(Number(payload?.nextOffset))
+          ? Number(payload.nextOffset)
+          : offset + LIVE_PEER_CHUNK_SIZE;
+        if (hasMore && (!Number.isFinite(offset) || offset < 0)) {
+          throw new Error("api pagination returned invalid nextOffset");
         }
       }
-    };
 
-    load();
-    return () => {
-      cancelled = true;
-      if (refreshTimer) clearTimeout(refreshTimer);
-    };
+      if (allLivePeers.length === 0) throw new Error("peer API returned no usable rows");
+      if (!cancelledRef.current) {
+        setPeers(allLivePeers);
+        setSource("live");
+        setSheetState({
+          source: "live",
+          lastAttemptAt: attemptedAt,
+          lastSuccessAt: attemptedAt,
+          lastError: "",
+          sheetPeerCount: allLivePeers.length,
+          isLoading: false,
+          loadedPeerCount: allLivePeers.length,
+          totalPeerCount,
+          sample: attemptedSample,
+        });
+        debug("live-peers", `loaded ${allLivePeers.length} live peers from API`);
+      }
+      return true;
+    } catch (e) {
+      if (!cancelledRef.current) {
+        setPeers((prev) => (prev.length ? prev : syntheticPeers));
+        setSource((prev) => (prev === "synthetic" ? "synthetic" : prev));
+        setSheetState((prev) => ({
+          source: prev.source === "synthetic" ? "synthetic" : prev.source,
+          lastAttemptAt: attemptedAt,
+          lastSuccessAt: prev.lastSuccessAt,
+          lastError: e && e.message ? e.message : String(e),
+          sheetPeerCount: attemptedSheetCount || prev.sheetPeerCount,
+          isLoading: false,
+          loadedPeerCount: attemptedSheetCount || prev.loadedPeerCount || 0,
+          totalPeerCount: prev.totalPeerCount,
+          sample: attemptedSample.length ? attemptedSample : prev.sample,
+        }));
+        debug("live-peers-error", e && e.message ? e.message : String(e));
+      }
+      return false;
+    } finally {
+      if (!cancelledRef.current) {
+        setPeerPoolLoading(false);
+        setSheetState((prev) => ({ ...prev, isLoading: false }));
+      }
+    }
   }, [syntheticPeers]);
 
-  return { peers, source, sheetState, peerPoolLoading };
+  /* Snapshot path: single edge-cached fetch that 302-redirects to the daily
+     blob. Returns true on success so the caller can skip the live fallback. */
+  const loadSnapshot = useCallback(async () => {
+    try {
+      const res = await fetch(PEER_SNAPSHOT_ENDPOINT, { cache: "no-store" });
+      if (!res.ok) return false;
+      const payload = await res.json();
+      const records = Array.isArray(payload?.peers) ? payload.peers : null;
+      if (!records || records.length === 0) return false;
+      const norm = buildPeersFromSnapshotRecords(records);
+      if (norm.length === 0) return false;
+      const generatedAt = typeof payload?.generatedAt === "string" ? payload.generatedAt : null;
+      if (!cancelledRef.current) {
+        setPeers(norm);
+        setSource("snapshot");
+        setSnapshotGeneratedAt(generatedAt);
+        setSheetState({
+          source: "snapshot",
+          lastAttemptAt: new Date().toISOString(),
+          lastSuccessAt: generatedAt || new Date().toISOString(),
+          lastError: "",
+          sheetPeerCount: norm.length,
+          isLoading: false,
+          loadedPeerCount: norm.length,
+          totalPeerCount: norm.length,
+          sample: norm.slice(0, 10),
+        });
+        setPeerPoolLoading(false);
+        debug("peer-snapshot", `loaded ${norm.length} peers from snapshot (generated ${generatedAt || "unknown"})`);
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    cancelledRef.current = false;
+    (async () => {
+      const ok = await loadSnapshot();
+      if (cancelledRef.current) return;
+      if (!ok) await loadLive();
+    })();
+    return () => { cancelledRef.current = true; };
+  }, [loadSnapshot, loadLive]);
+
+  return { peers, source, sheetState, peerPoolLoading, snapshotGeneratedAt, refresh: loadLive };
 }
 
 /* ============================================================================
@@ -2282,7 +2334,7 @@ function TopBar({
   );
 }
 
-function SheetDataModal({ open, onClose, sheetState }) {
+function SheetDataModal({ open, onClose, sheetState, snapshotGeneratedAt = null, onRefresh = null }) {
   if (!open) return null;
   const {
     source = "synthetic",
@@ -2305,6 +2357,27 @@ function SheetDataModal({ open, onClose, sheetState }) {
     } catch (_) {
       return iso;
     }
+  };
+
+  const fmtRelative = (iso) => {
+    if (!iso) return null;
+    const t = Date.parse(iso);
+    if (!Number.isFinite(t)) return null;
+    const diffMs = Date.now() - t;
+    if (diffMs < 0) return "just now";
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
+  const sourceLabel = source === "live" ? "LIVE" : source === "snapshot" ? "SNAPSHOT" : "FALLBACK";
+  const snapshotRelative = source === "snapshot" ? fmtRelative(snapshotGeneratedAt) : null;
+  const handleRefresh = () => {
+    if (typeof onRefresh === "function" && !isLoading) onRefresh();
   };
 
   return (
@@ -2345,14 +2418,26 @@ function SheetDataModal({ open, onClose, sheetState }) {
               <div className="serif" style={{ fontSize: 24, color: "var(--ink)", marginTop: 4 }}>
                 Gathered peer rows
               </div>
+              {snapshotRelative && (
+                <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>
+                  Snapshot updated {snapshotRelative}
+                </div>
+              )}
             </div>
-            <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
+            <div style={{ display: "flex", gap: 8 }}>
+              {typeof onRefresh === "function" && (
+                <Button size="sm" variant="secondary" onClick={handleRefresh} disabled={isLoading}>
+                  {isLoading ? "Refreshing…" : "Refresh data"}
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
+            </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
             <div style={{ padding: 10, background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
               <div className="label">Current source</div>
-              <div className="mono" style={{ color: "var(--ink)", marginTop: 6 }}>{source === "live" ? "LIVE" : "FALLBACK"}</div>
+              <div className="mono" style={{ color: "var(--ink)", marginTop: 6 }}>{sourceLabel}</div>
             </div>
             <div style={{ padding: 10, background: "var(--surface-fallback)", border: "1px solid var(--line)", borderRadius: "var(--radius-s)" }}>
               <div className="label">User inputs</div>
@@ -8605,7 +8690,7 @@ export default function App() {
   const [state, dispatch, hydrated] = useAppState();
   const answers = state.answers;
   const { mode: themeMode, toggleTheme } = useTheme();
-  const { peers, source: peerSource, sheetState, peerPoolLoading } = usePeerPool();
+  const { peers, source: peerSource, sheetState, peerPoolLoading, snapshotGeneratedAt, refresh: refreshPeers } = usePeerPool();
   const isMobile = useMediaQuery("(max-width: 639px)");
   const totalAnswered = Object.keys(answers).filter(k => answerIsFilled(answers[k])).length;
   const admin = useAdminUnlock();
@@ -9167,6 +9252,8 @@ export default function App() {
         open={sheetModalOpen}
         onClose={() => setSheetModalOpen(false)}
         sheetState={sheetState}
+        snapshotGeneratedAt={snapshotGeneratedAt}
+        onRefresh={refreshPeers}
       />
       <ShareSnapshotModal
         open={shareOpen}
