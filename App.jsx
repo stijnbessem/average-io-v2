@@ -6212,10 +6212,9 @@ function useAppState() {
    ADMIN — session logging + markdown export
    ============================================================================ */
 
-/* ⚠️  CHANGE THIS PASSWORD before sharing the artifact.
-   This is hardcoded in the source — anyone with the code can read it.
-   It's a light gate for casual prying, not real security. */
-const ADMIN_PASSWORD = "stijnbessem";
+/* Admin password lives server-side as ADMIN_PASSWORD in Vercel env.
+   Client posts the candidate to /api/admin-auth; server returns 200/401. */
+const ADMIN_AUTH_ENDPOINT = "/api/admin-auth";
 
 const SESSION_PREFIX = "session:";
 const QUESTIONNAIRE_VERSION = 2;
@@ -7250,6 +7249,7 @@ function AdminModal({
 }) {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [testStatus, setTestStatus] = useState(null); // null | "sending" | "sent" | "error"
   const [showDebug, setShowDebug] = useState(false);
   const [logCopied, setLogCopied] = useState(false);
@@ -7354,15 +7354,29 @@ function AdminModal({
 
   const open = prompting || unlocked;
 
-  const tryUnlock = () => {
-    if (pw === ADMIN_PASSWORD) {
-      setUnlocked(true);
-      setPrompting(false);
-      setErr(false);
-      setPw("");
-    } else {
+  const tryUnlock = async () => {
+    if (verifying) return;
+    setVerifying(true);
+    setErr(false);
+    try {
+      const res = await fetch(ADMIN_AUTH_ENDPOINT, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password: pw }),
+      });
+      if (res.ok) {
+        setUnlocked(true);
+        setPrompting(false);
+        setPw("");
+      } else {
+        setErr(true);
+        setTimeout(() => setErr(false), 1200);
+      }
+    } catch (_) {
       setErr(true);
       setTimeout(() => setErr(false), 1200);
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -7438,7 +7452,7 @@ function AdminModal({
                   Enter admin password
                 </h3>
                 <p style={{ color: "var(--ink-3)", fontSize: 13, margin: "0 0 20px" }}>
-                  This gate is cosmetic — the password is in the source. Not real security.
+                  Verified server-side. Set <span className="mono" style={{ fontSize: 11 }}>ADMIN_PASSWORD</span> in Vercel.
                 </p>
                 <input
                   type="password"
@@ -7447,6 +7461,7 @@ function AdminModal({
                   onChange={(e) => setPw(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && tryUnlock()}
                   placeholder="password"
+                  disabled={verifying}
                   style={{
                     width: "100%", padding: "12px 14px",
                     border: `1px solid ${err ? "var(--pale-red-ink)" : "var(--line)"}`,
@@ -7460,8 +7475,8 @@ function AdminModal({
                 />
                 {err && <div style={{ fontSize: 12, color: "var(--pale-red-ink)", marginTop: 8 }}>Wrong password.</div>}
                 <div style={{ display: "flex", gap: 8, marginTop: 20, justifyContent: "flex-end" }}>
-                  <Button variant="secondary" size="sm" onClick={close}>Cancel</Button>
-                  <Button size="sm" onClick={tryUnlock}>Unlock →</Button>
+                  <Button variant="secondary" size="sm" onClick={close} disabled={verifying}>Cancel</Button>
+                  <Button size="sm" onClick={tryUnlock} disabled={verifying}>{verifying ? "Checking…" : "Unlock →"}</Button>
                 </div>
               </div>
             ) : (

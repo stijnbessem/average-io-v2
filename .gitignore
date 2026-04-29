@@ -9,4 +9,5 @@ dist
 *.log
 .vercel
 .env*
+!.env.example
 .production-snapshot/
