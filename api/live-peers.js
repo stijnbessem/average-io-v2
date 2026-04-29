@@ -1,19 +1,31 @@
 /**
- * Live peer pool: reads finished sessions from Supabase and emits the
- * wide-format gviz table that App.jsx:buildPeersFromSheet expects.
+ * Live peer pool: reads finished sessions from Supabase one batch at a time
+ * and emits the wide-format gviz table that App.jsx:buildPeersFromSheet
+ * expects. The client paginates by passing ?offset=N&limit=500 and stitches
+ * pages together, displaying a running "X / Y loaded" indicator.
  *
- * Output shape: { table: { cols: [{label}], rows: [{c:[{v}, ...]}] } }
- * Columns emitted: session_id, q_<qid> for every question id seen across
- * all rows. Values are unwrapped from the rich {value, unit, ...} object.
+ * Output shape:
+ *   {
+ *     table: { cols: [{label}], rows: [{c:[{v}, ...]}] },
+ *     totalCount: number,   // total finished sessions in Supabase
+ *     offset: number,       // echo of requested offset
+ *     nextOffset: number,   // offset to request next (offset + rows.length)
+ *     hasMore: boolean      // false when we've reached totalCount
+ *   }
+ *
+ * Each row's `answers` JSONB is ~50KB. 500 rows ≈ 25MB, ~6s server-side —
+ * fits inside Supabase's 8s statement timeout with margin.
  */
 import { getSupabase } from "./_lib/supabase.js";
 
-// Each row's `answers` JSONB is ~50KB (full enriched object with stats per Q).
-// 500 × 50KB = ~25MB per fetch, ~6s server-side, fits inside Supabase's 8s
-// statement timeout with margin. Long-term: add a Postgres view that
-// pre-strips the JSONB to {qid: value} before returning.
-const PEER_LIMIT = 500;
-const PAGE_SIZE = 1000;
+const DEFAULT_LIMIT = 500;
+const MAX_LIMIT = 500;
+
+function parseNonNegativeInt(value, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return fallback;
+  return Math.floor(n);
+}
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -21,32 +33,29 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const offset = parseNonNegativeInt(req.query?.offset, 0);
+  const requestedLimit = parseNonNegativeInt(req.query?.limit, DEFAULT_LIMIT);
+  const limit = Math.min(Math.max(1, requestedLimit), MAX_LIMIT);
+
   try {
     const supabase = getSupabase();
-    // Fetch pages in parallel to stay under Supabase's per-statement timeout.
-    const ranges = [];
-    for (let offset = 0; offset < PEER_LIMIT; offset += PAGE_SIZE) {
-      ranges.push([offset, Math.min(offset + PAGE_SIZE, PEER_LIMIT) - 1]);
-    }
-    const results = await Promise.all(
-      ranges.map(([from, to]) =>
-        supabase
-          .from("sessions")
-          .select("id, version, segment_filter, finished_at, answers")
-          .eq("finished", true)
-          .order("created_at", { ascending: false })
-          .range(from, to),
-      ),
-    );
-    const all = [];
-    for (const { data, error } of results) {
-      if (error) throw new Error(error.message);
-      if (data && data.length > 0) all.push(...data);
-    }
+    const { data, error, count } = await supabase
+      .from("sessions")
+      .select("id, version, segment_filter, finished_at, answers", { count: "exact" })
+      .eq("finished", true)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    const table = buildGvizTable(all);
+    if (error) throw new Error(error.message);
+
+    const rows = data || [];
+    const totalCount = Number.isFinite(Number(count)) ? Number(count) : rows.length;
+    const nextOffset = offset + rows.length;
+    const hasMore = rows.length > 0 && nextOffset < totalCount;
+
+    const table = buildGvizTable(rows);
     res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=600");
-    return res.status(200).json({ table });
+    return res.status(200).json({ table, totalCount, offset, nextOffset, hasMore });
   } catch (error) {
     const message =
       error && typeof error.message === "string"

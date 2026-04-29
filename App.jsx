@@ -789,7 +789,7 @@ function buildPeerPool(size = 480, seed = 20260421) {
 
 const LIVE_PEER_POOL_ENDPOINT = "/api/live-peers";
 const LIVE_PEER_REFRESH_MS = 30000;
-const LIVE_PEER_CHUNK_SIZE = 1000;
+const LIVE_PEER_CHUNK_SIZE = 500;
 
 function parseGvizResponse(text) {
   if (typeof text !== "string" || text.trim() === "") throw new Error("empty gviz response");
@@ -2004,6 +2004,8 @@ function TopBar({
   state, dispatch, totalAnswered,
   peerSource = "synthetic", peerCount = 0, onOpenSheetData = null,
   peerPoolLoading = false,
+  loadedPeerCount = 0,
+  totalPeerCount = null,
   themeMode = "light",
   onToggleTheme,
   activeRoom = null,
@@ -2033,6 +2035,13 @@ function TopBar({
   };
   const isLive = peerSource === "live";
   const showPeerLoader = peerPoolLoading || !isLive;
+  const totalCountNum = Number(totalPeerCount);
+  const hasTotal = Number.isFinite(totalCountNum) && totalCountNum > 0;
+  const peerLoaderLabel = peerPoolLoading
+    ? hasTotal
+      ? `${loadedPeerCount} / ${totalCountNum}`
+      : `${loadedPeerCount}…`
+    : null;
 
   return (
     <div style={{
@@ -2167,8 +2176,15 @@ function TopBar({
                   <span className="mono" style={{ fontSize: 10, color: isLive ? "#6BC77D" : "var(--ink-3)" }}>
                     {isLive ? "LIVE" : "FALLBACK"}
                   </span>
-                  <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)" }}>
-                    {showPeerLoader ? <PeerPoolCountSpinner size={10} borderColor="var(--ink-3)" /> : peerCount}
+                  <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    {showPeerLoader ? (
+                      <>
+                        <PeerPoolCountSpinner size={10} borderColor="var(--ink-3)" />
+                        {peerLoaderLabel && <span aria-live="polite">{peerLoaderLabel}</span>}
+                      </>
+                    ) : (
+                      peerCount
+                    )}
                   </span>
                 </button>
                 <span>
@@ -3677,12 +3693,21 @@ function WelcomeScreen({
   dispatch,
   peerCount = 480,
   peerPoolLoading = false,
+  loadedPeerCount = 0,
+  totalPeerCount = null,
   peerSource = "synthetic",
   themeMode = "light",
   onToggleTheme,
   onCreateRoom,
   activeRoomId = null,
 }) {
+  const totalCountNum = Number(totalPeerCount);
+  const hasTotal = Number.isFinite(totalCountNum) && totalCountNum > 0;
+  const peerLoadLabel = peerPoolLoading
+    ? hasTotal
+      ? `${loadedPeerCount} / ${totalCountNum}`
+      : `${loadedPeerCount}…`
+    : null;
   const isMobile = useMediaQuery("(max-width: 639px)");
   return (
     <div style={{
@@ -3777,11 +3802,20 @@ function WelcomeScreen({
                 minWidth: peerPoolLoading ? 16 : undefined,
                 display: "inline-flex",
                 alignItems: "center",
+                gap: 6,
               }}
+              aria-live="polite"
             >
-              {peerPoolLoading ? <PeerPoolCountSpinner size={12} borderColor="var(--ink)" /> : peerCount}
+              {peerPoolLoading ? (
+                <>
+                  <PeerPoolCountSpinner size={12} borderColor="var(--ink)" />
+                  {peerLoadLabel && <span>{peerLoadLabel}</span>}
+                </>
+              ) : (
+                peerCount
+              )}
             </span>
-            <span>peers to compare against</span>
+            <span>{peerPoolLoading ? "peers loaded so far" : "peers to compare against"}</span>
           </div>
         </motion.div>
 
@@ -8965,6 +8999,8 @@ export default function App() {
         dispatch={dispatch}
         peerCount={peers.length}
         peerPoolLoading={peerPoolLoading}
+        loadedPeerCount={sheetState.loadedPeerCount}
+        totalPeerCount={sheetState.totalPeerCount}
         peerSource={peerSource}
         themeMode={themeMode}
         onToggleTheme={toggleTheme}
@@ -9031,6 +9067,8 @@ export default function App() {
             peerSource={peerSource}
             peerCount={peers.length}
             peerPoolLoading={peerPoolLoading}
+            loadedPeerCount={sheetState.loadedPeerCount}
+            totalPeerCount={sheetState.totalPeerCount}
             onOpenSheetData={() => setSheetModalOpen(true)}
             themeMode={themeMode}
             onToggleTheme={toggleTheme}
