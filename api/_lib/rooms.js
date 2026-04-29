@@ -88,9 +88,14 @@ export function rateLimit({ ip, bucket, windowMs, max }) {
 /* ------------------------------------------------------------------ */
 
 /**
- * HMAC key for hashing participant/owner tokens. Same derivation as before
- * the Supabase migration so existing room links keep working — DO NOT rotate.
- * Prefer ROOM_TOKEN_SECRET; if unset, derive from GOOGLE_WEBHOOK_SECRET.
+ * HMAC key for hashing participant/owner tokens. The salt source is the
+ * legacy GOOGLE_WEBHOOK_SECRET env var (kept around purely for token
+ * compatibility — Apps Script itself was decommissioned). Existing rooms
+ * have hashes derived from this; DO NOT rotate or rename.
+ *
+ * To migrate off the legacy var name without invalidating tokens: set
+ *   ROOM_TOKEN_SECRET = sha256("average-io:room-token-derive:v1:" + GOOGLE_WEBHOOK_SECRET)
+ * then GOOGLE_WEBHOOK_SECRET can be removed.
  */
 function getRoomTokenSecret() {
   const explicit = process.env.ROOM_TOKEN_SECRET;

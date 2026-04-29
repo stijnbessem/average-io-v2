@@ -9,46 +9,35 @@ npm install
 npm run dev
 ```
 
-Opens at `http://localhost:5173`.
+Opens at `http://localhost:5173`. The Vite dev server proxies `/api/*` to live `comparizzon.com` (configured in `vite.config.js`), so backend calls hit production data unless you also run `vercel dev`.
 
 ## Deploying to Vercel
 
-1. Push this repo to GitHub
+1. Push to GitHub
 2. Import the repo into Vercel
 3. Accept the defaults — Vercel auto-detects Vite
-4. Done
+4. Set the environment variables below
 
-## Stripe paywall setup
+## Environment variables
 
-The overview paywall now opens a real Stripe Checkout session through `api/create-checkout-session.js`.
+### Supabase (primary data store)
+- `SUPABASE_URL` — project URL
+- `SUPABASE_SERVICE_ROLE_KEY` — secret key, used by serverless functions
+- `SUPABASE_ANON_KEY` — publishable key (currently unused in code, set for future use)
 
-Set these environment variables in Vercel:
+### Stripe (paywall)
+- `STRIPE_SECRET_KEY` — `sk_live_...` or test key
+- `STRIPE_PUBLISHABLE_KEY` — `pk_live_...` or test key
+- `STRIPE_PRICE_ID` — the one-time price ID (`price_...`)
+- `SITE_URL` — public app URL for Checkout return URLs
 
-- `STRIPE_SECRET_KEY` = your Stripe secret key (`sk_live_...` or test key)
-- `STRIPE_PUBLISHABLE_KEY` = your Stripe publishable key (`pk_live_...` or test key)
-- `STRIPE_PRICE_ID` = the one-time EUR 1.00 price ID (`price_...`)
-- `SITE_URL` = your public app URL (for success/cancel return URLs)
-- `GOOGLE_WEBHOOK_URL` = your Google Apps Script webhook URL (`https://script.google.com/macros/s/.../exec`)
-- `GOOGLE_WEBHOOK_SECRET` = secret token expected by your Apps Script
-- `GOOGLE_SHEETS_CLIENT_EMAIL` = service account email from your Google Cloud credentials JSON
-- `GOOGLE_SHEETS_PRIVATE_KEY` = private key from credentials JSON (paste full key, including BEGIN/END lines)
-- `GOOGLE_SHEETS_SPREADSHEET_ID` = the target spreadsheet id (the long id in the sheet URL)
-- `GOOGLE_SHEETS_RANGE` = optional read range (default `A:ZZ`, or set `Form Responses 1!A:ZZ`)
-
-Notes:
-
-- Do **not** hardcode secret keys in client code.
-- The sample zip you shared includes a hardcoded test key in Ruby; do not reuse that in production.
-- Local `vite` dev does not run the `/api` function. Use Vercel deployment (or `vercel dev`) when testing full checkout end-to-end.
-- Paid access is verified server-side using Stripe Checkout `session_id` and persisted in an HttpOnly cookie.
-- Restore purchase is available from the paywall via email (`/api/restore-access`), checking paid Stripe sessions for the configured `STRIPE_PRICE_ID`.
+### Token salt (DO NOT ROTATE)
+- `GOOGLE_WEBHOOK_SECRET` — historical name; serves only as the HMAC salt seed for room owner/participant tokens. Removing or rotating this invalidates every existing room. (Set `ROOM_TOKEN_SECRET` to `sha256("average-io:room-token-derive:v1:" + GOOGLE_WEBHOOK_SECRET)` if you want to migrate off the legacy var name without breaking tokens.)
 
 ## Notes
 
-- `window.storage` is shimmed via `localStorage` outside the Claude artifact runtime (see `src/storage-shim.js`).
-- Google Sheets logging now goes through `api/log-session.js` so webhook secrets stay server-side.
-- Live peer reads now go through `api/live-peers.js` using a Google service account, so the Sheet can stay `Beperkt`.
-- Share the Sheet with `GOOGLE_SHEETS_CLIENT_EMAIL` as Viewer (or Editor if needed), otherwise reads will fail.
-- Admin password is also hardcoded — search for `ADMIN_PASSWORD` in `App.jsx` and change it before going public.
-- Questionnaire answers are now multi-choice only. Numeric/text prompts are converted to curated choice buckets so all answers can be compared as categorical distributions.
-- Moderate dedupe is applied to remove look-alike prompts (for example overlapping sleep/water/screen-time style questions) and keep each category focused.
+- `window.storage` is shimmed via `localStorage` outside the Claude artifact runtime (see `storage-shim.js`).
+- Paid access is verified server-side using Stripe Checkout `session_id` and persisted in an HttpOnly cookie.
+- "Restore purchase" looks up paid Stripe sessions by email at `/api/restore-access`.
+- Admin password is hardcoded — search for `ADMIN_PASSWORD` in `App.jsx` and change it before going public.
+- Local `vite` dev does not run `/api/*`; the proxy hits production. Use `vercel dev` for full end-to-end against a staging Supabase project.

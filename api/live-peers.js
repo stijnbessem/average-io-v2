@@ -8,8 +8,12 @@
  */
 import { getSupabase } from "./_lib/supabase.js";
 
-const PEER_LIMIT = 2000;
-const PAGE_SIZE = 1000; // Supabase PostgREST default cap; we paginate around it.
+// Each row's `answers` JSONB is ~50KB (full enriched object with stats per Q).
+// 500 × 50KB = ~25MB per fetch, ~6s server-side, fits inside Supabase's 8s
+// statement timeout with margin. Long-term: add a Postgres view that
+// pre-strips the JSONB to {qid: value} before returning.
+const PEER_LIMIT = 500;
+const PAGE_SIZE = 1000;
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
