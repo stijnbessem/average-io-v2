@@ -1,0 +1,179 @@
+Comparizzon - Instagram Ad Brief (Viral Copy + Brand Kit)
+
+Primary objective
+- Drive taps to comparizzon.com with bold, social-proof style messaging.
+- Make the ad feel modern, data-driven, and share-worthy.
+
+Recommended frame sizes
+- Feed: 1080 x 1350
+- Story: 1080 x 1920
+
+Viral copy hooks (choose 1-2 per variant)
+1) Compare your dating life with others.
+2) How average is your love life in 2026?
+3) Your habits vs everyone else. Ready?
+4) See where you are normal, rare, or wild.
+5) 3 minutes. Real people data. Brutal honesty.
+6) Most people guess wrong about themselves. Check yours.
+
+Headline options
+- Compare your dating life with others
+- See How You Compare
+- Are You Average or Rare?
+
+Subhead options
+- Answer a few questions and unlock your personal comparison dashboard.
+- Compare your answers with real peer data across lifestyle, money, dating, and AI.
+- No account needed. Fast quiz. Instant charts.
+
+CTA options
+- Start Now
+- Compare Me
+- See My Results
+
+Small trust/urgency lines
+- Takes about 3 minutes
+- Real community dataset
+- Private by default
+- Unlock full overview for EUR1
+
+Visual direction
+- Dark premium canvas with high-contrast text
+- Bright multi-color category pills (lively, social-first feel)
+- Simple data card mock (mini bars/ring chart)
+- Strong top headline, short subhead, clear CTA button
+
+Font usage (from product style tokens)
+- Primary sans: Inter
+  - Fallback stack: Inter, -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif
+  - Use for: headlines, body, CTA, labels, UI text
+- Serif accent: Fraunces
+  - Fallback stack: Fraunces, "Source Serif Pro", Georgia, serif
+  - Use for: selective hero word emphasis only (1-3 words max)
+- Mono (optional for small stats): JetBrains Mono
+  - Use for: tiny numeric badges, micro data labels
+
+Suggested type scale (Instagram)
+- Headline: 88-112 px, Inter Bold, line-height 0.95-1.02
+- Subhead: 36-46 px, Inter Medium/Semibold
+- Body/support: 28-34 px, Inter Medium
+- CTA: 30-36 px, Inter Semibold
+- Micro labels: 20-24 px, Inter Medium or JetBrains Mono
+
+Brand colors (current app tokens)
+Light/base neutrals
+- Background raised: #FFFFFF
+- Text primary: #111111
+- Text secondary: #2F3437
+- Text muted: #787774
+- Accent solid: #111111
+
+Dark/base neutrals (recommended for ad)
+- Background raised: #1A1A18
+- Text primary: #ECEBE7
+- Text secondary: #D4D2CC
+- Text muted: #9B9890
+- Accent solid: #E8E7E3
+
+Category/pill palette (light)
+- Red bg/ink: #FDEBEC / #9F2F2D
+- Blue bg/ink: #E1F3FE / #1F6C9F
+- Green bg/ink: #EDF3EC / #346538
+- Yellow bg/ink: #FBF3DB / #956400
+- Violet bg/ink: #EFEAFB / #5A3E9F
+
+Category/pill palette (dark)
+- Red bg/ink: #2A181A / #E8A8A8
+- Blue bg/ink: #14252F / #8BC4EA
+- Green bg/ink: #172520 / #9DC9A4
+- Yellow bg/ink: #2A2618 / #E6C96C
+- Violet bg/ink: #231E30 / #C4B4EB
+
+Layout recipe (quick)
+1) Top: logo + "NEW - COMPARIZZON"
+2) Middle: one viral headline + one short subhead
+3) Mid-lower: mock UI card with 4-6 colorful category pills
+4) Bottom: high-contrast CTA + comparizzon.com
+5) Keep safe margins generous for mobile crop
+
+Ready-to-paste ad copy set (Version A)
+- Eyebrow: NEW - COMPARIZZON
+- Headline: Compare your dating life with others.
+- Subhead: Answer fast. See how your choices stack up against real people.
+- Bullets: Dating in 2026 - Money - Food - AI Identity
+- CTA: Start Now
+- URL: comparizzon.com
+
+Ready-to-paste ad copy set (Version B)
+- Eyebrow: TRENDING NOW
+- Headline: Are you average or rare?
+- Subhead: 3 minutes to compare your life with community data.
+- Bullet: Real charts. Real answers. No fluff.
+- CTA: Compare Me
+- URL: comparizzon.com
+
+Font styling spec (export for Figma)
+- Font family system
+  - Primary: Inter
+  - Accent serif: Fraunces
+  - Data/mono: JetBrains Mono
+- Weights to use
+  - Inter: 500 (Medium), 600 (Semibold), 700 (Bold)
+  - Fraunces: 400 (Regular), 600 (Semibold for hero emphasis)
+  - JetBrains Mono: 500 (Medium)
+- Text styles (create as Figma named styles)
+  - H1 / Hero: Inter 700, 96 px, line-height 98%, letter-spacing -2%
+  - H2 / Secondary headline: Inter 700, 56 px, line-height 102%, letter-spacing -1%
+  - Subhead: Inter 600, 40 px, line-height 112%, letter-spacing -0.5%
+  - Body Large: Inter 500, 32 px, line-height 125%, letter-spacing 0%
+  - Body: Inter 500, 28 px, line-height 130%, letter-spacing 0%
+  - Label / Eyebrow: Inter 600, 22 px, line-height 120%, letter-spacing 8%, uppercase
+  - CTA Label: Inter 600, 34 px, line-height 100%, letter-spacing -0.5%
+  - Data Micro: JetBrains Mono 500, 20 px, line-height 120%, letter-spacing 0%
+- Styling rules
+  - Keep headlines in Inter (not serif) for punch and clarity.
+  - Use Fraunces only on 1-3 highlighted words.
+  - Avoid all-caps for long lines; only eyebrow tags should be uppercase.
+  - Minimum contrast target: 4.5:1 for body text.
+
+Button usage spec (Figma component)
+- Component names
+  - Button / Primary / Default
+  - Button / Primary / Hover
+  - Button / Primary / Pressed
+  - Button / Ghost / Default
+- Primary button style
+  - Height: 88 px (Feed), 96 px (Story)
+  - Padding: 0 40 px
+  - Radius: 18 px
+  - Fill: #E8E7E3 on dark background OR #111111 on light background
+  - Text: Inter 600, 34 px
+  - Text color: #111111 on light fill OR #ECEBE7 on dark fill
+  - Shadow: 0 8 24 rgba(0,0,0,0.22) for dark layouts
+- Hover/pressed behavior
+  - Hover: +6% brightness
+  - Pressed: scale to 98% and reduce shadow by 30%
+- CTA copy length
+  - Keep to 2-3 words max (Start Now, Compare Me, See Results)
+
+Icon usage spec
+- Icon style
+  - Stroke-based, rounded caps/joins, minimal detail
+  - Stroke width: 2 px (at 1080-wide frame)
+  - Corner radius language should match button rounding
+- Icon sizes
+  - Inline bullet icons: 24 px
+  - Feature icons in cards: 28-32 px
+  - Accent/floating decorative icons: 36-44 px
+- Icon color usage
+  - Use text primary color for functional icons
+  - Use palette accents sparingly for emphasis only (max 1-2 accent icons per frame)
+- Recommended icon set for this ad
+  - Heart or spark (dating)
+  - Bar chart or donut chart (comparison data)
+  - Lock (EUR1 unlock cue)
+  - Lightning or trend arrow (speed/viral energy)
+- Placement rules
+  - Pair icons with short text labels; do not use icon-only meaning for key info
+  - Keep icon + label clusters left-aligned for easy scanning
+  - Preserve at least 16 px spacing between icon and label text

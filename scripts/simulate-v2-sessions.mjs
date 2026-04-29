@@ -30,21 +30,6 @@ function slugCategoryId(name) {
   return s || "category";
 }
 
-/** Mirrors App.jsx QUESTION_DEPENDENCIES for V2 (only questions that exist in JSON). */
-const DEPENDENCIES = {
-  penis_length: { dependsOn: "gender", showIf: ["Male"] },
-  bra_cup: { dependsOn: "gender", showIf: ["Female"] },
-  plastic_detail: {
-    dependsOn: "plastic_surgery",
-    showIf: [
-      "Minor tweaks only",
-      "Injectables / fillers",
-      "Revision / follow-up surgery",
-      "Major surgical work",
-    ],
-  },
-};
-
 function flattenQuestions(raw) {
   const out = [];
   for (const block of raw.questionnaire || []) {
@@ -52,7 +37,12 @@ function flattenQuestions(raw) {
     const blockSensitive = Boolean(block.sensitive);
     for (const q of block.questions || []) {
       const labels = (q.options || []).map((o) => (typeof o === "string" ? o : o.label));
-      const dep = DEPENDENCIES[q.id] || {};
+      const fromFile = {};
+      if (q.dependsOn) {
+        fromFile.dependsOn = q.dependsOn;
+        if (Array.isArray(q.showIf)) fromFile.showIf = q.showIf;
+        if (Array.isArray(q.hideIf)) fromFile.hideIf = q.hideIf;
+      }
       out.push({
         id: q.id,
         cat,
@@ -60,18 +50,27 @@ function flattenQuestions(raw) {
         options: labels,
         multi: Boolean(q.multi),
         sensitive: blockSensitive || Boolean(q.sensitive),
-        ...dep,
+        ...fromFile,
       });
     }
   }
   return out;
 }
 
+function dependencyMatches(q, parentVal) {
+  if (parentVal === undefined || parentVal === null || parentVal === "") return false;
+  if (Array.isArray(q.showIf) && q.showIf.length > 0) {
+    return q.showIf.includes(parentVal);
+  }
+  if (Array.isArray(q.hideIf) && q.hideIf.length > 0) {
+    return !q.hideIf.includes(parentVal);
+  }
+  return true;
+}
+
 function isVisible(q, answers) {
   if (!q.dependsOn) return true;
-  const parent = answers[q.dependsOn];
-  if (parent == null || parent === "") return false;
-  return Array.isArray(q.showIf) && q.showIf.includes(parent);
+  return dependencyMatches(q, answers[q.dependsOn]);
 }
 
 function pickWeighted(options, weights) {
@@ -230,7 +229,6 @@ async function sendSnapshot(snapshot) {
     secret: WEBHOOK_SECRET,
     snapshot,
     meta: {
-      user_agent: "simulate-v2-sessions.mjs",
       language: "en-GB",
       timezone: "Europe/Amsterdam",
     },

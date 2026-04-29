@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://average.io/sitemap.xml
+Sitemap: https://comparizzon.com/sitemap.xml
