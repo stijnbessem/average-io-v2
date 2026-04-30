@@ -2085,8 +2085,24 @@ function TopBar({
     setMenuOpen(false);
     if (onOpenSheetData) onOpenSheetData();
   };
+  // Three peer-data states the pill needs to convey:
+  //   live      — freshly paginated from Supabase (most up-to-date)
+  //   snapshot  — daily blob (cached, complete, ~24h stale at worst)
+  //   synthetic — client-side seed data (no real peers loaded)
+  // "real" groups live + snapshot since both represent actual peer data; only
+  // synthetic deserves the muted "FALLBACK" treatment. The spinner reflects an
+  // in-progress fetch only — when peerPoolLoading is false the pill is settled,
+  // regardless of which source we ended up on.
   const isLive = peerSource === "live";
-  const showPeerLoader = peerPoolLoading || !isLive;
+  const isSnapshot = peerSource === "snapshot";
+  const isRealData = isLive || isSnapshot;
+  const sourceLabel = isLive ? "LIVE" : isSnapshot ? "SNAPSHOT" : "FALLBACK";
+  const sourceTitle = isLive
+    ? "Using live community data"
+    : isSnapshot
+    ? "Using cached daily snapshot — refresh for live data"
+    : "Using synthetic fallback data";
+  const showPeerLoader = peerPoolLoading;
   const totalCountNum = Number(totalPeerCount);
   const hasTotal = Number.isFinite(totalCountNum) && totalCountNum > 0;
   const peerLoaderLabel = peerPoolLoading
@@ -2210,23 +2226,23 @@ function TopBar({
               <div style={{ marginLeft: 10, paddingLeft: 14, borderLeft: "1px solid var(--line)", display: "flex", alignItems: "baseline", gap: 12 }}>
                 <button
                   onClick={openSheetData}
-                  title={isLive ? "Using live community data" : "Using synthetic fallback data"}
+                  title={sourceTitle}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
                     padding: "4px 8px",
                     borderRadius: 999,
-                    border: `1px solid ${isLive ? "var(--surface-live-border)" : "var(--surface-fallback-border)"}`,
-                    background: isLive ? "var(--surface-live)" : "var(--surface-fallback)",
+                    border: `1px solid ${isRealData ? "var(--surface-live-border)" : "var(--surface-fallback-border)"}`,
+                    background: isRealData ? "var(--surface-live)" : "var(--surface-fallback)",
                     cursor: "pointer",
                     fontFamily: "inherit",
                   }}
                 >
                   <span style={{
                     width: 6, height: 6, borderRadius: "50%",
-                    background: isLive ? "#2E9B45" : "#8A867A",
+                    background: isRealData ? "#2E9B45" : "#8A867A",
                   }} />
-                  <span className="mono" style={{ fontSize: 10, color: isLive ? "#6BC77D" : "var(--ink-3)" }}>
-                    {isLive ? "LIVE" : "FALLBACK"}
+                  <span className="mono" style={{ fontSize: 10, color: isRealData ? "#6BC77D" : "var(--ink-3)" }}>
+                    {sourceLabel}
                   </span>
                   <span className="mono" style={{ fontSize: 10, color: "var(--ink-3)", display: "inline-flex", alignItems: "center", gap: 6 }}>
                     {showPeerLoader ? (
@@ -2304,12 +2320,13 @@ function TopBar({
               }}>
                 <button
                   onClick={openSheetData}
+                  title={sourceTitle}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
                     padding: "3px 7px",
                     borderRadius: 999,
-                    border: `1px solid ${isLive ? "var(--surface-live-border)" : "var(--surface-fallback-border)"}`,
-                    background: isLive ? "var(--surface-live)" : "var(--surface-fallback)",
+                    border: `1px solid ${isRealData ? "var(--surface-live-border)" : "var(--surface-fallback-border)"}`,
+                    background: isRealData ? "var(--surface-live)" : "var(--surface-fallback)",
                     marginRight: 8,
                     cursor: "pointer",
                     fontFamily: "inherit",
@@ -2317,10 +2334,10 @@ function TopBar({
                 >
                   <span style={{
                     width: 6, height: 6, borderRadius: "50%",
-                    background: isLive ? "#2E9B45" : "#8A867A",
+                    background: isRealData ? "#2E9B45" : "#8A867A",
                   }} />
-                  <span className="mono" style={{ fontSize: 10, color: isLive ? "#6BC77D" : "var(--ink-3)" }}>
-                    {isLive ? "LIVE" : "FALLBACK"}
+                  <span className="mono" style={{ fontSize: 10, color: isRealData ? "#6BC77D" : "var(--ink-3)" }}>
+                    {sourceLabel}
                   </span>
                 </button>
                 <span className="mono" style={{ fontSize: 13, color: "var(--ink)" }}>{totalAnswered}</span>
@@ -9219,6 +9236,8 @@ export default function App() {
                 <span>
                   {peerSource === "live"
                     ? `Live community comparisons · ${peers.length} peers`
+                    : peerSource === "snapshot"
+                    ? `Cached daily snapshot · ${peers.length} peers`
                     : "Prototype fallback · synthetic peer pool"}
                 </span>
               </button>
