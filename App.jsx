@@ -2401,6 +2401,9 @@ function TopBar({
 }
 
 function SheetDataModal({ open, onClose, sheetState, snapshotGeneratedAt = null, onRefresh = null }) {
+  // Mobile: actions move to a bottom bar so the title stops fighting them for
+  // horizontal space. Desktop keeps the compact top-right cluster.
+  const isMobile = useMediaQuery("(max-width: 639px)");
   if (!open) return null;
   const {
     source = "synthetic",
@@ -2478,7 +2481,12 @@ function SheetDataModal({ open, onClose, sheetState, snapshotGeneratedAt = null,
             padding: 18,
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: isMobile ? "flex-start" : "center",
+            gap: 10, marginBottom: 12,
+          }}>
             <div>
               <div className="label">Shared Sheet Data</div>
               <div className="serif" style={{ fontSize: 24, color: "var(--ink)", marginTop: 4 }}>
@@ -2490,14 +2498,18 @@ function SheetDataModal({ open, onClose, sheetState, snapshotGeneratedAt = null,
                 </div>
               )}
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {typeof onRefresh === "function" && (
-                <Button size="sm" variant="secondary" onClick={handleRefresh} disabled={isLoading}>
-                  {isLoading ? "Refreshing…" : "Refresh data"}
-                </Button>
-              )}
-              <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
-            </div>
+            {/* Desktop: actions in the header. Mobile: nothing here — actions
+                render at the bottom of the modal body for thumb-reachability. */}
+            {!isMobile && (
+              <div style={{ display: "flex", gap: 8 }}>
+                {typeof onRefresh === "function" && (
+                  <Button size="sm" variant="secondary" onClick={handleRefresh} disabled={isLoading}>
+                    {isLoading ? "Refreshing…" : "Refresh data"}
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
+              </div>
+            )}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
@@ -2530,6 +2542,39 @@ function SheetDataModal({ open, onClose, sheetState, snapshotGeneratedAt = null,
               Latest fetch error: {lastError}
             </div>
           ) : null}
+
+          {/* Mobile-only action bar: pinned to the bottom of the modal body so
+              both buttons sit within thumb reach instead of getting squeezed
+              next to a wrapping title. Equal width to read as primary actions. */}
+          {isMobile && (
+            <div style={{
+              display: "flex",
+              gap: 10,
+              marginTop: 8,
+              paddingTop: 12,
+              borderTop: "1px solid var(--line)",
+            }}>
+              {typeof onRefresh === "function" && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  style={{ flex: 1, width: "100%" }}
+                >
+                  {isLoading ? "Refreshing…" : "Refresh data"}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onClose}
+                style={{ flex: 1, width: "100%" }}
+              >
+                Close
+              </Button>
+            </div>
+          )}
 
         </motion.div>
       </motion.div>
