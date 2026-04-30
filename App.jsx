@@ -881,7 +881,8 @@ function buildPeersFromSheet(table) {
 
 /* Snapshot records arrive as a slim {qid: rawValue} per peer (api/snapshot.js
    strips the JSONB envelope server-side). We still run each value through
-   normalizeAnswerForQuestion since QUESTIONS_BY_ID lives client-only. */
+   normalizeAnswerForQuestion since QUESTIONS_BY_ID lives client-only.
+   Used for v1 snapshots (row-oriented, `payload.peers`). */
 function buildPeersFromSnapshotRecords(records) {
   if (!Array.isArray(records)) return [];
   const out = [];
@@ -898,6 +899,49 @@ function buildPeersFromSnapshotRecords(records) {
     if (Object.keys(peer).length > 0) out.push(peer);
   }
   return out;
+}
+
+/* Column-oriented snapshots (v2, `payload.columns`) store one array per
+   question id, length = peer count, with null in cells where the peer
+   didn't answer. We pivot back to per-peer objects on the fly so the rest
+   of the app's comparison code is untouched. ~70% smaller on the wire. */
+function buildPeersFromSnapshotColumns(columns, count) {
+  if (!columns || typeof columns !== "object") return [];
+  const peerCount = Number(count);
+  if (!Number.isFinite(peerCount) || peerCount <= 0) return [];
+
+  // Pre-resolve which columns we actually want to read so we don't repeat
+  // the QUESTIONS_BY_ID lookup `count × keys` times.
+  const validQids = [];
+  for (const qid of Object.keys(columns)) {
+    if (QUESTIONS_BY_ID[qid] && Array.isArray(columns[qid])) validQids.push(qid);
+  }
+
+  const out = [];
+  for (let i = 0; i < peerCount; i++) {
+    const peer = {};
+    for (const qid of validQids) {
+      const raw = columns[qid][i];
+      if (raw == null || raw === "") continue;
+      const normalized = normalizeAnswerForQuestion(raw, QUESTIONS_BY_ID[qid]);
+      if (normalized != null && normalized !== "") peer[qid] = normalized;
+    }
+    if (Object.keys(peer).length > 0) out.push(peer);
+  }
+  return out;
+}
+
+/* Format-agnostic dispatcher: reads the snapshot envelope and returns
+   normalized peer objects regardless of v1 (peers[]) or v2 (columns) shape. */
+function buildPeersFromSnapshotPayload(payload) {
+  if (!payload || typeof payload !== "object") return [];
+  if (payload.version === 2 && payload.columns) {
+    return buildPeersFromSnapshotColumns(payload.columns, payload.count);
+  }
+  if (Array.isArray(payload.peers)) {
+    return buildPeersFromSnapshotRecords(payload.peers);
+  }
+  return [];
 }
 
 function usePeerPool() {
@@ -1050,9 +1094,9 @@ function usePeerPool() {
       const res = await fetch(PEER_SNAPSHOT_ENDPOINT);
       if (!res.ok) return false;
       const payload = await res.json();
-      const records = Array.isArray(payload?.peers) ? payload.peers : null;
-      if (!records || records.length === 0) return false;
-      const norm = buildPeersFromSnapshotRecords(records);
+      // Accept v1 (payload.peers) and v2 (payload.columns) — see
+      // buildPeersFromSnapshotPayload. Empty/unknown payloads fall through.
+      const norm = buildPeersFromSnapshotPayload(payload);
       if (norm.length === 0) return false;
       const generatedAt = typeof payload?.generatedAt === "string" ? payload.generatedAt : null;
       if (!cancelledRef.current) {
