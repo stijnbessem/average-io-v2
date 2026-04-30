@@ -99,6 +99,9 @@ export default async function handler(req, res) {
       url,
     });
   } catch (error) {
+    // Surface full error to runtime logs so failed cron runs are debuggable
+    // from the dashboard without having to capture the response body.
+    console.error("[snapshot] generation failed:", error);
     const message = error && typeof error.message === "string" ? error.message : "Snapshot generation failed.";
     return res.status(500).json({ error: message });
   }
