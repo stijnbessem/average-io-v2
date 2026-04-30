@@ -1039,10 +1039,15 @@ function usePeerPool() {
   }, [syntheticPeers]);
 
   /* Snapshot path: single edge-cached fetch that 302-redirects to the daily
-     blob. Returns true on success so the caller can skip the live fallback. */
+     blob. Returns true on success so the caller can skip the live fallback.
+     We deliberately use the browser's default cache mode here so repeat
+     visits within the blob's max-age window are instant — no `cache: "no-store"`,
+     because the blob carries `Cache-Control: public, max-age=3600` from put()
+     and the redirect adds a short browser cache window. The cron updates the
+     blob once a day, so a stale read from local cache is bounded to ~1h. */
   const loadSnapshot = useCallback(async () => {
     try {
-      const res = await fetch(PEER_SNAPSHOT_ENDPOINT, { cache: "no-store" });
+      const res = await fetch(PEER_SNAPSHOT_ENDPOINT);
       if (!res.ok) return false;
       const payload = await res.json();
       const records = Array.isArray(payload?.peers) ? payload.peers : null;

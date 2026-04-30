@@ -24,7 +24,15 @@ export default async function handler(req, res) {
     if (!blob?.url) {
       return res.status(404).json({ error: "Snapshot not yet generated." });
     }
-    res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
+    // Browser keeps the redirect for 5 min (so SPA navigations within a session
+    // skip the redirect lookup entirely), edge caches for 1h, and we serve
+    // stale-while-revalidate up to 24h to absorb a backend hiccup. The actual
+    // blob has its own 1h max-age set by put({ cacheControlMaxAge: 3600 }) so
+    // repeat visits in the same hour bypass the network entirely.
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400"
+    );
     res.setHeader("X-Snapshot-Uploaded-At", String(blob.uploadedAt || ""));
     return res.redirect(302, blob.url);
   } catch (error) {
